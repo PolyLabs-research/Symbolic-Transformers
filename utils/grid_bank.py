@@ -103,24 +103,27 @@ class GridBank:
         }
 
 
-def sinusoid_features(k: np.ndarray, n_freq: int = 32, max_period: float = 2 * GRID_CELLS) -> np.ndarray:
+def sinusoid_features(k: np.ndarray, n_freq: int = 32, max_period: float = 2 * GRID_CELLS,
+                      min_period: float = 2.0) -> np.ndarray:
     """Fixed multi-frequency sin/cos features of integer values k, shape (len(k), 2*n_freq).
 
-    Periods run geometrically from 2 to ``max_period`` (default 1250: half a cycle
-    over 0..624, so the slowest cosine is monotone across the whole numeral range). This is the standard positional-encoding
+    Periods run geometrically from ``min_period`` to ``max_period`` (default 2 to
+    1250: half a cycle over 0..624, so the slowest cosine is monotone across the
+    whole numeral range). A larger ``min_period`` drops the high frequencies that
+    let a linear layer memorise individual values, giving a smoother code. This is the standard positional-encoding
     recipe applied to a numeral's value instead of a sequence position: an
     ordinal code that is smooth in k, with no 2D structure and no per-cell
     parameters, which makes it the control for "is it the grid or just an
     ordinal encoding that helps?".
     """
     k = np.asarray(k, dtype=np.float64)[:, None]
-    periods = np.geomspace(2.0, max_period, n_freq)[None, :]
+    periods = np.geomspace(min_period, max_period, n_freq)[None, :]
     angles = 2 * np.pi * k / periods
     return np.concatenate([np.sin(angles), np.cos(angles)], axis=1).astype(np.float32)
 
 
 def sinusoid_bank(vocab_size: int, n_numerals: int = GRID_CELLS, n_freq: int = 32,
-                  labels: Optional[List[str]] = None) -> GridBank:
+                  labels: Optional[List[str]] = None, min_period: float = 2.0) -> GridBank:
     """A bank whose numeral rows (ids 0..n_numerals-1) are sinusoid features of k.
 
     Every other token (glyphs, special tokens) has no feature row and uses the
@@ -128,7 +131,7 @@ def sinusoid_bank(vocab_size: int, n_numerals: int = GRID_CELLS, n_freq: int = 3
     grid arms.
     """
     feats = np.zeros((vocab_size, 2 * n_freq), dtype=np.float32)
-    feats[:n_numerals] = sinusoid_features(np.arange(n_numerals), n_freq=n_freq)
+    feats[:n_numerals] = sinusoid_features(np.arange(n_numerals), n_freq=n_freq, min_period=min_period)
     has = np.zeros(vocab_size, dtype=bool)
     has[:n_numerals] = True
     return GridBank(grids=feats, has_grid=has, labels=labels or [""] * vocab_size)

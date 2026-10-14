@@ -397,6 +397,7 @@ def create_model(
     tie_weights: bool = False,
     grid_bank: Optional[Union[GridBank, str, Path]] = None,
     verbose: bool = True,
+    sinusoid_min_period: float = 2.0,
 ) -> SymbolicTransformer:
     """
     Factory function for creating models of different sizes.
@@ -408,6 +409,7 @@ def create_model(
         tie_weights: Tie the output layer to the embedding table
         grid_bank: GridBank, path to a bank .npz, or None to load the default
             bank (only used for grid embeddings)
+        sinusoid_min_period: shortest period of the sinusoid features (sinusoid arm)
         
     Returns:
         SymbolicTransformer model
@@ -417,7 +419,7 @@ def create_model(
     
     bank: Optional[GridBank] = None
     if embedding_type == 'sinusoid':
-        bank = grid_bank if isinstance(grid_bank, GridBank) else sinusoid_bank(vocab_size)
+        bank = grid_bank if isinstance(grid_bank, GridBank) else sinusoid_bank(vocab_size, min_period=sinusoid_min_period)
     elif embedding_type != 'learned':
         if isinstance(grid_bank, GridBank):
             bank = grid_bank

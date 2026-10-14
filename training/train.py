@@ -81,6 +81,7 @@ class TrainingConfig:
     embedding_type: str = "learned"
     tie_weights: bool = False
     grid_bank: str = str(DEFAULT_BANK_PATH)
+    sinusoid_min_period: float = 2.0
     seed: int = 42
 
 
@@ -361,6 +362,8 @@ def main():
     parser.add_argument("--tie-weights", action="store_true",
                         help="Tie the output layer to the embedding table (recommended with grid embeddings)")
     parser.add_argument("--grid-bank", default=str(DEFAULT_BANK_PATH), help="Grid bank .npz for grid embeddings")
+    parser.add_argument("--sinusoid-min-period", type=float, default=2.0,
+                        help="Shortest period of the sinusoid features (--embedding sinusoid)")
     parser.add_argument("--device", default=None, help="cuda or cpu (default: cuda if available)")
     parser.add_argument("--num-workers", type=int, default=4,
                         help="DataLoader worker processes (use 0 for tiny samples or when running several trainings in parallel)")
@@ -388,6 +391,7 @@ def main():
     config.embedding_type = args.embedding
     config.tie_weights = args.tie_weights
     config.grid_bank = args.grid_bank
+    config.sinusoid_min_period = args.sinusoid_min_period
     set_seed(config.seed)
     vocab = Vocabulary(args.vocab)
     config.vocab_size = vocab.vocab_size
@@ -422,7 +426,8 @@ def main():
     print("\nCreating model...")
     bank = GridBank.load(config.grid_bank) if config.embedding_type in ('grid_linear', 'grid_conv') else None
     model = create_model(config.vocab_size, config.model_size, embedding_type=config.embedding_type,
-                         tie_weights=config.tie_weights, grid_bank=bank)
+                         tie_weights=config.tie_weights, grid_bank=bank,
+                         sinusoid_min_period=config.sinusoid_min_period)
     trainer = Trainer(model, train_loader, val_loader, config, vocab)
 
     start_epoch = 0

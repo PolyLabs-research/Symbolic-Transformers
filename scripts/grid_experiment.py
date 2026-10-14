@@ -36,6 +36,9 @@ ARMS = {
     "learned_untied": ["--embedding", "learned"],
     # Control: fixed sinusoid features of k for numerals, same linear layer as grid_linear.
     "sinusoid": ["--embedding", "sinusoid", "--tie-weights"],
+    # Same, without the high frequencies (periods 32..1250): a smooth ordinal code
+    # that cannot memorise individual values. Separates nesting from smoothness.
+    "sinusoid_smooth": ["--embedding", "sinusoid", "--tie-weights", "--sinusoid-min-period", "32"],
 }
 DEFAULT_ARMS = ["learned", "grid_linear", "grid_conv"]
 SPLITS = ("test", "test_holdout", "test_far")
