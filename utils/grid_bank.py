@@ -122,6 +122,37 @@ def sinusoid_features(k: np.ndarray, n_freq: int = 32, max_period: float = 2 * G
     return np.concatenate([np.sin(angles), np.cos(angles)], axis=1).astype(np.float32)
 
 
+def cell_position_features(n_index_freq: int = 8, n_axis_freq: int = 4,
+                           index_periods: Tuple[float, float] = (32.0, 2 * GRID_CELLS),
+                           axis_periods: Tuple[float, float] = (5.0, 2 * GRID_N)) -> np.ndarray:
+    """Fixed smooth features of every panel cell's position, shape (625, F).
+
+    For cell i at (row, col): sin/cos of the row-major index i at ``n_index_freq``
+    periods, sin/cos of row and of col at ``n_axis_freq`` periods each, plus
+    linear ramps (i/625, row/25, col/25) and a constant. All periods are long
+    relative to a single cell, so neighbouring cells get similar features.
+
+    Used by the ``grid_shared`` encoder, which derives each cell's weight from
+    these features through one shared learned matrix instead of keeping 625
+    independent weight columns. A cell that is never filled in training still
+    gets a weight consistent with its neighbours.
+    """
+    i = np.arange(GRID_CELLS, dtype=np.float64)
+    row = i // GRID_N
+    col = i % GRID_N
+
+    def sincos(x: np.ndarray, lo: float, hi: float, n: int) -> List[np.ndarray]:
+        periods = np.geomspace(lo, hi, n)
+        ang = 2 * np.pi * x[:, None] / periods[None, :]
+        return [np.sin(ang), np.cos(ang)]
+
+    parts = sincos(i, index_periods[0], index_periods[1], n_index_freq)
+    parts += sincos(row, axis_periods[0], axis_periods[1], n_axis_freq)
+    parts += sincos(col, axis_periods[0], axis_periods[1], n_axis_freq)
+    parts.append(np.stack([i / GRID_CELLS, row / GRID_N, col / GRID_N, np.ones_like(i)], axis=1))
+    return np.concatenate(parts, axis=1).astype(np.float32)
+
+
 def sinusoid_bank(vocab_size: int, n_numerals: int = GRID_CELLS, n_freq: int = 32,
                   labels: Optional[List[str]] = None, min_period: float = 2.0) -> GridBank:
     """A bank whose numeral rows (ids 0..n_numerals-1) are sinusoid features of k.

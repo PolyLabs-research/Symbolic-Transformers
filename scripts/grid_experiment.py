@@ -31,6 +31,9 @@ ARMS = {
     "learned": ["--embedding", "learned", "--tie-weights"],
     "grid_linear": ["--embedding", "grid_linear", "--tie-weights"],
     "grid_conv": ["--embedding", "grid_conv", "--tie-weights"],
+    # Cell weights generated from smooth position features through one shared
+    # matrix: no parameter belongs to a single cell.
+    "grid_shared": ["--embedding", "grid_shared", "--tie-weights"],
     # Control: the original untied model. Unseen rows keep their random init
     # instead of being pushed away from hidden states by the tied softmax.
     "learned_untied": ["--embedding", "learned"],

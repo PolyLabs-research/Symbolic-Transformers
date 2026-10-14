@@ -9,6 +9,12 @@ Embedding options (``embedding_type``):
                    row-major count (thermometer) code, so panel k is a subset
                    of panel k+1 and embeddings move along a path as k grows.
 - ``grid_conv``    a small 2D conv encoder over the 25x25 panel.
+- ``grid_shared``  like grid_linear, but each cell's weight is generated from
+                   fixed smooth features of the cell's position through one
+                   shared matrix, so no parameter belongs to a single cell:
+                   cells never filled in training still get a weight that is
+                   consistent with their neighbours (extrapolation), and
+                   adjacent cells get similar increments (precision).
 - ``sinusoid``     control arm: numerals get fixed multi-frequency sin/cos
                    features of their value k through the same linear layer;
                    glyphs and special tokens use learned rows. An ordinal code
@@ -37,10 +43,12 @@ _ROOT = str(Path(__file__).resolve().parents[1])
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from utils.grid_bank import GRID_CELLS, GRID_N, DEFAULT_BANK_PATH, GridBank, sinusoid_bank  # noqa: E402
+from utils.grid_bank import (  # noqa: E402
+    GRID_CELLS, GRID_N, DEFAULT_BANK_PATH, GridBank, cell_position_features, sinusoid_bank,
+)
 
-EMBEDDING_TYPES = ("learned", "grid_linear", "grid_conv", "sinusoid")
-GRID_TYPES = ("grid_linear", "grid_conv")
+EMBEDDING_TYPES = ("learned", "grid_linear", "grid_conv", "grid_shared", "sinusoid")
+GRID_TYPES = ("grid_linear", "grid_conv", "grid_shared")
 
 
 class PositionalEncoding(nn.Module):
@@ -93,6 +101,30 @@ class ConvGridEncoder(nn.Module):
         return self.proj(x.flatten(1))
 
 
+class SharedCellEncoder(nn.Module):
+    """(N, 625) panel bits -> (N, d_model) with position-generated cell weights.
+
+    W = Phi @ A where Phi (625, F) are fixed smooth features of each cell's
+    position and A (F, d_model) is learned. The embedding of a panel is
+    bits @ W + b, i.e. the sum of the generated weights of its filled cells.
+    For the thermometer code that is a cumulative sum of increments that vary
+    smoothly with the cell index.
+    """
+
+    def __init__(self, d_model: int):
+        super().__init__()
+        phi = torch.tensor(cell_position_features(), dtype=torch.float32)  # (625, F)
+        self.register_buffer("phi", phi)
+        self.proj = nn.Linear(phi.shape[1], d_model)
+
+    def cell_weights(self) -> torch.Tensor:
+        """The generated (625, d_model) per-cell weight matrix."""
+        return self.phi @ self.proj.weight.t()
+
+    def forward(self, bits: torch.Tensor) -> torch.Tensor:
+        return self.proj(bits @ self.phi)
+
+
 class GridEmbedding(nn.Module):
     """Embed tokens from fixed per-token feature rows (base-625 panels or sinusoid features).
 
@@ -104,16 +136,21 @@ class GridEmbedding(nn.Module):
 
     def __init__(self, grid_bank: GridBank, d_model: int, kind: str = "grid_linear", init_std: float = 0.02):
         super().__init__()
-        if kind not in ("grid_linear", "grid_conv", "sinusoid"):
+        if kind not in ("grid_linear", "grid_conv", "grid_shared", "sinusoid"):
             raise ValueError(f"Unknown grid embedding kind: {kind}")
-        if kind == "grid_conv" and grid_bank.n_features != GRID_CELLS:
-            raise ValueError("grid_conv needs 25x25 panels")
+        if kind in ("grid_conv", "grid_shared") and grid_bank.n_features != GRID_CELLS:
+            raise ValueError(f"{kind} needs 25x25 panels")
         self.kind = kind
         self.d_model = d_model
         vocab_size = grid_bank.vocab_size
         self.register_buffer("grids", torch.tensor(grid_bank.grids, dtype=torch.float32))
         self.register_buffer("has_grid", torch.tensor(grid_bank.has_grid, dtype=torch.bool))
-        self.encoder = ConvGridEncoder(d_model) if kind == "grid_conv" else nn.Linear(grid_bank.n_features, d_model)
+        if kind == "grid_conv":
+            self.encoder = ConvGridEncoder(d_model)
+        elif kind == "grid_shared":
+            self.encoder = SharedCellEncoder(d_model)
+        else:
+            self.encoder = nn.Linear(grid_bank.n_features, d_model)
         # LayerNorm keeps every panel embedding at the same scale regardless of
         # how many cells are filled; its gain starts at init_std so grid rows
         # match the scale of a freshly initialised learned table.
@@ -419,6 +456,8 @@ def create_model(
     
     bank: Optional[GridBank] = None
     if embedding_type == 'sinusoid':
+        if isinstance(grid_bank, GridBank) and grid_bank.n_features == GRID_CELLS:
+            raise ValueError("embedding_type='sinusoid' was given a 625-column panel bank; pass a sinusoid_bank() or None")
         bank = grid_bank if isinstance(grid_bank, GridBank) else sinusoid_bank(vocab_size, min_period=sinusoid_min_period)
     elif embedding_type != 'learned':
         if isinstance(grid_bank, GridBank):
@@ -501,7 +540,7 @@ if __name__ == "__main__":
         print(f"  Generation:   {prompt.shape} → {generated.shape}")
     
     print("\nGrid embedding variants (tiny, tied):")
-    for emb in ('grid_linear', 'grid_conv', 'sinusoid'):
+    for emb in ('grid_linear', 'grid_conv', 'grid_shared', 'sinusoid'):
         model = create_model(vocab_size, 'tiny', embedding_type=emb, tie_weights=True)
         logits = model(torch.randint(0, vocab_size, (2, 16)))
         print(f"  {emb}: logits {tuple(logits.shape)}")

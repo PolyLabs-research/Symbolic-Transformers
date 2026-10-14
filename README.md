@@ -204,6 +204,7 @@ nothing about. The grid arms replace the table for every grid-backed token:
 | `learned` | `nn.Embedding` row | `nn.Embedding` row | original model |
 | `grid_linear` | one shared `Linear(625 → d_model)` over the panel bits | learned fallback row | embeddings move along a path as *k* grows |
 | `grid_conv` | small 2D conv encoder over the 25×25 panel | learned fallback row | sees shape, not just count |
+| `grid_shared` | panel bits × cell weights *generated* from smooth position features through one shared matrix | learned fallback row | no parameter belongs to a single cell: unseen cells inherit from neighbours |
 | `sinusoid` | numerals: fixed sin/cos features of *k* (periods 2-1250) through `Linear(64 → d_model)`; glyphs: learned row | learned fallback row | control: an ordinal code with no nesting |
 | `sinusoid_smooth` | same with periods 32-1250 only | learned fallback row | control: a smooth ordinal code with no nesting |
 

@@ -193,8 +193,17 @@ token's embedding from its 625-bit panel `g_t` (row-major, from `grids/grid_bank
 ```
 grid_linear:  e_t = LN(W g_t + b)            W: 625 × d_model, shared by all tokens
 grid_conv:    e_t = LN(MLP(Conv2d(g_t)))     4 and 8 channels, two 2× max-pools, 288 → d_model
+grid_shared:  e_t = LN((g_t Φ) A + b)        Φ: 625 × 36 fixed smooth features of each cell's
+                                             position (sin/cos of index, row, col; ramps); A: 36 × d_model
+                                             learned, so cell i's weight is Φ_i A and no parameter
+                                             belongs to one cell
 special:      e_t = F[t]                     learned fallback rows for tokens without a panel
 ```
+
+`grid_linear` only trains column `W_i` from panels that fill cell `i`, so cells beyond the largest trained
+value keep their random init and the embedding of a larger value points in a random direction.
+`grid_shared` generates every cell's weight from the same `A`, so cells never filled in training get weights
+consistent with their neighbours (extrapolation) and adjacent cells get similar increments (precision).
 
 For numerals `g_k` is the thermometer code (first k cells set), so `W g_k` is the cumulative sum of
 the first k columns of `W`: adjacent indices get adjacent embeddings and an index absent from training

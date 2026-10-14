@@ -243,3 +243,59 @@ def test_sinusoid_model_forward_and_roundtrip(tmp_path, vocab):
     loaded.symbol_embed.noise_flip = 0.5
     with torch.no_grad():
         assert torch.allclose(loaded(ids), after)
+
+
+# ----------------------------------------------------------------------------
+# Shared-structure encoder
+# ----------------------------------------------------------------------------
+
+def test_cell_position_features_are_smooth():
+    from utils.grid_bank import cell_position_features, GRID_N
+
+    phi = cell_position_features()
+    assert phi.shape[0] == 625 and np.isfinite(phi).all()
+    # Neighbouring cells along the fill order are closer than distant ones.
+    d_adj = np.linalg.norm(phi[100] - phi[101])
+    d_far = np.linalg.norm(phi[100] - phi[400])
+    assert d_adj < d_far
+    # Cells in the same column share column features; the ramp columns are exact.
+    assert np.allclose(phi[3, -4], 3 / 625) and np.allclose(phi[3 + GRID_N, -3], 1 / GRID_N)
+
+
+def test_grid_shared_generates_cell_weights_and_roundtrips(tmp_path, vocab, bank):
+    torch = pytest.importorskip("torch")
+    from models.transformer import SharedCellEncoder, create_model, load_model_from_checkpoint
+
+    enc = SharedCellEncoder(d_model=16)
+    W = enc.cell_weights()
+    assert W.shape == (625, 16)
+    # No parameter belongs to a single cell: adjacent cells get similar weights.
+    adj = (W[1:] - W[:-1]).norm(dim=1).mean().item()
+    rnd = (W[torch.randperm(625)] - W).norm(dim=1).mean().item()
+    assert adj < 0.5 * rnd
+    # Encoder output is the sum of generated weights over filled cells (plus bias).
+    bits = torch.tensor(bank.grids[:5], dtype=torch.float32)
+    assert torch.allclose(enc(bits), bits @ W + enc.proj.bias, atol=1e-5)
+
+    model = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True,
+                         grid_bank=bank, verbose=False)
+    model.eval()
+    ids = torch.tensor([[vocab.message_start, 17, vocab.encode_label("LESS_THAN"), 599, vocab.answer_token]])
+    with torch.no_grad():
+        before = model(ids)
+    assert torch.isfinite(before).all()
+    assert model.count_parameters() < create_model(vocab.vocab_size, "tiny", embedding_type="grid_linear",
+                                                   tie_weights=True, grid_bank=bank, verbose=False).count_parameters()
+    torch.save({"model_state_dict": model.state_dict(),
+                "config": {"model_size": "tiny", "embedding_type": "grid_shared", "tie_weights": True}}, tmp_path / "g.pt")
+    loaded, _ = load_model_from_checkpoint(tmp_path / "g.pt", vocab.vocab_size, "cpu", verbose=False)
+    with torch.no_grad():
+        assert torch.allclose(before, loaded(ids))
+
+
+def test_sinusoid_rejects_panel_bank(vocab, bank):
+    pytest.importorskip("torch")
+    from models.transformer import create_model
+
+    with pytest.raises(ValueError):
+        create_model(vocab.vocab_size, "tiny", embedding_type="sinusoid", grid_bank=bank, verbose=False)
