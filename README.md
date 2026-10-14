@@ -204,7 +204,8 @@ nothing about. The grid arms replace the table for every grid-backed token:
 | `learned` | `nn.Embedding` row | `nn.Embedding` row | original model |
 | `grid_linear` | one shared `Linear(625 → d_model)` over the panel bits | learned fallback row | embeddings move along a path as *k* grows |
 | `grid_conv` | small 2D conv encoder over the 25×25 panel | learned fallback row | sees shape, not just count |
-| `sinusoid` | numerals: fixed sin/cos features of *k* through `Linear(64 → d_model)`; glyphs: learned row | learned fallback row | control: an ordinal code with no 2D structure |
+| `sinusoid` | numerals: fixed sin/cos features of *k* (periods 2-1250) through `Linear(64 → d_model)`; glyphs: learned row | learned fallback row | control: an ordinal code with no nesting |
+| `sinusoid_smooth` | same with periods 32-1250 only | learned fallback row | control: a smooth ordinal code with no nesting |
 
 All arms can use `--tie-weights`, which computes output logits against the same embedding table. With a
 grid embedding that means an index the model never trained on can still be **predicted** from its panel,
