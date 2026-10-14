@@ -87,6 +87,12 @@ def evaluate_arm(args, run_dir: Path, data_dir: Path):
     return json.load(open(run_dir / "eval.json"))
 
 
+def _label(key: str, r: dict) -> str:
+    """Arm label from the run directory name, marking tied output weights."""
+    arm = key.rsplit("_s", 1)[0]
+    return f"{arm}{' (tied)' if r.get('tie_weights') else ''}"
+
+
 def collate(results, out_dir: Path):
     lines = ["# Grid embedding ablation", "",
              "Top-1 accuracy (%) per split and target category. `copy` is the bound-variable reuse case,",
@@ -100,14 +106,14 @@ def collate(results, out_dir: Path):
             if split not in r["splits"]:
                 continue
             res = r["splits"][split]
-            lines.append(f"| {r['embedding_type']} | {key.rsplit('_s', 1)[-1]} | "
+            lines.append(f"| {_label(key, r)} | {key.rsplit('_s', 1)[-1]} | "
                          + " | ".join(f"{res[c]['acc']*100:.1f}" for c in CATEGORIES) + " |")
         lines.append("")
     lines += ["## Embedding geometry (numerals)", "",
               "| arm | seed | range | spearman(dist, gap) | nearest-neighbour adjacent |", "|---|---|---|---|---|"]
     for key, r in results.items():
         for rng, g in r["geometry"].items():
-            lines.append(f"| {r['embedding_type']} | {key.rsplit('_s', 1)[-1]} | {rng} | "
+            lines.append(f"| {_label(key, r)} | {key.rsplit('_s', 1)[-1]} | {rng} | "
                          f"{g['spearman_dist_vs_gap']:.3f} | {g['nearest_neighbour_is_adjacent']*100:.1f}% |")
     lines.append("")
     noisy = {k: r for k, r in results.items() if r["noise"]}
@@ -118,12 +124,12 @@ def collate(results, out_dir: Path):
             for p, per_split in r["noise"].items():
                 res = per_split.get("test")
                 if res:
-                    lines.append(f"| {r['embedding_type']} | {key.rsplit('_s', 1)[-1]} | {p} | "
+                    lines.append(f"| {_label(key, r)} | {key.rsplit('_s', 1)[-1]} | {p} | "
                                  f"{res['overall']['acc']*100:.1f} | {res['copy']['acc']*100:.1f} |")
         lines.append("")
     lines += ["## Training", "", "| arm | seed | params | best val loss | epochs |", "|---|---|---|---|---|"]
     for key, r in results.items():
-        lines.append(f"| {r['embedding_type']} | {key.rsplit('_s', 1)[-1]} | {r['params']:,} | "
+        lines.append(f"| {_label(key, r)} | {key.rsplit('_s', 1)[-1]} | {r['params']:,} | "
                      f"{r['best_val_loss']:.4f} | {r['epoch']} |")
     (out_dir / "results.md").write_text("\n".join(lines) + "\n")
     json.dump(results, open(out_dir / "results.json", "w"), indent=2)
@@ -155,6 +161,7 @@ def main() -> int:
     ap.add_argument("--sequential", action="store_true", help="Train arms one after another")
     ap.add_argument("--threads", type=int, default=None, help="CPU threads per training process")
     ap.add_argument("--eval-only", action="store_true", help="Skip training; evaluate existing checkpoints")
+    ap.add_argument("--collate-only", action="store_true", help="Only rebuild results.md from existing eval.json files")
     args = ap.parse_args()
 
     out_dir = ROOT / args.out_dir
@@ -163,8 +170,8 @@ def main() -> int:
     json.dump(vars(args), open(out_dir / "config.json", "w"), indent=2)
     generate_data(args, data_dir)
 
-    jobs = [(arm, seed) for seed in args.seeds for arm in args.arms]
-    if not args.eval_only:
+    jobs = [] if args.collate_only else [(arm, seed) for seed in args.seeds for arm in args.arms]
+    if not args.eval_only and not args.collate_only:
         n_par = 1 if args.sequential else len(args.arms)
         threads = args.threads or max(1, (os.cpu_count() or 1) // n_par)
         t0 = time.time()
