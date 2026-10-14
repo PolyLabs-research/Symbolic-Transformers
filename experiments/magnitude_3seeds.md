@@ -9,7 +9,9 @@ with a = b. Operands are drawn from 0-499 with
 training pairs; `test_holdout` pairs have at least one operand in the held-out band, `test_far` at least one in
 500-624 (beyond the trained range). 20000 training pairs,
 tiny model, batch 64, lr 0.0003, 40 epochs, seeds 1-3. Arms: `learned_untied` (the
-original model), `learned` (tied output), `grid_linear` and `grid_conv` (tied output).
+original model), `learned` (tied output), `grid_linear` and `grid_conv` (tied output), and the `sinusoid`
+control (fixed sin/cos features of k, periods 2-1250, through the same linear layer and tied output; added
+after the first four arms ran).
 
 ## Reading
 
@@ -45,6 +47,15 @@ original model), `learned` (tied output), `grid_linear` and `grid_conv` (tied ou
 6. **Tying the output to a learned table hurts again**: `learned` (tied) is at chance on every held-out
    breakdown including gap 0, where `learned_untied` gets 86%.
 
+7. **The sinusoid control matches the grid on this centred gap.** `sinusoid` reaches 93.7 ± 0.1% on held-out
+   pairs (grid_linear 93.9 ± 1.6), 73.5 ± 0.9% with both operands unseen (72.4 ± 7.3), 81 ± 1% at gaps over 20
+   (78 ± 10), and a magnitude readout of 0.955 ± 0.017 on unseen values (1.000). So for a gap bracketed by
+   trained values on both sides, any ordinal code the linear layer can interpolate does as well as the
+   thermometer; the panel is not uniquely responsible. With the band moved to the edge of the trained
+   range (350-449, `magnitude_offcenter_seed1.md`) the sinusoid falls to chance on both-unseen comparisons
+   while the panel arms hold, which points at nesting rather than smoothness as the thing the grid adds;
+   that comparison is being repeated over three seeds.
+
 ## Results table
 
 
@@ -59,6 +70,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_linear | 3 | 99.4 ± 0.1 | 93.9 ± 1.6 | 46.8 ± 2.0 |
 | learned | 3 | 97.7 ± 0.3 | 53.1 ± 1.6 | 65.0 ± 15.9 |
 | learned_untied | 3 | 97.4 ± 0.4 | 86.7 ± 0.1 | 49.3 ± 1.3 |
+| sinusoid | 3 | 99.3 ± 0.1 | 93.7 ± 0.1 | 62.2 ± 4.2 |
 
 ## test_holdout: accuracy by number of unseen operands
 
@@ -68,6 +80,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_linear | 99.5 ± 0.1 | 72.4 ± 7.3 |
 | learned | 53.6 ± 3.1 | 51.1 ± 4.2 |
 | learned_untied | 95.5 ± 0.6 | 52.7 ± 2.4 |
+| sinusoid | 99.0 ± 0.1 | 73.5 ± 0.9 |
 
 ## test_far: accuracy by number of unseen operands
 
@@ -77,6 +90,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_linear | 49.7 ± 3.9 | 38.0 ± 3.8 |
 | learned | 69.9 ± 20.1 | 50.3 ± 3.6 |
 | learned_untied | 49.8 ± 2.0 | 48.0 ± 1.0 |
+| sinusoid | 76.1 ± 4.0 | 20.9 ± 6.3 |
 
 ## test_holdout: both operands unseen, accuracy by |a - b|
 
@@ -88,6 +102,7 @@ The clean test: no seen operand to anchor on.
 | grid_linear | 100.0 ± 0.0 | 55.6 ± 0.0 | 52.1 ± 2.3 | 55.3 ± 6.7 | 78.1 ± 10.2 | n/a |
 | learned | 51.6 ± 39.7 | 50.0 ± 0.0 | 50.3 ± 1.7 | 52.4 ± 2.1 | 50.7 ± 2.9 | n/a |
 | learned_untied | 85.8 ± 8.7 | 50.0 ± 7.9 | 49.7 ± 4.5 | 47.9 ± 3.5 | 49.9 ± 2.6 | n/a |
+| sinusoid | 98.2 ± 1.7 | 44.4 ± 7.9 | 51.5 ± 5.6 | 53.9 ± 0.9 | 81.3 ± 1.3 | n/a |
 
 ## test_far: both operands unseen, accuracy by |a - b|
 
@@ -99,6 +114,7 @@ The clean test: no seen operand to anchor on.
 | grid_linear | 94.4 ± 8.0 | 15.4 ± 0.0 | 39.7 ± 6.2 | 38.9 ± 3.1 | 34.2 ± 6.0 | 0.0 ± 0.0 |
 | learned | 52.1 ± 39.1 | 41.0 ± 19.2 | 51.0 ± 4.2 | 51.6 ± 3.3 | 50.0 ± 0.6 | 47.0 ± 11.3 |
 | learned_untied | 87.3 ± 7.0 | 53.8 ± 16.6 | 47.5 ± 3.0 | 47.8 ± 2.1 | 44.0 ± 0.7 | 39.4 ± 5.7 |
+| sinusoid | 77.0 ± 27.6 | 38.5 ± 12.6 | 43.1 ± 11.4 | 28.9 ± 13.7 | 10.2 ± 7.4 | 1.5 ± 2.1 |
 
 ## test: accuracy by |a - b|
 
@@ -108,6 +124,7 @@ The clean test: no seen operand to anchor on.
 | grid_linear | 98.7 ± 1.8 | 87.0 ± 5.2 | 76.1 ± 4.1 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | learned | 78.0 ± 7.9 | 61.1 ± 4.5 | 56.8 ± 2.0 | 89.6 ± 1.9 | 99.8 ± 0.1 | 99.8 ± 0.0 |
 | learned_untied | 73.0 ± 5.8 | 66.7 ± 4.5 | 54.3 ± 5.3 | 86.2 ± 4.5 | 99.9 ± 0.1 | 99.9 ± 0.0 |
+| sinusoid | 95.6 ± 0.9 | 83.3 ± 0.0 | 76.1 ± 2.5 | 99.3 ± 0.5 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 
 ## test_holdout: accuracy by |a - b|
 
@@ -117,6 +134,7 @@ The clean test: no seen operand to anchor on.
 | grid_linear | 100.0 ± 0.0 | 55.6 ± 0.0 | 52.0 ± 2.2 | 58.3 ± 6.4 | 90.6 ± 4.2 | 100.0 ± 0.0 |
 | learned | 51.6 ± 39.7 | 50.0 ± 0.0 | 50.3 ± 1.7 | 52.1 ± 2.1 | 51.2 ± 0.7 | 54.3 ± 3.8 |
 | learned_untied | 85.8 ± 8.7 | 50.0 ± 7.9 | 49.1 ± 3.8 | 50.0 ± 3.2 | 71.6 ± 1.0 | 99.2 ± 0.1 |
+| sinusoid | 98.2 ± 1.7 | 44.4 ± 7.9 | 51.5 ± 5.4 | 57.1 ± 1.3 | 90.7 ± 0.3 | 100.0 ± 0.0 |
 
 ## test_far: accuracy by |a - b|
 
@@ -126,6 +144,7 @@ The clean test: no seen operand to anchor on.
 | grid_linear | 94.4 ± 8.0 | 15.4 ± 0.0 | 39.1 ± 6.1 | 37.1 ± 3.0 | 28.9 ± 3.5 | 52.4 ± 3.9 |
 | learned | 52.1 ± 39.1 | 41.0 ± 19.2 | 51.2 ± 4.2 | 51.8 ± 3.7 | 52.4 ± 6.3 | 70.9 ± 20.1 |
 | learned_untied | 87.3 ± 7.0 | 53.8 ± 16.6 | 46.9 ± 3.0 | 45.5 ± 2.0 | 30.0 ± 0.5 | 54.9 ± 2.1 |
+| sinusoid | 77.0 ± 27.6 | 38.5 ± 12.6 | 42.5 ± 11.2 | 29.6 ± 14.3 | 23.6 ± 8.8 | 77.5 ± 3.4 |
 
 ## Is magnitude in the embedding?
 
@@ -138,6 +157,7 @@ training-pool rows correlated with k.
 | grid_linear | 1.000 ± 0.000 | 1.000 ± 0.000 | -0.556 ± 0.127 | 0.329 ± 0.939 | 0.320 ± 0.932 | -0.078 ± 0.527 |
 | learned | 0.992 ± 0.000 | -0.014 ± 0.072 | -0.004 ± 0.036 | 0.997 ± 0.000 | 0.113 ± 0.037 | -0.025 ± 0.040 |
 | learned_untied | 0.989 ± 0.002 | 0.002 ± 0.068 | -0.057 ± 0.064 | 0.339 ± 0.924 | -0.086 ± 0.048 | 0.026 ± 0.121 |
+| sinusoid | 1.000 ± 0.000 | 0.955 ± 0.017 | -0.923 ± 0.011 | 0.294 ± 0.880 | 0.155 ± 0.568 | -0.248 ± 0.798 |
 
 ## Training
 
@@ -147,3 +167,4 @@ training-pool rows correlated with k.
 | grid_linear | 3 | 563,743 | 0.012 ± 0.001 | 26, 30, 26 |
 | learned | 3 | 483,359 | 0.045 ± 0.002 | 25, 23, 25 |
 | learned_untied | 3 | 569,247 | 0.049 ± 0.004 | 21, 23, 15 |
+| sinusoid | 3 | 491,935 | 0.017 ± 0.000 | 28, 29, 29 |
