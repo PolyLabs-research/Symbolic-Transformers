@@ -420,7 +420,7 @@ def main():
                             num_workers=args.num_workers, pin_memory=use_cuda)
     
     print("\nCreating model...")
-    bank = GridBank.load(config.grid_bank) if config.embedding_type != 'learned' else None
+    bank = GridBank.load(config.grid_bank) if config.embedding_type in ('grid_linear', 'grid_conv') else None
     model = create_model(config.vocab_size, config.model_size, embedding_type=config.embedding_type,
                          tie_weights=config.tie_weights, grid_bank=bank)
     trainer = Trainer(model, train_loader, val_loader, config, vocab)

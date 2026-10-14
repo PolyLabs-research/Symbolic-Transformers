@@ -53,9 +53,15 @@ def sample_png_to_bits(png_path: Path) -> np.ndarray:
 
 @dataclass
 class GridBank:
-    """625-bit panels for a vocabulary, aligned by token id."""
+    """Per-token feature rows aligned by token id.
 
-    grids: np.ndarray      # (vocab_size, 625) uint8
+    For the real grid bank a row is the 625-bit panel (uint8). The same container
+    also carries other fixed per-token features (see ``sinusoid_bank``), so
+    ``grids`` may be float and have a different width; ``has_grid`` marks the
+    tokens that have a feature row at all.
+    """
+
+    grids: np.ndarray      # (vocab_size, n_features); uint8 panels or float features
     has_grid: np.ndarray   # (vocab_size,) bool
     labels: List[str]      # token labels, for sanity checks
 
@@ -63,11 +69,15 @@ class GridBank:
     def vocab_size(self) -> int:
         return int(self.grids.shape[0])
 
+    @property
+    def n_features(self) -> int:
+        return int(self.grids.shape[1])
+
     @classmethod
-    def empty(cls, vocab_size: int) -> "GridBank":
-        """A bank of all-zero panels; used when a checkpoint will supply the real buffers."""
+    def empty(cls, vocab_size: int, n_features: int = GRID_CELLS) -> "GridBank":
+        """A bank of all-zero rows; used when a checkpoint will supply the real buffers."""
         return cls(
-            grids=np.zeros((vocab_size, GRID_CELLS), dtype=np.uint8),
+            grids=np.zeros((vocab_size, n_features), dtype=np.float32),
             has_grid=np.zeros(vocab_size, dtype=bool),
             labels=[""] * vocab_size,
         )
@@ -91,6 +101,37 @@ class GridBank:
             "numerals": int(sum(1 for i, l in enumerate(self.labels) if l.startswith("NUM_") and self.has_grid[i])),
             "glyphs": int(sum(1 for i, l in enumerate(self.labels) if not l.startswith("NUM_") and self.has_grid[i])),
         }
+
+
+def sinusoid_features(k: np.ndarray, n_freq: int = 32, max_period: float = 2 * GRID_CELLS) -> np.ndarray:
+    """Fixed multi-frequency sin/cos features of integer values k, shape (len(k), 2*n_freq).
+
+    Periods run geometrically from 2 to ``max_period`` (default 1250: half a cycle
+    over 0..624, so the slowest cosine is monotone across the whole numeral range). This is the standard positional-encoding
+    recipe applied to a numeral's value instead of a sequence position: an
+    ordinal code that is smooth in k, with no 2D structure and no per-cell
+    parameters, which makes it the control for "is it the grid or just an
+    ordinal encoding that helps?".
+    """
+    k = np.asarray(k, dtype=np.float64)[:, None]
+    periods = np.geomspace(2.0, max_period, n_freq)[None, :]
+    angles = 2 * np.pi * k / periods
+    return np.concatenate([np.sin(angles), np.cos(angles)], axis=1).astype(np.float32)
+
+
+def sinusoid_bank(vocab_size: int, n_numerals: int = GRID_CELLS, n_freq: int = 32,
+                  labels: Optional[List[str]] = None) -> GridBank:
+    """A bank whose numeral rows (ids 0..n_numerals-1) are sinusoid features of k.
+
+    Every other token (glyphs, special tokens) has no feature row and uses the
+    model's learned fallback embedding, exactly like special tokens do in the
+    grid arms.
+    """
+    feats = np.zeros((vocab_size, 2 * n_freq), dtype=np.float32)
+    feats[:n_numerals] = sinusoid_features(np.arange(n_numerals), n_freq=n_freq)
+    has = np.zeros(vocab_size, dtype=bool)
+    has[:n_numerals] = True
+    return GridBank(grids=feats, has_grid=has, labels=labels or [""] * vocab_size)
 
 
 def build_grid_bank(vocab_path: Path, repo_root: Optional[Path] = None, verify_pngs: bool = True) -> GridBank:

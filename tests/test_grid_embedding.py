@@ -198,3 +198,48 @@ def test_evaluator_categories(vocab):
     assert set(categorize([ms, pred, 3, 630, var, 7], 631, vocab, var)) == {"overall", "structure", "after_numeral"}
     # MESSAGE_START -> FORALL : plain structure
     assert set(categorize([ms], 641, vocab, var)) == {"overall", "structure"}
+
+
+# ----------------------------------------------------------------------------
+# Sinusoid control arm
+# ----------------------------------------------------------------------------
+
+def test_sinusoid_bank_covers_numerals_only(vocab):
+    from utils.grid_bank import sinusoid_bank, sinusoid_features
+
+    bank = sinusoid_bank(vocab.vocab_size)
+    assert bank.grids.shape == (vocab.vocab_size, 64) and bank.n_features == 64
+    assert bank.has_grid[:625].all() and not bank.has_grid[625:].any()
+    f = sinusoid_features(np.arange(625))
+    assert np.allclose(bank.grids[:625], f)
+    # Smooth in k: adjacent values are closer than distant ones, and the slowest
+    # cosine (period 1250, half a cycle over 0..624) is monotone over the range.
+    assert np.linalg.norm(f[10] - f[11]) < np.linalg.norm(f[10] - f[300])
+    slowest_cos = f[:, 63]
+    assert np.all(np.diff(slowest_cos) < 0)
+
+
+def test_sinusoid_model_forward_and_roundtrip(tmp_path, vocab):
+    torch = pytest.importorskip("torch")
+    from models.transformer import create_model, load_model_from_checkpoint
+
+    model = create_model(vocab.vocab_size, "tiny", embedding_type="sinusoid", tie_weights=True, verbose=False)
+    model.eval()
+    assert model.symbol_embed.grids.shape == (vocab.vocab_size, 64)
+    ids = torch.tensor([[vocab.message_start, 17, vocab.encode_label("LESS_THAN"), 599, vocab.answer_token]])
+    with torch.no_grad():
+        before = model(ids)
+    assert before.shape == (1, 5, vocab.vocab_size) and torch.isfinite(before).all()
+    # Glyph / special tokens come from the learned fallback rows.
+    table = model.embedding_table()
+    assert torch.allclose(table[vocab.answer_token], model.symbol_embed.fallback.weight[vocab.answer_token])
+    torch.save({"model_state_dict": model.state_dict(),
+                "config": {"model_size": "tiny", "embedding_type": "sinusoid", "tie_weights": True}}, tmp_path / "s.pt")
+    loaded, _ = load_model_from_checkpoint(tmp_path / "s.pt", vocab.vocab_size, "cpu", verbose=False)
+    with torch.no_grad():
+        after = loaded(ids)
+    assert torch.allclose(before, after)
+    # noise_flip is a panel-only concept and must leave sinusoid features alone.
+    loaded.symbol_embed.noise_flip = 0.5
+    with torch.no_grad():
+        assert torch.allclose(loaded(ids), after)

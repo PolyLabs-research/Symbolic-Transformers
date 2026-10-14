@@ -9,6 +9,11 @@ Embedding options (``embedding_type``):
                    row-major count (thermometer) code, so panel k is a subset
                    of panel k+1 and embeddings move along a path as k grows.
 - ``grid_conv``    a small 2D conv encoder over the 25x25 panel.
+- ``sinusoid``     control arm: numerals get fixed multi-frequency sin/cos
+                   features of their value k through the same linear layer;
+                   glyphs and special tokens use learned rows. An ordinal code
+                   with no 2D structure, to tell "the grid helps" apart from
+                   "any ordinal encoding helps".
 
 Tokens without a panel (MESSAGE_START, PAD, ...) use a learned fallback row.
 With ``tie_weights`` the output logits are the dot product with the same
@@ -32,9 +37,10 @@ _ROOT = str(Path(__file__).resolve().parents[1])
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from utils.grid_bank import GRID_CELLS, GRID_N, DEFAULT_BANK_PATH, GridBank  # noqa: E402
+from utils.grid_bank import GRID_CELLS, GRID_N, DEFAULT_BANK_PATH, GridBank, sinusoid_bank  # noqa: E402
 
-EMBEDDING_TYPES = ("learned", "grid_linear", "grid_conv")
+EMBEDDING_TYPES = ("learned", "grid_linear", "grid_conv", "sinusoid")
+GRID_TYPES = ("grid_linear", "grid_conv")
 
 
 class PositionalEncoding(nn.Module):
@@ -88,24 +94,26 @@ class ConvGridEncoder(nn.Module):
 
 
 class GridEmbedding(nn.Module):
-    """Embed tokens from their base-625 panels.
+    """Embed tokens from fixed per-token feature rows (base-625 panels or sinusoid features).
 
-    The full (vocab_size, d_model) table is recomputed from the panels on every
+    The full (vocab_size, d_model) table is recomputed from the features on every
     forward pass (cheap: a few hundred rows), which keeps weight tying trivial
     and lets ``noise_flip`` corrupt the panels at evaluation time to measure
-    robustness. Rows whose token has no panel come from ``fallback``.
+    robustness. Rows whose token has no feature row come from ``fallback``.
     """
 
     def __init__(self, grid_bank: GridBank, d_model: int, kind: str = "grid_linear", init_std: float = 0.02):
         super().__init__()
-        if kind not in ("grid_linear", "grid_conv"):
+        if kind not in ("grid_linear", "grid_conv", "sinusoid"):
             raise ValueError(f"Unknown grid embedding kind: {kind}")
+        if kind == "grid_conv" and grid_bank.n_features != GRID_CELLS:
+            raise ValueError("grid_conv needs 25x25 panels")
         self.kind = kind
         self.d_model = d_model
         vocab_size = grid_bank.vocab_size
         self.register_buffer("grids", torch.tensor(grid_bank.grids, dtype=torch.float32))
         self.register_buffer("has_grid", torch.tensor(grid_bank.has_grid, dtype=torch.bool))
-        self.encoder = nn.Linear(GRID_CELLS, d_model) if kind == "grid_linear" else ConvGridEncoder(d_model)
+        self.encoder = ConvGridEncoder(d_model) if kind == "grid_conv" else nn.Linear(grid_bank.n_features, d_model)
         # LayerNorm keeps every panel embedding at the same scale regardless of
         # how many cells are filled; its gain starts at init_std so grid rows
         # match the scale of a freshly initialised learned table.
@@ -121,7 +129,7 @@ class GridEmbedding(nn.Module):
 
     def panels(self) -> torch.Tensor:
         g = self.grids
-        if self.noise_flip > 0.0:
+        if self.noise_flip > 0.0 and self.kind in GRID_TYPES:
             flip = (torch.rand_like(g) < self.noise_flip) & self.has_grid.unsqueeze(1)
             g = torch.where(flip, 1.0 - g, g)
         return g
@@ -408,7 +416,9 @@ def create_model(
         raise ValueError(f"Unknown model size: {model_size}")
     
     bank: Optional[GridBank] = None
-    if embedding_type != 'learned':
+    if embedding_type == 'sinusoid':
+        bank = grid_bank if isinstance(grid_bank, GridBank) else sinusoid_bank(vocab_size)
+    elif embedding_type != 'learned':
         if isinstance(grid_bank, GridBank):
             bank = grid_bank
         else:
@@ -450,7 +460,11 @@ def load_model_from_checkpoint(
     config = checkpoint.get('config', {})
     embedding_type = config.get('embedding_type', 'learned')
     tie_weights = bool(config.get('tie_weights', False))
-    bank = GridBank.empty(vocab_size) if embedding_type != 'learned' else None
+    bank = None
+    if embedding_type != 'learned':
+        # Feature width comes from the checkpoint (625 for panels, 2*n_freq for sinusoid).
+        n_features = int(checkpoint['model_state_dict']['symbol_embed.grids'].shape[1])
+        bank = GridBank.empty(vocab_size, n_features)
     model = create_model(vocab_size, config.get('model_size', 'tiny'), embedding_type=embedding_type,
                          tie_weights=tie_weights, grid_bank=bank, verbose=verbose)
     model.load_state_dict(checkpoint['model_state_dict'])
@@ -485,7 +499,7 @@ if __name__ == "__main__":
         print(f"  Generation:   {prompt.shape} → {generated.shape}")
     
     print("\nGrid embedding variants (tiny, tied):")
-    for emb in ('grid_linear', 'grid_conv'):
+    for emb in ('grid_linear', 'grid_conv', 'sinusoid'):
         model = create_model(vocab_size, 'tiny', embedding_type=emb, tie_weights=True)
         logits = model(torch.randint(0, vocab_size, (2, 16)))
         print(f"  {emb}: logits {tuple(logits.shape)}")

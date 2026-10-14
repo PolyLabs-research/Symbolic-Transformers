@@ -34,6 +34,8 @@ ARMS = {
     # Control: the original untied model. Unseen rows keep their random init
     # instead of being pushed away from hidden states by the tied softmax.
     "learned_untied": ["--embedding", "learned"],
+    # Control: fixed sinusoid features of k for numerals, same linear layer as grid_linear.
+    "sinusoid": ["--embedding", "sinusoid", "--tie-weights"],
 }
 DEFAULT_ARMS = ["learned", "grid_linear", "grid_conv"]
 SPLITS = ("test", "test_holdout", "test_far")
