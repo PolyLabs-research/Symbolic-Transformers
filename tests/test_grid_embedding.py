@@ -299,3 +299,35 @@ def test_sinusoid_rejects_panel_bank(vocab, bank):
 
     with pytest.raises(ValueError):
         create_model(vocab.vocab_size, "tiny", embedding_type="sinusoid", grid_bank=bank, verbose=False)
+
+
+def test_grid_shared_basis_options_and_residual(tmp_path, vocab, bank):
+    torch = pytest.importorskip("torch")
+    from models.transformer import SharedCellEncoder, create_model, load_model_from_checkpoint
+
+    smooth = SharedCellEncoder(8, min_period=128, n_axis_freq=0)
+    assert smooth.phi.shape == (625, 2 * 8 + 4)  # index sin/cos only, plus ramps and constant
+    assert smooth.residual is None
+    hybrid = SharedCellEncoder(8, min_period=128, n_axis_freq=0, residual=True)
+    assert hybrid.residual is not None and torch.count_nonzero(hybrid.residual) == 0
+    bits = torch.tensor(bank.grids[:3], dtype=torch.float32)
+    hybrid.proj.load_state_dict(smooth.proj.state_dict())
+    assert torch.allclose(hybrid(bits), smooth(bits))  # zero residual changes nothing at init
+    with torch.no_grad():
+        hybrid.residual[0] += 1.0
+    assert not torch.allclose(hybrid(bits)[1], smooth(bits)[1])  # panel 1 fills cell 0
+    assert torch.allclose(hybrid(bits)[0], smooth(bits)[0])      # panel 0 fills nothing
+
+    # The loader must rebuild the same basis from the checkpoint config.
+    model = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
+                         verbose=False, shared_min_period=128, shared_axis_freq=0, shared_residual=True)
+    model.eval()
+    ids = torch.tensor([[vocab.message_start, 17, vocab.encode_label("LESS_THAN"), 599, vocab.answer_token]])
+    with torch.no_grad():
+        before = model(ids)
+    torch.save({"model_state_dict": model.state_dict(),
+                "config": {"model_size": "tiny", "embedding_type": "grid_shared", "tie_weights": True,
+                           "shared_min_period": 128, "shared_axis_freq": 0, "shared_residual": True}}, tmp_path / "h.pt")
+    loaded, _ = load_model_from_checkpoint(tmp_path / "h.pt", vocab.vocab_size, "cpu", verbose=False)
+    with torch.no_grad():
+        assert torch.allclose(before, loaded(ids))

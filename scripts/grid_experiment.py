@@ -34,6 +34,13 @@ ARMS = {
     # Cell weights generated from smooth position features through one shared
     # matrix: no parameter belongs to a single cell.
     "grid_shared": ["--embedding", "grid_shared", "--tie-weights"],
+    # Smoother basis: index features only, periods >= 128, so increments cannot
+    # change sign inside a gap narrower than ~64 cells.
+    "grid_smooth": ["--embedding", "grid_shared", "--tie-weights", "--shared-min-period", "128",
+                    "--shared-axis-freq", "0"],
+    # Smooth basis plus a zero-initialised per-cell residual for precision on trained cells.
+    "grid_hybrid": ["--embedding", "grid_shared", "--tie-weights", "--shared-min-period", "128",
+                    "--shared-axis-freq", "0", "--shared-residual"],
     # Control: the original untied model. Unseen rows keep their random init
     # instead of being pushed away from hidden states by the tied softmax.
     "learned_untied": ["--embedding", "learned"],

@@ -111,18 +111,26 @@ class SharedCellEncoder(nn.Module):
     smoothly with the cell index.
     """
 
-    def __init__(self, d_model: int):
+    def __init__(self, d_model: int, min_period: float = 32.0, n_index_freq: int = 8,
+                 n_axis_freq: int = 4, residual: bool = False):
         super().__init__()
-        phi = torch.tensor(cell_position_features(), dtype=torch.float32)  # (625, F)
+        phi = torch.tensor(cell_position_features(n_index_freq=n_index_freq, n_axis_freq=n_axis_freq,
+                                                  index_periods=(min_period, 2 * GRID_CELLS)),
+                           dtype=torch.float32)  # (625, F)
         self.register_buffer("phi", phi)
         self.proj = nn.Linear(phi.shape[1], d_model)
+        # Optional per-cell residual on top of the generated weight: zero at init
+        # and weight-decayed, so cells never filled in training keep only the
+        # smooth part while trained cells can sharpen their increment.
+        self.residual = nn.Parameter(torch.zeros(GRID_CELLS, d_model)) if residual else None
 
     def cell_weights(self) -> torch.Tensor:
-        """The generated (625, d_model) per-cell weight matrix."""
-        return self.phi @ self.proj.weight.t()
+        """The (625, d_model) per-cell weight matrix: generated part plus residual."""
+        W = self.phi @ self.proj.weight.t()
+        return W + self.residual if self.residual is not None else W
 
     def forward(self, bits: torch.Tensor) -> torch.Tensor:
-        return self.proj(bits @ self.phi)
+        return bits @ self.cell_weights() + self.proj.bias
 
 
 class GridEmbedding(nn.Module):
@@ -134,7 +142,8 @@ class GridEmbedding(nn.Module):
     robustness. Rows whose token has no feature row come from ``fallback``.
     """
 
-    def __init__(self, grid_bank: GridBank, d_model: int, kind: str = "grid_linear", init_std: float = 0.02):
+    def __init__(self, grid_bank: GridBank, d_model: int, kind: str = "grid_linear", init_std: float = 0.02,
+                 shared_min_period: float = 32.0, shared_axis_freq: int = 4, shared_residual: bool = False):
         super().__init__()
         if kind not in ("grid_linear", "grid_conv", "grid_shared", "sinusoid"):
             raise ValueError(f"Unknown grid embedding kind: {kind}")
@@ -148,7 +157,8 @@ class GridEmbedding(nn.Module):
         if kind == "grid_conv":
             self.encoder = ConvGridEncoder(d_model)
         elif kind == "grid_shared":
-            self.encoder = SharedCellEncoder(d_model)
+            self.encoder = SharedCellEncoder(d_model, min_period=shared_min_period,
+                                             n_axis_freq=shared_axis_freq, residual=shared_residual)
         else:
             self.encoder = nn.Linear(grid_bank.n_features, d_model)
         # LayerNorm keeps every panel embedding at the same scale regardless of
@@ -209,6 +219,9 @@ class SymbolicTransformer(nn.Module):
         embedding_type: str = "learned",
         tie_weights: bool = False,
         grid_bank: Optional[GridBank] = None,
+        shared_min_period: float = 32.0,
+        shared_axis_freq: int = 4,
+        shared_residual: bool = False,
     ):
         """
         Args:
@@ -247,7 +260,10 @@ class SymbolicTransformer(nn.Module):
                 raise ValueError("grid embeddings need a GridBank (pass grid_bank=GridBank.load())")
             if grid_bank.vocab_size != vocab_size:
                 raise ValueError(f"grid bank has {grid_bank.vocab_size} rows, vocab has {vocab_size}")
-            self.symbol_embed = GridEmbedding(grid_bank, d_model, kind=embedding_type)
+            self.symbol_embed = GridEmbedding(grid_bank, d_model, kind=embedding_type,
+                                              shared_min_period=shared_min_period,
+                                              shared_axis_freq=shared_axis_freq,
+                                              shared_residual=shared_residual)
         
         # 2. Positional encoding
         self.pos_encoder = PositionalEncoding(d_model, max_seq_len, dropout)
@@ -435,6 +451,9 @@ def create_model(
     grid_bank: Optional[Union[GridBank, str, Path]] = None,
     verbose: bool = True,
     sinusoid_min_period: float = 2.0,
+    shared_min_period: float = 32.0,
+    shared_axis_freq: int = 4,
+    shared_residual: bool = False,
 ) -> SymbolicTransformer:
     """
     Factory function for creating models of different sizes.
@@ -447,6 +466,8 @@ def create_model(
         grid_bank: GridBank, path to a bank .npz, or None to load the default
             bank (only used for grid embeddings)
         sinusoid_min_period: shortest period of the sinusoid features (sinusoid arm)
+        shared_min_period / shared_axis_freq / shared_residual: grid_shared basis
+            (shortest index period, number of row/col frequencies, per-cell residual)
         
     Returns:
         SymbolicTransformer model
@@ -471,6 +492,9 @@ def create_model(
         embedding_type=embedding_type,
         tie_weights=tie_weights,
         grid_bank=bank,
+        shared_min_period=shared_min_period,
+        shared_axis_freq=shared_axis_freq,
+        shared_residual=shared_residual,
         **config
     )
     
@@ -507,7 +531,10 @@ def load_model_from_checkpoint(
         n_features = int(checkpoint['model_state_dict']['symbol_embed.grids'].shape[1])
         bank = GridBank.empty(vocab_size, n_features)
     model = create_model(vocab_size, config.get('model_size', 'tiny'), embedding_type=embedding_type,
-                         tie_weights=tie_weights, grid_bank=bank, verbose=verbose)
+                         tie_weights=tie_weights, grid_bank=bank, verbose=verbose,
+                         shared_min_period=float(config.get('shared_min_period', 32.0)),
+                         shared_axis_freq=int(config.get('shared_axis_freq', 4)),
+                         shared_residual=bool(config.get('shared_residual', False)))
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     model.eval()

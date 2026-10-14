@@ -82,6 +82,9 @@ class TrainingConfig:
     tie_weights: bool = False
     grid_bank: str = str(DEFAULT_BANK_PATH)
     sinusoid_min_period: float = 2.0
+    shared_min_period: float = 32.0
+    shared_axis_freq: int = 4
+    shared_residual: bool = False
     seed: int = 42
 
 
@@ -364,6 +367,12 @@ def main():
     parser.add_argument("--grid-bank", default=str(DEFAULT_BANK_PATH), help="Grid bank .npz for grid embeddings")
     parser.add_argument("--sinusoid-min-period", type=float, default=2.0,
                         help="Shortest period of the sinusoid features (--embedding sinusoid)")
+    parser.add_argument("--shared-min-period", type=float, default=32.0,
+                        help="grid_shared: shortest period of the cell-index features")
+    parser.add_argument("--shared-axis-freq", type=int, default=4,
+                        help="grid_shared: number of row/col frequencies (0 = index features only)")
+    parser.add_argument("--shared-residual", action="store_true",
+                        help="grid_shared: add a zero-initialised per-cell residual weight")
     parser.add_argument("--device", default=None, help="cuda or cpu (default: cuda if available)")
     parser.add_argument("--num-workers", type=int, default=4,
                         help="DataLoader worker processes (use 0 for tiny samples or when running several trainings in parallel)")
@@ -392,6 +401,9 @@ def main():
     config.tie_weights = args.tie_weights
     config.grid_bank = args.grid_bank
     config.sinusoid_min_period = args.sinusoid_min_period
+    config.shared_min_period = args.shared_min_period
+    config.shared_axis_freq = args.shared_axis_freq
+    config.shared_residual = args.shared_residual
     set_seed(config.seed)
     vocab = Vocabulary(args.vocab)
     config.vocab_size = vocab.vocab_size
@@ -407,6 +419,8 @@ def main():
         config.embedding_type = ckpt_config.get('embedding_type', 'learned')
         config.tie_weights = bool(ckpt_config.get('tie_weights', False))
         if ckpt_config.get('grid_bank'): config.grid_bank = ckpt_config['grid_bank']
+        for key in ('shared_min_period', 'shared_axis_freq', 'shared_residual', 'sinusoid_min_period'):
+            if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
     if args.num_epochs is not None:
@@ -427,7 +441,10 @@ def main():
     bank = GridBank.load(config.grid_bank) if config.embedding_type in ('grid_linear', 'grid_conv', 'grid_shared') else None
     model = create_model(config.vocab_size, config.model_size, embedding_type=config.embedding_type,
                          tie_weights=config.tie_weights, grid_bank=bank,
-                         sinusoid_min_period=config.sinusoid_min_period)
+                         sinusoid_min_period=config.sinusoid_min_period,
+                         shared_min_period=config.shared_min_period,
+                         shared_axis_freq=config.shared_axis_freq,
+                         shared_residual=config.shared_residual)
     trainer = Trainer(model, train_loader, val_loader, config, vocab)
 
     start_epoch = 0
