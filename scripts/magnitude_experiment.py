@@ -96,6 +96,17 @@ def collate(results, out_dir: Path):
                 _ms([r["splits"][split]["by_unseen"][k]["acc"] for r in rs if split in r["splits"]]) for k in ("1", "2")) + " |")
         lines.append("")
 
+    for split in ("test_holdout", "test_far"):
+        if not any(split in r["splits"] and "by_gap_unseen2" in r["splits"][split] for r in results.values()):
+            continue
+        lines += [f"## {split}: both operands unseen, accuracy by |a - b|", "",
+                  "The clean test: no seen operand to anchor on.", "",
+                  "| arm | " + " | ".join(f"gap {g}" for g in GAPS) + " |", "|---|" + "---|" * len(GAPS)]
+        for arm, rs in by_arm.items():
+            lines.append(f"| {arm} | " + " | ".join(
+                _ms([r["splits"][split]["by_gap_unseen2"][g]["acc"] for r in rs if split in r["splits"]]) for g in GAPS) + " |")
+        lines.append("")
+
     for split in SPLITS:
         if not any(split in r["splits"] for r in results.values()):
             continue

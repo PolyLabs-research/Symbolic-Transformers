@@ -113,6 +113,12 @@ def evaluate_split(model, dataset: FOLDataset, vocab: Vocabulary, device: torch.
         "overall_tf": acc(rows, "correct_tf"),
         "by_gap": {bin_label(lo, hi): acc(r for r in rows if lo <= r["gap"] <= hi) for lo, hi in GAP_BINS},
         "by_unseen": {str(k): acc(r for r in rows if r["n_unseen"] == k) for k in (0, 1, 2)},
+        # Gap breakdown restricted to pairs where BOTH operands are unseen: the
+        # only comparison that cannot be answered by treating an unknown token
+        # as "an average value" (a held-out band in the middle of the range
+        # makes that guess right for most one-unseen pairs).
+        "by_gap_unseen2": {bin_label(lo, hi): acc(r for r in rows if r["n_unseen"] == 2 and lo <= r["gap"] <= hi)
+                           for lo, hi in GAP_BINS},
         "p_true_by_signed": {bin_label(lo, hi): {
             "p_true": float(np.mean([r["p_true"] for r in rows if lo <= r["signed"] <= hi]))
             if any(lo <= r["signed"] <= hi for r in rows) else float("nan"),
