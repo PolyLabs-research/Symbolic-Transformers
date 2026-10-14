@@ -71,6 +71,8 @@ def train_arm(args, arm: str, seed: int, data_dir: Path, run_dir: Path, threads:
            "--learning-rate", str(args.learning_rate), "--seed", str(seed),
            "--train-data", str(data_dir / "train.json"), "--val-data", str(data_dir / "val.json"),
            "--checkpoint-dir", str(run_dir), "--device", args.device] + ARMS[arm]
+    if getattr(args, "num_workers", None) is not None:
+        cmd += ["--num-workers", str(args.num_workers)]
     env = dict(os.environ, OMP_NUM_THREADS=str(threads), MKL_NUM_THREADS=str(threads))
     print(f"→ training {arm} seed {seed} ({threads} threads) → {run_dir}")
     return run(cmd, run_dir / "train.log", env=env, wait=wait)
@@ -160,6 +162,7 @@ def main() -> int:
     ap.add_argument("--max-eval-samples", type=int, default=None)
     ap.add_argument("--sequential", action="store_true", help="Train arms one after another")
     ap.add_argument("--threads", type=int, default=None, help="CPU threads per training process")
+    ap.add_argument("--num-workers", type=int, default=None, help="DataLoader workers per training process")
     ap.add_argument("--eval-only", action="store_true", help="Skip training; evaluate existing checkpoints")
     ap.add_argument("--collate-only", action="store_true", help="Only rebuild results.md from existing eval.json files")
     args = ap.parse_args()

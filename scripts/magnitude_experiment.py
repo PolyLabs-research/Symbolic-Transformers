@@ -157,6 +157,8 @@ def main() -> int:
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--sequential", action="store_true")
     ap.add_argument("--threads", type=int, default=None)
+    ap.add_argument("--num-workers", type=int, default=0,
+                    help="DataLoader workers per training process (0: five-token samples need none)")
     ap.add_argument("--eval-only", action="store_true")
     ap.add_argument("--collate-only", action="store_true")
     args = ap.parse_args()

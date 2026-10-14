@@ -362,6 +362,8 @@ def main():
                         help="Tie the output layer to the embedding table (recommended with grid embeddings)")
     parser.add_argument("--grid-bank", default=str(DEFAULT_BANK_PATH), help="Grid bank .npz for grid embeddings")
     parser.add_argument("--device", default=None, help="cuda or cpu (default: cuda if available)")
+    parser.add_argument("--num-workers", type=int, default=4,
+                        help="DataLoader worker processes (use 0 for tiny samples or when running several trainings in parallel)")
     args = parser.parse_args()
 
     def resolve_checkpoint_path(resume_arg: str, checkpoint_dir: Path) -> str:
@@ -412,8 +414,10 @@ def main():
     val_dataset = FOLDataset(config.val_data_path, config.max_seq_len, pad_id=pad_id)
     
     use_cuda = torch.cuda.is_available()
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=4, pin_memory=use_cuda)
-    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=4, pin_memory=use_cuda)
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True,
+                              num_workers=args.num_workers, pin_memory=use_cuda)
+    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False,
+                            num_workers=args.num_workers, pin_memory=use_cuda)
     
     print("\nCreating model...")
     bank = GridBank.load(config.grid_bank) if config.embedding_type != 'learned' else None
