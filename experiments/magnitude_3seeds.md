@@ -52,9 +52,10 @@ after the first four arms ran).
    (78 ± 10), and a magnitude readout of 0.955 ± 0.017 on unseen values (1.000). So for a gap bracketed by
    trained values on both sides, any ordinal code the linear layer can interpolate does as well as the
    thermometer; the panel is not uniquely responsible. With the band moved to the edge of the trained
-   range (350-449, `magnitude_offcenter_seed1.md`) the sinusoid falls to chance on both-unseen comparisons
-   while the panel arms hold, which points at nesting rather than smoothness as the thing the grid adds;
-   that comparison is being repeated over three seeds.
+   range (350-449, `magnitude_offcenter.md`, three seeds) the sinusoid drops to 57.7 ± 9.5% on both-unseen
+   comparisons over gap 20 and the smooth sinusoid to 58.9 ± 1.3%, while grid_linear holds at 81.7 ± 5.3%
+   with a readout of 1.000 in every seed. Nesting, not smoothness, is what the grid adds: it interpolates a
+   gap wherever the gap sits, a Fourier code only where the gap is bracketed on both sides.
 
 ## Results table
 
