@@ -233,7 +233,33 @@ top-1 accuracy per split and per target category:
 - embedding geometry: does distance between numeral embeddings track |i − j|, and is a numeral's nearest neighbour an adjacent index
 - panel noise: grid arms re-evaluated with 1% and 5% of panel bits flipped
 
-Results land in `runs/<name>/results.md`. Manual equivalents:
+Results land in `runs/<name>/results.md`. The reduced run (`experiments/grid_small_seed1.md`) showed that
+FOL syntax does not need the grids: an untied learned table generalises structure to unseen indices just as
+well, because no syntactic decision depends on which index is larger. It also showed that tying the output
+layer to a *learned* table breaks on unseen tokens while grid rows are immune.
+
+### The magnitude task
+
+The first task where the numeral embedding has to carry magnitude:
+
+```
+MESSAGE_START  NUM_a  LESS_THAN  NUM_b  ANSWER   ->   TRUE | FALSE
+```
+
+Operands are bare numerals, operators are the vocabulary's relation tokens, and the answer is one token.
+Training values come from 0-499 with 200-299 held out; test pairs are disjoint from training pairs;
+`test_holdout` has at least one operand from the held-out band and `test_far` at least one from 500-624.
+
+```bash
+python scripts/magnitude_experiment.py --out-dir runs/magnitude --seeds 1 2 3 --epochs 30
+```
+
+`evaluate_magnitude.py` reports accuracy by |a − b| (adjacent values are hardest) and by how many
+operands were unseen, plus two probes of the embedding table itself: whether a linear readout of *k*
+fitted on training values transfers to held-out and far values, and how well the first principal
+component tracks *k*. Results: `experiments/magnitude_*.md`.
+
+Manual equivalents for the FOL experiment:
 
 ```bash
 python training/train.py --embedding grid_linear --tie-weights --train-data runs/grid_small/data/train.json \
@@ -338,11 +364,13 @@ Symbolic-Transformers/
 ├── demo.py                           # Gradio next-token explorer
 ├── demo_with_benchmarks.py           # Gradio explorer + benchmark suite
 ├── symbolic_benchmarks.py            # Structural benchmark definitions + CLI runner
-├── evaluate_grid.py                  # Split-aware evaluation for the grid experiment
+├── evaluate_grid.py                  # Split-aware evaluation for the FOL grid experiment
+├── evaluate_magnitude.py             # Magnitude task evaluation + embedding magnitude probes
 ├── unified_vocabulary.json           # 671-token vocabulary
 ├── grids/grid_bank.npz               # 25×25 panels per token (built by scripts/build_grid_bank.py)
 │
 ├── data/
+│   ├── magnitude_generator.py        # NUM a <op> NUM b -> TRUE/FALSE with held-out value bands
 │   ├── dataset_generator.py          # Basic FOL formula generation (seeded, CLI)
 │   ├── advanced_generator.py         # Functions, fixed arities, structural diversity
 │   ├── generate_diverse_formulas.py  # Horn clauses + recursive terms
@@ -359,7 +387,8 @@ Symbolic-Transformers/
 ├── scripts/
 │   ├── update_vocabulary_complete.py # Adds special tokens to the vocabulary
 │   ├── build_grid_bank.py            # Rebuilds grids/grid_bank.npz from the PNGs
-│   └── grid_experiment.py            # Generate → train 3 arms → evaluate → results.md
+│   ├── grid_experiment.py            # FOL: generate → train arms → evaluate → results.md
+│   └── magnitude_experiment.py       # Magnitude task, multi-seed, mean ± std
 ├── tests/                            # pytest suite (python -m pytest tests)
 ├── out/                              # 25×25 glyph PNGs + decode tables (from base-625)
 │
