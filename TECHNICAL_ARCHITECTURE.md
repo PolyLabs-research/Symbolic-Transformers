@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document describes the technical architecture of a transformer-based model for First-Order Logic (FOL) reasoning using discrete symbolic representations. The key innovation is replacing high-dimensional continuous embeddings with a compact vocabulary of 663 discrete symbols encoded as visual glyphs on a 25×25 grid.
+This document describes the technical architecture of a transformer-based model for First-Order Logic (FOL) reasoning using discrete symbolic representations. The key innovation is replacing high-dimensional continuous embeddings with a compact vocabulary of 671 discrete tokens (625 numerals, 37 operator glyphs, 9 special tokens), each numeral and glyph having a 25×25 grid rendering.
 
 ---
 
@@ -24,7 +24,7 @@ Modern language models use:
 
 ### Our Approach: Discrete Symbolic Encoding
 
-- **Vocabulary**: 663 symbols (625 numerals + 38 operators)
+- **Vocabulary**: 671 tokens (625 numerals + 37 operator glyphs + 9 special tokens)
 - **Embeddings**: 256-768 dimensions (much smaller)
 - **Model size**: 500K-80M parameters (10-100× smaller)
 - **Compositionality**: Explicit in symbol sequences
@@ -61,7 +61,9 @@ Number 624: All cells filled
 
 ### 2.2 FOL Operator Symbols
 
-**Logical Connectives** (IDs 625-629):
+**Arithmetic glyphs** (IDs 625-635, painted in base-625): X, PLUS, MINUS, DIV, EQUALS, LPAREN, RPAREN, POW, DOT, SQRT, FACTORIAL. FOL reuses EQUALS (629), LPAREN (630), RPAREN (631) and DOT (633).
+
+**Logical Connectives** (IDs 636-640):
 ```
 NOT     (¬)  - Negation
 AND     (∧)  - Conjunction
@@ -70,16 +72,16 @@ IMPLIES (→)  - Implication
 IFF     (↔)  - Biconditional
 ```
 
-**Quantifiers** (IDs 630-632):
+**Quantifiers** (IDs 641-643):
 ```
 FORALL      (∀)  - Universal quantification
 EXISTS      (∃)  - Existential quantification
 EXISTS1     (∃!) - Unique existence
 ```
 
-**Relations** (IDs 633-638):
+**Relations** (IDs 644-648, plus EQUALS at 629):
 ```
-EQUALS        (=)  - Equality
+EQUALS        (=)  - Equality (ID 629)
 NOT_EQUALS    (≠)  - Inequality
 LESS_THAN     (<)
 GREATER_THAN  (>)
@@ -87,7 +89,7 @@ LESS_EQUAL    (≤)
 GREATER_EQUAL (≥)
 ```
 
-**Structural Tokens** (IDs 639-643):
+**Structural Tokens** (COMMA 649, COLON 650; LPAREN 630, RPAREN 631, DOT 633):
 ```
 LPAREN  (()  - Left parenthesis
 RPAREN  ())  - Right parenthesis
@@ -96,7 +98,7 @@ COLON   (:)  - Type annotation
 DOT     (.)  - Statement terminator
 ```
 
-**Category Tokens** (IDs 644-648) - **CRITICAL**:
+**Category Tokens** (IDs 653-657) - **CRITICAL**:
 ```
 VAR    - Variable introducer
 CONST  - Constant introducer
@@ -105,13 +107,13 @@ FUNC   - Function introducer
 SORT   - Type/sort introducer
 ```
 
-**Truth Constants** (IDs 649-650):
+**Truth Constants** (IDs 651-652):
 ```
 TRUE   (⊤)
 FALSE  (⊥)
 ```
 
-**Meta-Logic** (IDs 651-654):
+**Meta-Logic** (IDs 658-661):
 ```
 ENTAILS    (⊢)  - Syntactic entailment
 MODELS     (⊨)  - Semantic entailment
@@ -126,9 +128,14 @@ EQUIVALENT (≡)  - Logical equivalence
 **Example 1: Variables**
 ```
 Variable x₁:   [VAR, 1]
-Variable x₁₂:  [VAR, 1, 2]  (interpreted as 1×625 + 2 = 627 in base-625)
-Variable x₅₀₀: [VAR, 5, 0, 0]
+Variable x₁₂:  [VAR, 12]       (any index below 625 is a single numeral token)
+Variable x₅₀₀: [VAR, 500]
+Variable x₇₀₀: [VAR, 1, 75]    (1 × 625 + 75; digits are most-significant first)
 ```
+
+Because the base is 625, composition only appears for indices ≥ 625. The generators draw indices from
+0–99 by default, so in practice each index is learned as an atomic embedding; a configurable base is the
+planned way to make multi-digit indices common.
 
 **Example 2: Predicates**
 ```
@@ -165,7 +172,7 @@ Logits: Probability distribution over next symbol
 ### 3.2 Embedding Layer
 
 ```python
-self.symbol_embed = nn.Embedding(vocab_size=663, embedding_dim=d_model)
+self.symbol_embed = nn.Embedding(vocab_size=671, embedding_dim=d_model)
 ```
 
 **Design choices:**
@@ -174,7 +181,7 @@ self.symbol_embed = nn.Embedding(vocab_size=663, embedding_dim=d_model)
 - **Scaling**: Multiply by `√d_model` (standard practice)
 
 **Why smaller d_model?**
-- 663 discrete symbols vs. 50K continuous tokens
+- 671 discrete tokens vs. 50K continuous tokens
 - Less semantic variation to capture
 - Empirically: 256-512 dimensions sufficient
 
@@ -244,10 +251,10 @@ next_symbol = argmax(probs)  # or sample
 
 **Parameter calculation example (Base):**
 ```
-Embedding:  663 × 512           = 339K
+Embedding:  671 × 512           = 344K
 Attention:  6 × (4×512×512)     = 6.3M
 FFN:        6 × (2×512×2048)    = 12.6M
-Output:     512 × 663           = 339K
+Output:     512 × 671           = 344K
 Total:                          ≈ 15M
 ```
 
@@ -398,7 +405,7 @@ perplexity = exp(cross_entropy_loss)
 
 **Interpretation:**
 - Perfect model: perplexity = 1.0
-- Random guessing (663 symbols): perplexity = 663
+- Random guessing (671 tokens): perplexity = 671
 - Good model: perplexity < 20
 
 ### 5.2 Accuracy Metrics
@@ -429,7 +436,7 @@ accuracy = correct_predictions / total_predictions
 ### 5.4 Benchmark Comparisons
 
 Compare against:
-1. **Random baseline**: Uniform distribution over 663 symbols
+1. **Random baseline**: Uniform distribution over 671 tokens
 2. **N-gram model**: Statistical prediction (e.g., trigrams)
 3. **LSTM baseline**: Recurrent architecture
 4. **Standard transformer**: Same size but with continuous embeddings
@@ -598,13 +605,13 @@ Compositionality is **explicit** in symbol sequence, not **implicit** in embeddi
 Number of FOL formulas expressible with n symbols:
 ```
 Traditional: O(vocab_size^n) = O(50000^n)
-Our system:  O(vocab_size^n) = O(663^n)
+Our system:  O(vocab_size^n) = O(671^n)
 ```
 
 But with compositional structure:
 ```
-Effective vocabulary: 663 base + unlimited composites
-Real expressions: Still O(663^n) but with structured meaning
+Effective vocabulary: 671 base + unlimited composites
+Real expressions: Still O(671^n) but with structured meaning
 ```
 
 **Claim:** Compositional structure provides compression without sacrificing expressiveness.
@@ -643,7 +650,7 @@ This architecture demonstrates a novel approach to symbolic AI:
 **Key innovations:**
 1. Base-625 visual symbolic encoding
 2. Compositional symbol sequences
-3. Compact vocabulary (663 vs 50K+)
+3. Compact vocabulary (671 vs 50K+)
 4. Smaller models (15M vs 100M+ params)
 5. Explicit structure preservation
 

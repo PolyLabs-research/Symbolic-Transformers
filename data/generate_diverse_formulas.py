@@ -232,7 +232,7 @@ def generate_diverse_dataset():
         formulas = generator.generate_batch(n_samples, complexity=3)
         
         # Convert to NextSymbolDataset
-        dataset = NextSymbolDataset(formulas, max_seq_len=128)
+        dataset = NextSymbolDataset(formulas, vocab, max_seq_len=128)
         dataset.save(str(output_dir / f"{split_name}.json"))
         
     print(f"\n✓ Saved all datasets to {output_dir}")

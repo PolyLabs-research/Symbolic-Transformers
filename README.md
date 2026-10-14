@@ -42,14 +42,14 @@ A grammar can tell you what strings are *syntactically valid* with 100% accuracy
 
 ## 🎯 Overview
 
-**Symbolic Transformers** achieve competitive performance on logical reasoning tasks using only **566K parameters** and **662 discrete symbols** — 200× more parameter-efficient than traditional language models.
+**Symbolic Transformers** achieve competitive performance on logical reasoning tasks using only **566K parameters** and **671 discrete tokens** — 200× more parameter-efficient than traditional language models.
 
 ### Key Innovation
 
 Instead of high-dimensional continuous embeddings (768-4096 dims × 50K tokens), we use:
 
-- **Compositional category tokens**: `VAR 12 → [VAR, 1, 2]` — unlimited variables with finite vocabulary
-- **Compact vocabulary**: 662 symbols (625 numerals + 37 FOL operators)
+- **Compositional category tokens**: `VAR 12 → [VAR, 12]`, `VAR 700 → [VAR, 1, 75]` — a category token followed by base-625 digits, so a finite vocabulary names unlimited variables
+- **Compact vocabulary**: 671 tokens (625 numerals + 37 operator glyphs + 9 special tokens)
 - **Symbolic grounding**: Each numeral has a corresponding 25×25 grid pattern via [base-625](https://github.com/tripptytrip/base-625)
 
 **Result:** A **2.2 MB model** that runs on edge devices and learns FOL syntax rules with near-perfect accuracy.
@@ -106,13 +106,18 @@ python evaluate_model.py                            # Evaluate
 
 *Projected based on scaling experiments. Base model training in progress (epoch 1: val loss 0.96).
 
+> **Note on the shipped checkpoint.** `checkpoints/best_model.pt` was trained before two fixes landed: the
+> dataset only used variable/predicate indices 0–4, and the loss ignored every `NUM_000` target. The numbers
+> above come from that run. Retrain (Colab or `python training/train.py`) after regenerating data to get
+> figures that reflect the current code.
+
 ### Baselines & Context
 
 To understand what 44% accuracy means:
 
 | Method | Top-1 Accuracy | Notes |
 |--------|---------------|-------|
-| Random | 0.15% | 1/662 tokens |
+| Random | 0.15% | 1/671 tokens |
 | Unigram frequency | ~8% | Always predict most common token |
 | Bigram model | ~18% | Conditional on previous token |
 | Grammar-constrained random | ~25-30% | Random among valid next tokens |
@@ -156,15 +161,19 @@ The key insight: instead of infinite embeddings for every variable/predicate, us
 
 ```
 Traditional:  VAR_0, VAR_1, VAR_2, ... VAR_999  (1000 embeddings)
-Ours:         VAR + [0-624]                      (626 embeddings, unlimited range)
+Ours:         VAR + base-625 digits              (626 embeddings, unlimited range)
 
 VAR 0:   [VAR, 0]
-VAR 42:  [VAR, 4, 2]
-VAR 999: [VAR, 9, 9, 9]
+VAR 42:  [VAR, 42]         (one base-625 digit)
+VAR 700: [VAR, 1, 75]      (1 × 625 + 75)
 PRED 5:  [PRED, 5]
 ```
 
-This is reusable for any symbolic domain with indexed entities.
+This is reusable for any symbolic domain with indexed entities. Note that every index below 625 is a
+single numeral token, so multi-digit composition only appears from index 625 upwards; the default
+generators draw indices from 0–99, so the model currently learns indices as atomic tokens. Making the
+base configurable (for example base 25, so `VAR 42 → [VAR, 1, 17]`) is the planned way to exercise
+composition in ordinary training data.
 
 ### Model Configurations
 
@@ -174,14 +183,18 @@ This is reusable for any symbolic domain with indexed entities.
 | small  | 256     | 4      | 4     | 1024   | 3.5M |
 | base   | 512     | 6      | 8     | 2048   | 19.6M |
 
-### Vocabulary (662 symbols)
+### Vocabulary (671 tokens)
 
-- **Numerals (0-624):** Base-625 compositional encoding
-- **Quantifiers:** FORALL (∀), EXISTS (∃), EXISTS_UNIQUE (∃!)
-- **Connectives:** NOT (¬), AND (∧), OR (∨), IMPLIES (→), IFF (↔)
-- **Relations:** EQUALS (=), NOT_EQUALS (≠), LESS_THAN (<), etc.
-- **Structural:** LPAREN, RPAREN, COMMA, COLON, DOT
-- **Categories:** VAR, CONST, PRED, FUNC, SORT
+- **Numerals (0-624):** IDs 0–624, one per base-625 digit; each has a 25×25 grid rendering
+- **Arithmetic glyphs (625–635):** X, PLUS, MINUS, DIV, EQUALS, LPAREN, RPAREN, POW, DOT, SQRT, FACTORIAL (painted in base-625; FOL reuses EQUALS and the parentheses)
+- **Connectives (636–640):** NOT (¬), AND (∧), OR (∨), IMPLIES (→), IFF (↔)
+- **Quantifiers (641–643):** FORALL (∀), EXISTS (∃), EXISTS1 (∃!)
+- **Relations (644–648):** NOT_EQUALS (≠), LESS_THAN (<), GREATER_THAN (>), LESS_EQUAL (≤), GREATER_EQUAL (≥)
+- **Structural (649–650):** COMMA, COLON
+- **Truth and meta (651–661):** TRUE, FALSE, VAR, CONST, PRED, FUNC, SORT, ENTAILS, MODELS, DEFINE, EQUIVALENT
+- **Special (662–670):** MESSAGE_START, MESSAGE_END, PAD, UNK, and the reasoning tokens SEP, QUERY, ANSWER, END, UNKNOWN
+
+Every training context starts with `MESSAGE_START`, so the demos and benchmarks prepend it automatically.
 
 ---
 
@@ -222,28 +235,21 @@ This is reusable for any symbolic domain with indexed entities.
 
 ## 🎮 Interactive UI
 
-Explore the model in real-time:
+Explore the model in real-time with the Gradio demos (`pip install gradio`):
 
 ```bash
-./run_ui.sh
+python demo.py                  # live next-token explorer
+python demo_with_benchmarks.py  # explorer + structural benchmark suite in the browser
 ```
 
-```
-╭─────────── Current Formula ───────────╮
-│ ∀ x₁                                  │
-╰───────────────────────────────────────╯
-╭─────────── Predictions ───────────────╮
-│ 1. VAR    99.6%  ██████████████████   │
-│ 2. NUM_1   0.1%  -                    │
-│ 3. NUM_3   0.1%  -                    │
-╰───────────────────────────────────────╯
-```
+Type a prefix such as `FORALL VAR 1` and the top next-token probabilities update as you type.
+`MESSAGE_START` is prepended automatically; numerals must be 0–624.
 
-Features:
-- Type tokens or select from top-5 predictions
-- Auto-complete formulas with temperature control
-- Human-readable rendering (∀x₁ P₅(x₁))
-- Confidence visualisation
+The same benchmark suite runs from the command line:
+
+```bash
+python symbolic_benchmarks.py --checkpoint checkpoints/best_model.pt --vocab unified_vocabulary.json
+```
 
 ---
 
@@ -284,12 +290,17 @@ torch.onnx.export(
 Symbolic-Transformers/
 ├── train_symbolic_transformer.ipynb  # 🚀 Colab notebook
 ├── quickstart.py                     # Interactive setup
-├── evaluate_model.py                 # Evaluation script
-├── run_ui.sh                         # Launch UI
-├── unified_vocabulary.json           # 662-token vocabulary
+├── evaluate_model.py                 # Evaluation script (top-k accuracy, samples)
+├── demo.py                           # Gradio next-token explorer
+├── demo_with_benchmarks.py           # Gradio explorer + benchmark suite
+├── symbolic_benchmarks.py            # Structural benchmark definitions + CLI runner
+├── unified_vocabulary.json           # 671-token vocabulary
 │
 ├── data/
-│   └── dataset_generator.py          # FOL formula generation
+│   ├── dataset_generator.py          # Basic FOL formula generation (seeded, CLI)
+│   ├── advanced_generator.py         # Functions, fixed arities, structural diversity
+│   ├── generate_diverse_formulas.py  # Horn clauses + recursive terms
+│   └── transitivity_generator.py     # Phase 4 reasoning chains (generator only)
 ├── models/
 │   └── transformer.py                # Model architecture
 ├── training/
@@ -298,7 +309,10 @@ Symbolic-Transformers/
 │   └── evaluate.py                   # Metrics
 ├── utils/
 │   └── vocabulary.py                 # Encoding/decoding
-├── ui/                               # Interactive terminal UI
+├── scripts/
+│   └── update_vocabulary_complete.py # Adds special tokens to the vocabulary
+├── tests/                            # pytest suite (python -m pytest tests)
+├── out/                              # 25×25 glyph PNGs + decode tables (from base-625)
 │
 ├── datasets/                         # Generated data
 └── checkpoints/                      # Saved models

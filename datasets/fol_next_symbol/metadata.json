@@ -1,25 +1,45 @@
 {
-  "generator": "basic_with_boundaries_v1",
+  "generator": "basic_with_boundaries_v2",
   "vocab_path": "unified_vocabulary.json",
   "vocab_size": 671,
   "uses_boundaries": true,
+  "seed": 42,
+  "max_seq_len": 128,
+  "complexity_distribution": [
+    [
+      1,
+      0.2
+    ],
+    [
+      2,
+      0.4
+    ],
+    [
+      3,
+      0.3
+    ],
+    [
+      4,
+      0.1
+    ]
+  ],
   "config": {
     "max_depth": 3,
-    "max_variables": 5,
-    "max_predicates": 5
+    "max_variables": 100,
+    "max_predicates": 100
   },
   "splits": {
     "train": {
       "num_formulas": 10000,
-      "num_samples": 163614
+      "num_samples": 164061
     },
     "val": {
       "num_formulas": 1000,
-      "num_samples": 15664
+      "num_samples": 16513
     },
     "test": {
       "num_formulas": 1000,
-      "num_samples": 16748
+      "num_samples": 17490
     }
   }
 }

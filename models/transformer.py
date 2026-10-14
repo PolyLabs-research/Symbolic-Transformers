@@ -289,7 +289,7 @@ if __name__ == "__main__":
     # Test model creation
     print("Testing Symbolic Transformer model...\n")
     
-    vocab_size = 663  # 625 numerals + 38 FOL symbols
+    vocab_size = 671  # matches unified_vocabulary.json (625 numerals + 37 symbols + 9 special)
     
     for size in ['tiny', 'small', 'base', 'large']:
         print(f"\n{size.upper()} model:")

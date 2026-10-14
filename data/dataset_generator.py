@@ -339,7 +339,12 @@ def generate_training_data(
     n_val: int = 1000,
     n_test: int = 1000,
     complexity_distribution: Optional[List[Tuple[int, float]]] = None,
-    use_boundaries: bool = True
+    use_boundaries: bool = True,
+    max_variables: int = FormulaConfig.max_variables,
+    max_predicates: int = FormulaConfig.max_predicates,
+    max_depth: int = 3,
+    max_seq_len: int = 128,
+    seed: Optional[int] = 42,
 ):
     """
     Generate complete training/validation/test datasets.
@@ -352,9 +357,16 @@ def generate_training_data(
         n_test: Number of test formulas
         complexity_distribution: List of (complexity, weight) tuples
         use_boundaries: Whether to wrap formulas with MESSAGE_START/END
+        max_variables: Variable indices are drawn from 0..max_variables-1
+        max_predicates: Predicate indices are drawn from 0..max_predicates-1
+        max_depth: Maximum nesting depth of generated formulas
+        max_seq_len: Formulas longer than this (with boundaries) are skipped
+        seed: Random seed for reproducible datasets (None = unseeded)
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    if seed is not None:
+        random.seed(seed)
     
     print("="*60)
     print("FOL DATASET GENERATION (BASIC with MESSAGE BOUNDARIES)")
@@ -379,9 +391,9 @@ def generate_training_data(
     
     # Setup generator
     config = FormulaConfig(
-        max_depth=3,
-        max_variables=5,
-        max_predicates=5,
+        max_depth=max_depth,
+        max_variables=max_variables,
+        max_predicates=max_predicates,
         use_quantifiers=True,
         use_connectives=True,
         use_equality=True,
@@ -409,7 +421,7 @@ def generate_training_data(
             formulas.extend(batch)
             print(f"  Complexity {complexity}: {n_for_complexity} formulas")
         
-        dataset = NextSymbolDataset(formulas, vocab, max_seq_len=512, use_boundaries=use_boundaries)
+        dataset = NextSymbolDataset(formulas, vocab, max_seq_len=max_seq_len, use_boundaries=use_boundaries)
         
         output_path = output_dir / f"{split_name}.json"
         dataset.save(str(output_path))
@@ -423,10 +435,13 @@ def generate_training_data(
     
     # Save metadata
     metadata = {
-        'generator': 'basic_with_boundaries_v1',
+        'generator': 'basic_with_boundaries_v2',
         'vocab_path': vocab_path,
         'vocab_size': vocab.vocab_size,
         'uses_boundaries': use_boundaries,
+        'seed': seed,
+        'max_seq_len': max_seq_len,
+        'complexity_distribution': complexity_distribution,
         'config': {
             'max_depth': config.max_depth,
             'max_variables': config.max_variables,
@@ -455,18 +470,38 @@ def generate_training_data(
 
 
 if __name__ == "__main__":
-    # Example usage
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate FOL next-symbol datasets")
+    parser.add_argument("--vocab", default="unified_vocabulary.json")
+    parser.add_argument("--out", default="datasets/fol_next_symbol")
+    parser.add_argument("--n-train", type=int, default=10000)
+    parser.add_argument("--n-val", type=int, default=1000)
+    parser.add_argument("--n-test", type=int, default=1000)
+    parser.add_argument("--max-variables", type=int, default=FormulaConfig.max_variables)
+    parser.add_argument("--max-predicates", type=int, default=FormulaConfig.max_predicates)
+    parser.add_argument("--max-depth", type=int, default=3)
+    parser.add_argument("--max-seq-len", type=int, default=128)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--no-boundaries", action="store_true", help="Do not wrap formulas in MESSAGE_START/END")
+    args = parser.parse_args()
+
     generate_training_data(
-        vocab_path="unified_vocabulary.json",
-        output_dir="datasets/fol_next_symbol",
-        n_train=10000,
-        n_val=1000,
-        n_test=1000,
+        vocab_path=args.vocab,
+        output_dir=args.out,
+        n_train=args.n_train,
+        n_val=args.n_val,
+        n_test=args.n_test,
         complexity_distribution=[
             (1, 0.2),  # 20% simple
             (2, 0.4),  # 40% medium
             (3, 0.3),  # 30% complex
             (4, 0.1),  # 10% very complex
         ],
-        use_boundaries=True  # NEW: Enable MESSAGE_START/END
+        use_boundaries=not args.no_boundaries,
+        max_variables=args.max_variables,
+        max_predicates=args.max_predicates,
+        max_depth=args.max_depth,
+        max_seq_len=args.max_seq_len,
+        seed=args.seed,
     )

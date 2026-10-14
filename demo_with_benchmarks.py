@@ -332,25 +332,35 @@ if HAS_MESSAGE_BOUNDARIES:
 # PREDICTION FUNCTIONS
 # ============================================================
 
+def parse_tokens(sequence_text: str) -> List[int]:
+    """Parse 'FORALL VAR 1' into token IDs.
+
+    Numerals must be 0-624 (anything else would index past the embedding
+    table). MESSAGE_START is prepended unless already present, because every
+    training context starts with it.
+    """
+    token_ids: List[int] = []
+    for t in sequence_text.strip().split():
+        if t in vocab.label_to_id:
+            token_ids.append(vocab.encode_label(t))
+        elif t.isdigit() and 0 <= int(t) <= vocab.numeral_range[1]:
+            token_ids.append(int(t))
+        else:
+            raise ValueError(f"Unknown token {t!r} (labels or numerals 0-{vocab.numeral_range[1]} only)")
+    if HAS_MESSAGE_BOUNDARIES and (not token_ids or token_ids[0] != vocab.message_start):
+        token_ids = [vocab.message_start] + token_ids
+    return token_ids
+
+
 def predict_next_token(sequence_text: str) -> Dict[str, float]:
     """Takes a string like 'FORALL VAR', returns a dict of top tokens with probabilities."""
     if not sequence_text.strip():
         return None
     
-    tokens = sequence_text.strip().split()
-    token_ids = []
-    
-    for t in tokens:
-        if t in vocab.label_to_id:
-            token_ids.append(vocab.encode_label(t))
-        else:
-            try:
-                token_ids.append(int(t))
-            except ValueError:
-                continue
-    
-    if not token_ids:
-        return {"Error": 0.0}
+    try:
+        token_ids = parse_tokens(sequence_text)
+    except ValueError as exc:
+        return {str(exc): 0.0}
     
     x = torch.tensor([token_ids], device=device, dtype=torch.long)
     
@@ -374,19 +384,9 @@ def get_full_predictions(sequence_text: str) -> Dict[str, float]:
     if not sequence_text.strip():
         return {}
     
-    tokens = sequence_text.strip().split()
-    token_ids = []
-    
-    for t in tokens:
-        if t in vocab.label_to_id:
-            token_ids.append(vocab.encode_label(t))
-        else:
-            try:
-                token_ids.append(int(t))
-            except ValueError:
-                continue
-    
-    if not token_ids:
+    try:
+        token_ids = parse_tokens(sequence_text)
+    except ValueError:
         return {}
     
     x = torch.tensor([token_ids], device=device, dtype=torch.long)

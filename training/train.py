@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import json
+import math
 import time
 from pathlib import Path
 from typing import Dict, Optional, List
@@ -65,40 +66,56 @@ class TrainingConfig:
     mixed_precision: bool = False
 
 
+def _sample_context(sample: Dict) -> List[int]:
+    """Return the (unpadded) context token list of a dataset sample."""
+    if 'input_ids' in sample:
+        return sample['input_ids']
+    if 'context' in sample:
+        return sample['context']
+    return sample.get('input', [])
+
+
 class FOLDataset(Dataset):
-    """PyTorch Dataset for FOL next-symbol prediction."""
+    """PyTorch Dataset for FOL next-symbol prediction.
+
+    Each item is a right-padded context plus its true length, so the trainer
+    reads the logits at the last *real* token. Contexts are padded with
+    ``pad_id`` (the vocabulary's PAD token, not numeral 0) and only as far as
+    the longest context in the file, capped at ``max_seq_len``. A context that
+    is still too long keeps its *last* tokens, because the target follows the
+    end of the context.
+    """
     
-    def __init__(self, data_path: str, max_seq_len: int = 512):
+    def __init__(self, data_path: str, max_seq_len: int = 512, pad_id: int = 0):
         with open(data_path, 'r') as f:
             data = json.load(f)
         
         self.samples = data['samples']
-        self.max_seq_len = max_seq_len
-        print(f"✓ Loaded {len(self.samples)} samples from {data_path}")
+        self.pad_id = pad_id
+        longest = max((len(_sample_context(s)) for s in self.samples), default=1)
+        self.max_seq_len = max(1, min(max_seq_len, longest))
+        n_truncated = sum(1 for s in self.samples if len(_sample_context(s)) > self.max_seq_len)
+        print(f"✓ Loaded {len(self.samples)} samples from {data_path} "
+              f"(padded to {self.max_seq_len}, pad_id={pad_id})")
+        if n_truncated:
+            print(f"⚠ {n_truncated} contexts longer than {self.max_seq_len} will keep only their last tokens")
     
     def __len__(self) -> int:
         return len(self.samples)
     
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         sample = self.samples[idx]
-        
-        # Handle formats
-        if 'input_ids' in sample:
-            context = sample['input_ids']
-        else:
-            context = sample['context'] if 'context' in sample else sample.get('input', [])
-            
+        context = list(_sample_context(sample))
         target = sample['target']
         
-        # Calculate REAL length before padding
+        # Real length before padding; truncate from the front so the target
+        # still follows the final context token.
         context_len = len(context)
-        
-        # Pad context to max_seq_len
-        if context_len < self.max_seq_len:
-            context = context + [0] * (self.max_seq_len - context_len)
-        else:
-            context = context[:self.max_seq_len]
+        if context_len > self.max_seq_len:
+            context = context[-self.max_seq_len:]
             context_len = self.max_seq_len
+        elif context_len < self.max_seq_len:
+            context = context + [self.pad_id] * (self.max_seq_len - context_len)
         
         return {
             'input_ids': torch.tensor(context, dtype=torch.long),
@@ -142,16 +159,20 @@ class Trainer:
             eps=1e-9
         )
         
-        # Learning rate scheduler
-        def lr_lambda(step):
-            if step < config.warmup_steps:
-                return step / config.warmup_steps
-            return max(0.1, 0.5 * (1.0 + torch.cos(torch.tensor(
-                (step - config.warmup_steps) / (len(train_loader) * config.num_epochs)
-            ) * 3.14159)))
+        # Learning rate scheduler: linear warmup, then cosine decay to 10%.
+        total_steps = max(1, len(train_loader) * config.num_epochs)
+        warmup = max(1, config.warmup_steps)
+
+        def lr_lambda(step: int) -> float:
+            if step < warmup:
+                return (step + 1) / warmup
+            progress = min(1.0, (step - warmup) / max(1, total_steps - warmup))
+            return max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
         
         self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
-        self.criterion = nn.CrossEntropyLoss(ignore_index=0)
+        # No ignore_index: targets are never padding, and token 0 is the
+        # numeral NUM_000 (ignoring it silently dropped ~6% of training targets).
+        self.criterion = nn.CrossEntropyLoss()
         
         self.global_step = 0
         self.epoch = 0
@@ -309,6 +330,11 @@ def main():
     parser.add_argument("--num-epochs", type=int, help="Total epochs")
     parser.add_argument("--batch-size", type=int, help="Batch size")
     parser.add_argument("--model-size", default="tiny", choices=["tiny", "small", "base", "large"])
+    parser.add_argument("--train-data", default=None, help="Path to train.json")
+    parser.add_argument("--val-data", default=None, help="Path to val.json")
+    parser.add_argument("--checkpoint-dir", default=None, help="Where to write checkpoints (default: checkpoints/)")
+    parser.add_argument("--vocab", default="unified_vocabulary.json")
+    parser.add_argument("--warmup-steps", type=int, default=None)
     args = parser.parse_args()
 
     def resolve_checkpoint_path(resume_arg: str, checkpoint_dir: Path) -> str:
@@ -323,7 +349,11 @@ def main():
         return resume_arg
 
     config = get_training_config(model_size=args.model_size, num_epochs=args.num_epochs or 50, batch_size=args.batch_size)
-    vocab = Vocabulary("unified_vocabulary.json")
+    if args.train_data: config.train_data_path = args.train_data
+    if args.val_data: config.val_data_path = args.val_data
+    if args.checkpoint_dir: config.checkpoint_dir = args.checkpoint_dir
+    if args.warmup_steps is not None: config.warmup_steps = args.warmup_steps
+    vocab = Vocabulary(args.vocab)
     config.vocab_size = vocab.vocab_size
     
     resume_path: Optional[str] = None
@@ -339,11 +369,13 @@ def main():
         config.num_epochs = args.num_epochs
 
     print("\nLoading datasets...")
-    train_dataset = FOLDataset(config.train_data_path, config.max_seq_len)
-    val_dataset = FOLDataset(config.val_data_path, config.max_seq_len)
+    pad_id = vocab.pad_token if vocab.pad_token is not None else 0
+    train_dataset = FOLDataset(config.train_data_path, config.max_seq_len, pad_id=pad_id)
+    val_dataset = FOLDataset(config.val_data_path, config.max_seq_len, pad_id=pad_id)
     
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=4, pin_memory=True)
-    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=4, pin_memory=True)
+    use_cuda = torch.cuda.is_available()
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=4, pin_memory=use_cuda)
+    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=4, pin_memory=use_cuda)
     
     print("\nCreating model...")
     model = create_model(config.vocab_size, config.model_size)
