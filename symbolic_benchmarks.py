@@ -560,15 +560,12 @@ if __name__ == "__main__":
     import sys
     import torch
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from models.transformer import create_model
+    from models.transformer import load_model_from_checkpoint
     from utils.vocabulary import Vocabulary
     
     vocab = Vocabulary(args.vocab)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    checkpoint = torch.load(args.checkpoint, map_location=device)
-    model = create_model(vocab_size=vocab.vocab_size, model_size=checkpoint['config']['model_size'])
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.to(device)
+    model, checkpoint = load_model_from_checkpoint(args.checkpoint, vocab.vocab_size, device)
     
     runner = BenchmarkRunner(model, vocab, device, prepend_start=not args.no_prepend_start)
     if args.category:

@@ -10,6 +10,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import json
 import math
+import random
 import time
 from pathlib import Path
 from typing import Dict, Optional, List
@@ -18,11 +19,23 @@ import sys
 import argparse
 import re
 
+import numpy as np
+
 # Ensure we can import from parent directory
 sys.path.append(str(Path(__file__).parent.parent))
 
-from models.transformer import create_model
+from models.transformer import EMBEDDING_TYPES, create_model
+from utils.grid_bank import DEFAULT_BANK_PATH, GridBank
 from utils.vocabulary import Vocabulary
+
+
+def set_seed(seed: int) -> None:
+    """Seed python, numpy and torch for a reproducible run."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 
 def get_training_config(model_size='tiny', num_epochs=50, batch_size=None):
@@ -64,6 +77,11 @@ class TrainingConfig:
     log_every: int = 100
     device: str = "cuda"
     mixed_precision: bool = False
+    # Embedding experiment knobs (see models/transformer.py)
+    embedding_type: str = "learned"
+    tie_weights: bool = False
+    grid_bank: str = str(DEFAULT_BANK_PATH)
+    seed: int = 42
 
 
 def _sample_context(sample: Dict) -> List[int]:
@@ -293,7 +311,8 @@ class Trainer:
         print("\n" + "="*60)
         print("TRAINING START")
         print("="*60)
-        print(f"Model: {self.config.model_size}")
+        print(f"Model: {self.config.model_size} | embedding: {self.config.embedding_type}"
+              f"{' (tied output)' if self.config.tie_weights else ''} | seed: {self.config.seed}")
         print(f"Vocab size: {self.config.vocab_size}")
         print(f"Batch size: {self.config.batch_size}")
         print(f"Epochs: {self.config.num_epochs}")
@@ -335,6 +354,14 @@ def main():
     parser.add_argument("--checkpoint-dir", default=None, help="Where to write checkpoints (default: checkpoints/)")
     parser.add_argument("--vocab", default="unified_vocabulary.json")
     parser.add_argument("--warmup-steps", type=int, default=None)
+    parser.add_argument("--learning-rate", type=float, default=None)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--embedding", default="learned", choices=list(EMBEDDING_TYPES),
+                        help="learned (original) | grid_linear | grid_conv (base-625 panel encoders)")
+    parser.add_argument("--tie-weights", action="store_true",
+                        help="Tie the output layer to the embedding table (recommended with grid embeddings)")
+    parser.add_argument("--grid-bank", default=str(DEFAULT_BANK_PATH), help="Grid bank .npz for grid embeddings")
+    parser.add_argument("--device", default=None, help="cuda or cpu (default: cuda if available)")
     args = parser.parse_args()
 
     def resolve_checkpoint_path(resume_arg: str, checkpoint_dir: Path) -> str:
@@ -353,6 +380,13 @@ def main():
     if args.val_data: config.val_data_path = args.val_data
     if args.checkpoint_dir: config.checkpoint_dir = args.checkpoint_dir
     if args.warmup_steps is not None: config.warmup_steps = args.warmup_steps
+    if args.learning_rate is not None: config.learning_rate = args.learning_rate
+    if args.device: config.device = args.device
+    config.seed = args.seed
+    config.embedding_type = args.embedding
+    config.tie_weights = args.tie_weights
+    config.grid_bank = args.grid_bank
+    set_seed(config.seed)
     vocab = Vocabulary(args.vocab)
     config.vocab_size = vocab.vocab_size
     
@@ -363,6 +397,10 @@ def main():
         ckpt_config = checkpoint_meta.get('config', {})
         if ckpt_config.get('model_size'): config.model_size = ckpt_config['model_size']
         if ckpt_config.get('vocab_size'): config.vocab_size = ckpt_config['vocab_size']
+        # The architecture must match the checkpoint, whatever the CLI said.
+        config.embedding_type = ckpt_config.get('embedding_type', 'learned')
+        config.tie_weights = bool(ckpt_config.get('tie_weights', False))
+        if ckpt_config.get('grid_bank'): config.grid_bank = ckpt_config['grid_bank']
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
     if args.num_epochs is not None:
@@ -378,7 +416,9 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=4, pin_memory=use_cuda)
     
     print("\nCreating model...")
-    model = create_model(config.vocab_size, config.model_size)
+    bank = GridBank.load(config.grid_bank) if config.embedding_type != 'learned' else None
+    model = create_model(config.vocab_size, config.model_size, embedding_type=config.embedding_type,
+                         tie_weights=config.tie_weights, grid_bank=bank)
     trainer = Trainer(model, train_loader, val_loader, config, vocab)
 
     start_epoch = 0

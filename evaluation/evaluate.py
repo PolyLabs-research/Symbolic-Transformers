@@ -190,18 +190,10 @@ class Evaluator:
 
 
 def load_checkpoint(checkpoint_path: str, vocab_size: int, device: str = "cuda") -> SymbolicTransformer:
-    """Load model from checkpoint."""
-    checkpoint = torch.load(checkpoint_path, map_location=device)
-    
-    # Get model config
-    config = checkpoint['config']
-    
-    # Create model
-    from models.transformer import create_model
-    model = create_model(vocab_size, config['model_size'])
-    
-    # Load weights
-    model.load_state_dict(checkpoint['model_state_dict'])
+    """Load model from checkpoint (any embedding type)."""
+    from models.transformer import load_model_from_checkpoint
+    device = device if torch.cuda.is_available() else "cpu"
+    model, checkpoint = load_model_from_checkpoint(checkpoint_path, vocab_size, device)
     
     print(f"✓ Loaded checkpoint from epoch {checkpoint['epoch']}")
     print(f"✓ Best val loss: {checkpoint['best_val_loss']:.4f}")

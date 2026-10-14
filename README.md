@@ -58,12 +58,7 @@ Instead of high-dimensional continuous embeddings (768-4096 dims × 50K tokens),
 
 The companion repo [**base-625**](https://github.com/tripptytrip/base-625) provides a 25×25 glyph/grid system for visual symbol representations.
 
-**Current status:** The transformer trains on **discrete token IDs** (learned embeddings). The base-625 grids are used for:
-- Rendering and inspection (human-readable symbol visualisation)
-- Debugging and interpretability
-- Future experiments with CNN/bit-vector embeddings and visual augmentation
-
-This is a deliberate architecture choice — token embeddings are simpler and sufficient for the current task, while the visual grounding provides interpretability and a path to vision-based extensions.
+**Current status:** The original model trains on **discrete token IDs** (learned embeddings) and uses the grids only for rendering and inspection. The `grid_linear` and `grid_conv` embedding arms (see [Making the grids matter](#-making-the-grids-matter)) feed the 25×25 panels into the model directly, so the question "do the grids help?" is now a flag on the trainer rather than a future plan.
 
 ---
 
@@ -198,6 +193,55 @@ Every training context starts with `MESSAGE_START`, so the demos and benchmarks 
 
 ---
 
+## 🧩 Making the grids matter
+
+A numeral's panel is the **count encoding**: numeral *k* is the first *k* cells filled in row-major order.
+That is a thermometer code, so panel *k* is a subset of panel *k+1*, which a learned embedding table knows
+nothing about. The grid arms replace the table for every grid-backed token:
+
+| `--embedding` | numeral / glyph tokens | special tokens | notes |
+|---|---|---|---|
+| `learned` | `nn.Embedding` row | `nn.Embedding` row | original model |
+| `grid_linear` | one shared `Linear(625 → d_model)` over the panel bits | learned fallback row | embeddings move along a path as *k* grows |
+| `grid_conv` | small 2D conv encoder over the 25×25 panel | learned fallback row | sees shape, not just count |
+
+All arms can use `--tie-weights`, which computes output logits against the same embedding table. With a
+grid embedding that means an index the model never trained on can still be **predicted** from its panel,
+which is what copying a bound variable into a predicate body requires.
+
+Panels come from `grids/grid_bank.npz` (625 generated numeral panels + the 37 painted glyphs from `out/symbols`,
+verified against the PNGs by `python scripts/build_grid_bank.py`). Checkpoints carry their panels, so no bank
+file is needed to load one.
+
+### The experiment
+
+```bash
+# reduced CPU run (~1 h): 2k formulas, indices 0-99 with 60-79 held out, 100-199 never seen
+python scripts/grid_experiment.py --out-dir runs/grid_small --n-train 2000 --epochs 8
+
+# full run (GPU / Colab)
+python scripts/grid_experiment.py --out-dir runs/grid_full --n-train 10000 --epochs 30 --seeds 1 2 3
+```
+
+The driver generates the data (`data/dataset_generator.py --index-range 0-99 --holdout 60-79 --far-range 100-199`),
+trains the three arms on identical data and seed, and evaluates each with `evaluate_grid.py`, which reports
+top-1 accuracy per split and per target category:
+
+- `structure` / `after_numeral`: operator targets, and operator targets right after a numeral (does an unseen index derail the syntax?)
+- `copy`: numeral targets that reuse a variable bound earlier in the context, the one place the model must emit a specific index
+- `fresh`: numeral targets with no earlier occurrence (chance by construction)
+- embedding geometry: does distance between numeral embeddings track |i − j|, and is a numeral's nearest neighbour an adjacent index
+- panel noise: grid arms re-evaluated with 1% and 5% of panel bits flipped
+
+Results land in `runs/<name>/results.md`. Manual equivalents:
+
+```bash
+python training/train.py --embedding grid_linear --tie-weights --train-data runs/grid_small/data/train.json \
+    --val-data runs/grid_small/data/val.json --checkpoint-dir runs/mine --num-epochs 8
+python evaluate_grid.py --checkpoint runs/mine/best_model.pt \
+    --splits runs/grid_small/data/test.json runs/grid_small/data/test_holdout.json runs/grid_small/data/test_far.json
+```
+
 ## 📚 Training Guide
 
 ### Recommended Configurations
@@ -294,7 +338,9 @@ Symbolic-Transformers/
 ├── demo.py                           # Gradio next-token explorer
 ├── demo_with_benchmarks.py           # Gradio explorer + benchmark suite
 ├── symbolic_benchmarks.py            # Structural benchmark definitions + CLI runner
+├── evaluate_grid.py                  # Split-aware evaluation for the grid experiment
 ├── unified_vocabulary.json           # 671-token vocabulary
+├── grids/grid_bank.npz               # 25×25 panels per token (built by scripts/build_grid_bank.py)
 │
 ├── data/
 │   ├── dataset_generator.py          # Basic FOL formula generation (seeded, CLI)
@@ -302,15 +348,18 @@ Symbolic-Transformers/
 │   ├── generate_diverse_formulas.py  # Horn clauses + recursive terms
 │   └── transitivity_generator.py     # Phase 4 reasoning chains (generator only)
 ├── models/
-│   └── transformer.py                # Model architecture
+│   └── transformer.py                # Model architecture (learned / grid_linear / grid_conv embeddings)
 ├── training/
 │   └── train.py                      # Training loop
 ├── evaluation/
 │   └── evaluate.py                   # Metrics
 ├── utils/
-│   └── vocabulary.py                 # Encoding/decoding
+│   ├── vocabulary.py                 # Encoding/decoding
+│   └── grid_bank.py                  # Panel bank: thermometer numerals + painted glyphs
 ├── scripts/
-│   └── update_vocabulary_complete.py # Adds special tokens to the vocabulary
+│   ├── update_vocabulary_complete.py # Adds special tokens to the vocabulary
+│   ├── build_grid_bank.py            # Rebuilds grids/grid_bank.npz from the PNGs
+│   └── grid_experiment.py            # Generate → train 3 arms → evaluate → results.md
 ├── tests/                            # pytest suite (python -m pytest tests)
 ├── out/                              # 25×25 glyph PNGs + decode tables (from base-625)
 │

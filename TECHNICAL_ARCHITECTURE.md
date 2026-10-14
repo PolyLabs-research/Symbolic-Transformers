@@ -185,6 +185,26 @@ self.symbol_embed = nn.Embedding(vocab_size=671, embedding_dim=d_model)
 - Less semantic variation to capture
 - Empirically: 256-512 dimensions sufficient
 
+### 3.2.1 Grid embeddings (`--embedding grid_linear | grid_conv`)
+
+The learned table treats numerals as unrelated symbols. The grid arms derive each grid-backed
+token's embedding from its 625-bit panel `g_t` (row-major, from `grids/grid_bank.npz`):
+
+```
+grid_linear:  e_t = LN(W g_t + b)            W: 625 × d_model, shared by all tokens
+grid_conv:    e_t = LN(MLP(Conv2d(g_t)))     4 and 8 channels, two 2× max-pools, 288 → d_model
+special:      e_t = F[t]                     learned fallback rows for tokens without a panel
+```
+
+For numerals `g_k` is the thermometer code (first k cells set), so `W g_k` is the cumulative sum of
+the first k columns of `W`: adjacent indices get adjacent embeddings and an index absent from training
+still lands between its neighbours. The LayerNorm gain is initialised to 0.02 so grid rows start at the
+same scale as a learned table. The full table is recomputed each forward pass (671 rows, negligible).
+
+With `--tie-weights` the output logits are `h · e_tᵀ + c_t` against the same table, which is what lets
+an unseen numeral be predicted (its row exists because its panel exists). Checkpoints store the panels
+as buffers, so `load_model_from_checkpoint` needs no bank file.
+
 ### 3.3 Positional Encoding
 
 Standard sinusoidal encoding:

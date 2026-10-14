@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.getcwd())
 
 from utils.vocabulary import Vocabulary
-from models.transformer import create_model
+from models.transformer import load_model_from_checkpoint
 
 # 1. SETUP & LOAD MODEL (Global scope for speed)
 print("🔄 Initializing GUI...")
@@ -21,13 +21,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if not os.path.exists('checkpoints/best_model.pt'):
     raise FileNotFoundError("checkpoints/best_model.pt not found")
 
-checkpoint = torch.load('checkpoints/best_model.pt', map_location=device)
+model, checkpoint = load_model_from_checkpoint('checkpoints/best_model.pt', vocab.vocab_size, device)
 config = checkpoint['config']
-
-model = create_model(vocab_size=vocab.vocab_size, model_size=config['model_size'])
-model.load_state_dict(checkpoint['model_state_dict'])
-model.to(device)
-model.eval()
 print("✓ Model loaded successfully")
 
 # 2. PREDICTION FUNCTION

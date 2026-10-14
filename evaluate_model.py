@@ -22,19 +22,15 @@ import torch.nn.functional as F
 # Make the repo importable regardless of the current working directory.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from models.transformer import create_model  # noqa: E402
+from models.transformer import load_model_from_checkpoint  # noqa: E402
 from training.train import FOLDataset  # noqa: E402
 from utils.vocabulary import Vocabulary  # noqa: E402
 
 
 def load_model_checkpoint(checkpoint_path: str, vocab_size: int, device: torch.device):
     """Load a trained model (and its checkpoint dict) from disk."""
-    checkpoint = torch.load(checkpoint_path, map_location=device)
+    model, checkpoint = load_model_from_checkpoint(checkpoint_path, vocab_size, device)
     config = checkpoint['config']
-    model = create_model(vocab_size, config['model_size'])
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.to(device)
-    model.eval()
     print(f"✓ Loaded {config['model_size']} model from epoch {checkpoint.get('epoch')}")
     if 'best_val_loss' in checkpoint:
         print(f"✓ Best val loss: {checkpoint['best_val_loss']:.4f}")
@@ -148,7 +144,8 @@ def main():
     print("SUMMARY")
     print("=" * 60)
     cfg = checkpoint.get('config', {})
-    print(f"Model size:      {cfg.get('model_size', '?')} ({n_params:,} params)")
+    print(f"Model size:      {cfg.get('model_size', '?')} ({n_params:,} params, "
+          f"{cfg.get('embedding_type', 'learned')} embedding{', tied' if cfg.get('tie_weights') else ''})")
     print(f"Checkpoint:      {args.checkpoint} (epoch {checkpoint.get('epoch', '?')}, "
           f"step {checkpoint.get('global_step', '?')})")
     if 'best_val_loss' in checkpoint:
