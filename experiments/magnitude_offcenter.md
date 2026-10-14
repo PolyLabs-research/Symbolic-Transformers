@@ -52,6 +52,12 @@ for `grid_conv` and `learned_untied`:
    81.7% for grid_linear. Same cause as in the centred run: row/column features and index periods down to
    32 let the generated increments oscillate inside the gap. A smoother basis is the follow-up.
 
+8. **Smoother basis and residual, three seeds:** `grid_smooth` 88.4 ± 2.5% on the far band but 40.1 ± 0.8%
+   on two-unseen held-out pairs (27.2% at gaps over 20); `grid_hybrid` 84.4 ± 3.6% far, 43.2 ± 4.4% two-unseen
+   (31.5% at gaps over 20). Same picture as the centred run: the shared-function encoders extrapolate order
+   and invert inside the gap regardless of basis smoothness, and the residual buys nothing. grid_linear
+   remains the only arm that interpolates an edge gap (72.6% / 81.7%).
+
 ## Results table
 
 
@@ -63,8 +69,10 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | arm | seeds | test | test_holdout | test_far |
 |---|---|---|---|---|
 | grid_conv | 1 | 99.2 | 91.8 | 49.5 |
+| grid_hybrid | 3 | 99.4 ± 0.1 | 86.8 ± 1.3 | 84.4 ± 3.6 |
 | grid_linear | 3 | 99.5 ± 0.1 | 93.8 ± 0.7 | 43.3 ± 1.8 |
 | grid_shared | 3 | 99.4 ± 0.2 | 87.5 ± 0.8 | 88.0 ± 0.4 |
+| grid_smooth | 3 | 99.6 ± 0.0 | 83.7 ± 0.7 | 88.4 ± 2.5 |
 | learned_untied | 1 | 97.8 | 61.7 | 51.8 |
 | sinusoid | 3 | 99.3 ± 0.1 | 88.3 ± 2.3 | 57.1 ± 1.9 |
 | sinusoid_smooth | 3 | 99.3 ± 0.2 | 88.5 ± 1.1 | 53.1 ± 3.5 |
@@ -74,8 +82,10 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | arm | 1 unseen | 2 unseen |
 |---|---|---|
 | grid_conv | 97.9 | 68.4 |
+| grid_hybrid | 98.1 ± 0.7 | 43.2 ± 4.4 |
 | grid_linear | 99.3 ± 0.1 | 72.6 ± 3.4 |
 | grid_shared | 98.7 ± 0.1 | 44.8 ± 4.4 |
+| grid_smooth | 95.1 ± 0.9 | 40.1 ± 0.8 |
 | learned_untied | 63.2 | 55.6 |
 | sinusoid | 95.9 ± 1.9 | 59.0 ± 4.9 |
 | sinusoid_smooth | 96.0 ± 1.2 | 59.7 ± 0.6 |
@@ -85,8 +95,10 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | arm | 1 unseen | 2 unseen |
 |---|---|---|
 | grid_conv | 53.4 | 37.9 |
+| grid_hybrid | 98.1 ± 0.5 | 43.6 ± 12.9 |
 | grid_linear | 49.2 ± 3.2 | 25.6 ± 8.0 |
 | grid_shared | 100.0 ± 0.0 | 52.2 ± 1.7 |
+| grid_smooth | 98.1 ± 2.2 | 59.4 ± 12.9 |
 | learned_untied | 51.3 | 53.1 |
 | sinusoid | 72.4 ± 2.5 | 11.5 ± 0.3 |
 | sinusoid_smooth | 68.3 ± 4.4 | 7.8 ± 0.7 |
@@ -98,8 +110,10 @@ The clean test: no seen operand to anchor on.
 | arm | gap 0 | gap 1 | gap 2-5 | gap 6-20 | gap 21-100 | gap 101+ |
 |---|---|---|---|---|---|---|
 | grid_conv | 100.0 | 55.6 | 54.5 | 53.8 | 71.7 | n/a |
+| grid_hybrid | 100.0 ± 0.0 | 55.6 ± 0.0 | 49.1 ± 0.0 | 47.4 ± 5.2 | 31.5 ± 5.5 | n/a |
 | grid_linear | 100.0 ± 0.0 | 55.6 ± 0.0 | 49.1 ± 0.0 | 48.6 ± 1.2 | 81.7 ± 5.3 | n/a |
 | grid_shared | 100.0 ± 0.0 | 55.6 ± 0.0 | 49.1 ± 0.0 | 48.7 ± 3.6 | 33.7 ± 6.1 | n/a |
+| grid_smooth | 100.0 ± 0.0 | 55.6 ± 0.0 | 48.5 ± 3.7 | 45.1 ± 1.7 | 27.2 ± 0.5 | n/a |
 | learned_untied | 89.3 | 33.3 | 43.6 | 51.8 | 54.2 | n/a |
 | sinusoid | 99.6 ± 0.6 | 59.3 ± 2.6 | 44.8 ± 6.2 | 50.8 ± 1.2 | 57.7 ± 9.5 | n/a |
 | sinusoid_smooth | 96.4 ± 5.0 | 57.4 ± 2.6 | 54.5 ± 1.5 | 49.4 ± 1.6 | 58.9 ± 1.3 | n/a |
@@ -111,8 +125,10 @@ The clean test: no seen operand to anchor on.
 | arm | gap 0 | gap 1 | gap 2-5 | gap 6-20 | gap 21-100 | gap 101+ |
 |---|---|---|---|---|---|---|
 | grid_conv | 94.4 | 30.8 | 38.2 | 40.9 | 33.1 | 2.3 |
+| grid_hybrid | 65.7 ± 19.3 | 33.3 ± 7.3 | 57.4 ± 2.4 | 54.2 ± 5.0 | 36.4 ± 18.9 | 39.4 ± 29.4 |
 | grid_linear | 69.5 ± 21.6 | 30.8 ± 10.9 | 32.8 ± 2.5 | 31.2 ± 12.6 | 19.5 ± 11.0 | 0.0 ± 0.0 |
 | grid_shared | 52.1 ± 0.0 | 38.5 ± 0.0 | 57.4 ± 0.0 | 59.3 ± 2.0 | 48.6 ± 2.3 | 64.4 ± 2.1 |
+| grid_smooth | 50.7 ± 2.0 | 38.5 ± 6.3 | 56.4 ± 0.7 | 58.8 ± 2.4 | 60.2 ± 18.4 | 76.5 ± 33.2 |
 | learned_untied | 87.3 | 46.2 | 50.0 | 48.3 | 50.4 | 63.6 |
 | sinusoid | 74.6 ± 13.9 | 28.2 ± 9.6 | 33.8 ± 4.2 | 14.6 ± 2.6 | 1.0 ± 0.8 | 0.0 ± 0.0 |
 | sinusoid_smooth | 80.8 ± 15.0 | 23.1 ± 6.3 | 19.1 ± 3.2 | 2.6 ± 1.0 | 0.0 ± 0.0 | 0.0 ± 0.0 |
@@ -122,8 +138,10 @@ The clean test: no seen operand to anchor on.
 | arm | gap 0 | gap 1 | gap 2-5 | gap 6-20 | gap 21-100 | gap 101+ |
 |---|---|---|---|---|---|---|
 | grid_conv | 96.2 | 72.2 | 71.1 | 99.0 | 100.0 | 100.0 |
+| grid_hybrid | 96.9 ± 2.4 | 81.5 ± 2.6 | 77.5 ± 3.2 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_linear | 95.6 ± 0.9 | 87.0 ± 2.6 | 83.1 ± 6.0 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_shared | 96.9 ± 2.4 | 87.0 ± 5.2 | 75.1 ± 5.9 | 99.9 ± 0.2 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_smooth | 96.2 ± 0.0 | 83.3 ± 4.5 | 85.5 ± 2.0 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | learned_untied | 79.2 | 66.7 | 57.8 | 88.4 | 99.8 | 100.0 |
 | sinusoid | 96.2 ± 0.0 | 87.0 ± 2.6 | 74.7 ± 6.1 | 99.5 ± 0.2 | 100.0 ± 0.0 | 99.9 ± 0.0 |
 | sinusoid_smooth | 97.5 ± 3.6 | 88.9 ± 4.5 | 72.3 ± 11.3 | 99.9 ± 0.2 | 100.0 ± 0.0 | 100.0 ± 0.0 |
@@ -133,8 +151,10 @@ The clean test: no seen operand to anchor on.
 | arm | gap 0 | gap 1 | gap 2-5 | gap 6-20 | gap 21-100 | gap 101+ |
 |---|---|---|---|---|---|---|
 | grid_conv | 100.0 | 55.6 | 54.4 | 53.3 | 84.0 | 100.0 |
+| grid_hybrid | 100.0 ± 0.0 | 55.6 ± 0.0 | 49.1 ± 0.0 | 52.5 ± 4.4 | 67.5 ± 3.5 | 99.9 ± 0.1 |
 | grid_linear | 100.0 ± 0.0 | 55.6 ± 0.0 | 49.1 ± 0.0 | 52.1 ± 1.1 | 91.4 ± 2.1 | 100.0 ± 0.0 |
 | grid_shared | 100.0 ± 0.0 | 55.6 ± 0.0 | 49.1 ± 0.0 | 54.1 ± 2.6 | 69.5 ± 2.3 | 100.0 ± 0.0 |
+| grid_smooth | 100.0 ± 0.0 | 55.6 ± 0.0 | 49.7 ± 3.6 | 50.2 ± 0.7 | 58.6 ± 1.6 | 99.3 ± 0.4 |
 | learned_untied | 89.3 | 33.3 | 45.6 | 52.0 | 47.5 | 69.0 |
 | sinusoid | 99.6 ± 0.6 | 59.3 ± 2.6 | 44.4 ± 5.8 | 52.1 ± 0.9 | 73.0 ± 8.0 | 99.9 ± 0.1 |
 | sinusoid_smooth | 96.4 ± 5.0 | 57.4 ± 2.6 | 56.1 ± 1.4 | 52.1 ± 1.1 | 73.2 ± 3.7 | 99.9 ± 0.1 |
@@ -144,8 +164,10 @@ The clean test: no seen operand to anchor on.
 | arm | gap 0 | gap 1 | gap 2-5 | gap 6-20 | gap 21-100 | gap 101+ |
 |---|---|---|---|---|---|---|
 | grid_conv | 94.4 | 30.8 | 37.7 | 39.4 | 27.8 | 55.7 |
+| grid_hybrid | 65.7 ± 19.3 | 33.3 ± 7.3 | 56.5 ± 2.4 | 55.4 ± 5.2 | 49.3 ± 15.1 | 98.0 ± 1.0 |
 | grid_linear | 69.5 ± 21.6 | 30.8 ± 10.9 | 32.4 ± 2.5 | 30.2 ± 12.0 | 18.1 ± 8.2 | 51.1 ± 3.4 |
 | grid_shared | 52.1 ± 0.0 | 38.5 ± 0.0 | 57.0 ± 0.7 | 61.2 ± 1.9 | 61.5 ± 1.7 | 99.4 ± 0.0 |
+| grid_smooth | 50.7 ± 2.0 | 38.5 ± 6.3 | 55.6 ± 0.7 | 60.7 ± 2.3 | 70.0 ± 14.0 | 97.7 ± 2.2 |
 | learned_untied | 87.3 | 46.2 | 49.3 | 46.0 | 37.8 | 55.4 |
 | sinusoid | 74.6 ± 13.9 | 28.2 ± 9.6 | 33.3 ± 4.1 | 15.5 ± 2.3 | 9.5 ± 1.4 | 74.1 ± 2.5 |
 | sinusoid_smooth | 80.8 ± 15.0 | 23.1 ± 6.3 | 18.8 ± 3.1 | 3.8 ± 0.8 | 5.6 ± 0.3 | 70.6 ± 4.6 |
@@ -158,8 +180,10 @@ training-pool rows correlated with k.
 | arm | readout train | readout holdout | readout far | PC1 train | PC1 holdout | PC1 far |
 |---|---|---|---|---|---|---|
 | grid_conv | 1.000 | 0.975 | -0.394 | 1.000 | 0.256 | -0.401 |
+| grid_hybrid | 1.000 ± 0.000 | 1.000 ± 0.000 | -0.972 ± 0.039 | 0.936 ± 0.079 | -0.548 ± 0.616 | -0.863 ± 0.147 |
 | grid_linear | 1.000 ± 0.000 | 1.000 ± 0.000 | -0.880 ± 0.093 | 0.333 ± 0.942 | 0.340 ± 0.858 | -0.089 ± 0.704 |
 | grid_shared | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.979 ± 0.014 | -0.340 ± 0.876 | -0.149 ± 0.771 | 0.321 ± 0.934 |
+| grid_smooth | 1.000 ± 0.000 | 1.000 ± 0.000 | -0.950 ± 0.036 | 0.298 ± 0.918 | -0.294 ± 0.315 | -0.464 ± 0.613 |
 | learned_untied | 0.996 | 0.180 | 0.048 | -0.996 | 0.005 | -0.064 |
 | sinusoid | 1.000 ± 0.000 | 0.860 ± 0.064 | -0.932 ± 0.024 | -0.320 ± 0.884 | 0.258 ± 0.612 | 0.333 ± 0.924 |
 | sinusoid_smooth | 1.000 ± 0.000 | 0.560 ± 0.189 | -0.883 ± 0.082 | 0.317 ± 0.873 | -0.248 ± 0.454 | -0.343 ± 0.905 |
@@ -169,8 +193,10 @@ training-pool rows correlated with k.
 | arm | seeds | params | best val loss | epochs |
 |---|---|---|---|---|
 | grid_conv | 1 | 520,943 | 0.015 | 23 |
+| grid_hybrid | 3 | 566,303 | 0.012 ± 0.001 | 29, 30, 27 |
 | grid_linear | 3 | 563,743 | 0.011 ± 0.001 | 27, 27, 26 |
 | grid_shared | 3 | 488,351 | 0.012 ± 0.001 | 30, 22, 25 |
+| grid_smooth | 3 | 486,303 | 0.012 ± 0.001 | 28, 27, 27 |
 | learned_untied | 1 | 569,247 | 0.048 | 22 |
 | sinusoid | 3 | 491,935 | 0.017 ± 0.000 | 28, 26, 23 |
 | sinusoid_smooth | 3 | 491,935 | 0.013 ± 0.002 | 25, 26, 26 |
