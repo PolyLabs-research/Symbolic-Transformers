@@ -1,0 +1,633 @@
+{
+  "learned_s1": {
+    "checkpoint": "/home/user/Symbolic-Transformers/runs/grid_small/learned_s1/best_model.pt",
+    "embedding_type": "learned",
+    "tie_weights": true,
+    "epoch": 7,
+    "best_val_loss": 1.656332282932258,
+    "params": 483359,
+    "splits": {
+      "test": {
+        "overall": {
+          "acc": 0.5363416111447608,
+          "n": 6604
+        },
+        "structure": {
+          "acc": 0.7413575042158516,
+          "n": 4744
+        },
+        "after_numeral": {
+          "acc": 0.7451612903225806,
+          "n": 1860
+        },
+        "numeral": {
+          "acc": 0.013440860215053764,
+          "n": 1860
+        },
+        "copy": {
+          "acc": 0.015267175572519083,
+          "n": 393
+        },
+        "fresh": {
+          "acc": 0.012951601908657124,
+          "n": 1467
+        }
+      },
+      "test_holdout": {
+        "overall": {
+          "acc": 0.2577348850411581,
+          "n": 7046
+        },
+        "structure": {
+          "acc": 0.3572693291363368,
+          "n": 5083
+        },
+        "after_numeral": {
+          "acc": 0.02750891492613347,
+          "n": 1963
+        },
+        "numeral": {
+          "acc": 0.0,
+          "n": 1963
+        },
+        "copy": {
+          "acc": 0.0,
+          "n": 505
+        },
+        "fresh": {
+          "acc": 0.0,
+          "n": 1458
+        }
+      },
+      "test_far": {
+        "overall": {
+          "acc": 0.2573629361123697,
+          "n": 6621
+        },
+        "structure": {
+          "acc": 0.3573076116586286,
+          "n": 4769
+        },
+        "after_numeral": {
+          "acc": 0.025377969762419007,
+          "n": 1852
+        },
+        "numeral": {
+          "acc": 0.0,
+          "n": 1852
+        },
+        "copy": {
+          "acc": 0.0,
+          "n": 348
+        },
+        "fresh": {
+          "acc": 0.0,
+          "n": 1504
+        }
+      }
+    },
+    "geometry": {
+      "0-99": {
+        "spearman_dist_vs_gap": 0.11225922292609475,
+        "spearman_cos_vs_gap": 0.047942771857831856,
+        "nearest_neighbour_is_adjacent": 0.05,
+        "n_pairs": 3959
+      },
+      "0-624": {
+        "spearman_dist_vs_gap": 0.19247468463885703,
+        "spearman_cos_vs_gap": 0.17021273893466057,
+        "nearest_neighbour_is_adjacent": 0.0048,
+        "n_pairs": 3990
+      }
+    },
+    "noise": {}
+  },
+  "grid_linear_s1": {
+    "checkpoint": "/home/user/Symbolic-Transformers/runs/grid_small/grid_linear_s1/best_model.pt",
+    "embedding_type": "grid_linear",
+    "tie_weights": true,
+    "epoch": 8,
+    "best_val_loss": 1.6475129288398416,
+    "params": 563743,
+    "splits": {
+      "test": {
+        "overall": {
+          "acc": 0.5355844942459116,
+          "n": 6604
+        },
+        "structure": {
+          "acc": 0.7409359190556493,
+          "n": 4744
+        },
+        "after_numeral": {
+          "acc": 0.7451612903225806,
+          "n": 1860
+        },
+        "numeral": {
+          "acc": 0.011827956989247311,
+          "n": 1860
+        },
+        "copy": {
+          "acc": 0.015267175572519083,
+          "n": 393
+        },
+        "fresh": {
+          "acc": 0.010906612133605999,
+          "n": 1467
+        }
+      },
+      "test_holdout": {
+        "overall": {
+          "acc": 0.5360488220266818,
+          "n": 7046
+        },
+        "structure": {
+          "acc": 0.7430651190241984,
+          "n": 5083
+        },
+        "after_numeral": {
+          "acc": 0.7524197656647987,
+          "n": 1963
+        },
+        "numeral": {
+          "acc": 0.0,
+          "n": 1963
+        },
+        "copy": {
+          "acc": 0.0,
+          "n": 505
+        },
+        "fresh": {
+          "acc": 0.0,
+          "n": 1458
+        }
+      },
+      "test_far": {
+        "overall": {
+          "acc": 0.49494034133816645,
+          "n": 6621
+        },
+        "structure": {
+          "acc": 0.6871461522331725,
+          "n": 4769
+        },
+        "after_numeral": {
+          "acc": 0.6279697624190065,
+          "n": 1852
+        },
+        "numeral": {
+          "acc": 0.0,
+          "n": 1852
+        },
+        "copy": {
+          "acc": 0.0,
+          "n": 348
+        },
+        "fresh": {
+          "acc": 0.0,
+          "n": 1504
+        }
+      }
+    },
+    "geometry": {
+      "0-99": {
+        "spearman_dist_vs_gap": 0.4468565790472051,
+        "spearman_cos_vs_gap": 0.4496876578075234,
+        "nearest_neighbour_is_adjacent": 1.0,
+        "n_pairs": 3959
+      },
+      "0-624": {
+        "spearman_dist_vs_gap": 0.44248025322431994,
+        "spearman_cos_vs_gap": 0.43981791121246244,
+        "nearest_neighbour_is_adjacent": 0.9984,
+        "n_pairs": 3990
+      }
+    },
+    "noise": {
+      "0.01": {
+        "test": {
+          "overall": {
+            "acc": 0.4480617807389461,
+            "n": 6604
+          },
+          "structure": {
+            "acc": 0.6193086003372681,
+            "n": 4744
+          },
+          "after_numeral": {
+            "acc": 0.6483870967741936,
+            "n": 1860
+          },
+          "numeral": {
+            "acc": 0.01129032258064516,
+            "n": 1860
+          },
+          "copy": {
+            "acc": 0.007633587786259542,
+            "n": 393
+          },
+          "fresh": {
+            "acc": 0.012269938650306749,
+            "n": 1467
+          }
+        },
+        "test_holdout": {
+          "overall": {
+            "acc": 0.40051092818620493,
+            "n": 7046
+          },
+          "structure": {
+            "acc": 0.5551839464882943,
+            "n": 5083
+          },
+          "after_numeral": {
+            "acc": 0.5517065715741213,
+            "n": 1963
+          },
+          "numeral": {
+            "acc": 0.0,
+            "n": 1963
+          },
+          "copy": {
+            "acc": 0.0,
+            "n": 505
+          },
+          "fresh": {
+            "acc": 0.0,
+            "n": 1458
+          }
+        },
+        "test_far": {
+          "overall": {
+            "acc": 0.3416402356139556,
+            "n": 6621
+          },
+          "structure": {
+            "acc": 0.4743132732228979,
+            "n": 4769
+          },
+          "after_numeral": {
+            "acc": 0.32667386609071275,
+            "n": 1852
+          },
+          "numeral": {
+            "acc": 0.0,
+            "n": 1852
+          },
+          "copy": {
+            "acc": 0.0,
+            "n": 348
+          },
+          "fresh": {
+            "acc": 0.0,
+            "n": 1504
+          }
+        }
+      },
+      "0.05": {
+        "test": {
+          "overall": {
+            "acc": 0.17534827377347062,
+            "n": 6604
+          },
+          "structure": {
+            "acc": 0.2434654300168634,
+            "n": 4744
+          },
+          "after_numeral": {
+            "acc": 0.14516129032258066,
+            "n": 1860
+          },
+          "numeral": {
+            "acc": 0.0016129032258064516,
+            "n": 1860
+          },
+          "copy": {
+            "acc": 0.0,
+            "n": 393
+          },
+          "fresh": {
+            "acc": 0.002044989775051125,
+            "n": 1467
+          }
+        },
+        "test_holdout": {
+          "overall": {
+            "acc": 0.12815782003973886,
+            "n": 7046
+          },
+          "structure": {
+            "acc": 0.177650993507771,
+            "n": 5083
+          },
+          "after_numeral": {
+            "acc": 0.09933774834437085,
+            "n": 1963
+          },
+          "numeral": {
+            "acc": 0.0,
+            "n": 1963
+          },
+          "copy": {
+            "acc": 0.0,
+            "n": 505
+          },
+          "fresh": {
+            "acc": 0.0,
+            "n": 1458
+          }
+        },
+        "test_far": {
+          "overall": {
+            "acc": 0.10889593716961184,
+            "n": 6621
+          },
+          "structure": {
+            "acc": 0.15118473474522962,
+            "n": 4769
+          },
+          "after_numeral": {
+            "acc": 0.062095032397408205,
+            "n": 1852
+          },
+          "numeral": {
+            "acc": 0.0,
+            "n": 1852
+          },
+          "copy": {
+            "acc": 0.0,
+            "n": 348
+          },
+          "fresh": {
+            "acc": 0.0,
+            "n": 1504
+          }
+        }
+      }
+    }
+  },
+  "grid_conv_s1": {
+    "checkpoint": "/home/user/Symbolic-Transformers/runs/grid_small/grid_conv_s1/best_model.pt",
+    "embedding_type": "grid_conv",
+    "tie_weights": true,
+    "epoch": 8,
+    "best_val_loss": 1.653839458717159,
+    "params": 520943,
+    "splits": {
+      "test": {
+        "overall": {
+          "acc": 0.5366444579043004,
+          "n": 6604
+        },
+        "structure": {
+          "acc": 0.7424114671163575,
+          "n": 4744
+        },
+        "after_numeral": {
+          "acc": 0.7553763440860215,
+          "n": 1860
+        },
+        "numeral": {
+          "acc": 0.011827956989247311,
+          "n": 1860
+        },
+        "copy": {
+          "acc": 0.015267175572519083,
+          "n": 393
+        },
+        "fresh": {
+          "acc": 0.010906612133605999,
+          "n": 1467
+        }
+      },
+      "test_holdout": {
+        "overall": {
+          "acc": 0.5337780300879932,
+          "n": 7046
+        },
+        "structure": {
+          "acc": 0.7399173716309266,
+          "n": 5083
+        },
+        "after_numeral": {
+          "acc": 0.7407030056036679,
+          "n": 1963
+        },
+        "numeral": {
+          "acc": 0.0,
+          "n": 1963
+        },
+        "copy": {
+          "acc": 0.0,
+          "n": 505
+        },
+        "fresh": {
+          "acc": 0.0,
+          "n": 1458
+        }
+      },
+      "test_far": {
+        "overall": {
+          "acc": 0.3724512913457182,
+          "n": 6621
+        },
+        "structure": {
+          "acc": 0.5170895365904802,
+          "n": 4769
+        },
+        "after_numeral": {
+          "acc": 0.24946004319654427,
+          "n": 1852
+        },
+        "numeral": {
+          "acc": 0.0,
+          "n": 1852
+        },
+        "copy": {
+          "acc": 0.0,
+          "n": 348
+        },
+        "fresh": {
+          "acc": 0.0,
+          "n": 1504
+        }
+      }
+    },
+    "geometry": {
+      "0-99": {
+        "spearman_dist_vs_gap": 0.283636845070983,
+        "spearman_cos_vs_gap": 0.29318676065957905,
+        "nearest_neighbour_is_adjacent": 0.88,
+        "n_pairs": 3959
+      },
+      "0-624": {
+        "spearman_dist_vs_gap": 0.5677275401112054,
+        "spearman_cos_vs_gap": 0.524908544214778,
+        "nearest_neighbour_is_adjacent": 0.8048,
+        "n_pairs": 3990
+      }
+    },
+    "noise": {
+      "0.01": {
+        "test": {
+          "overall": {
+            "acc": 0.37265293761356755,
+            "n": 6604
+          },
+          "structure": {
+            "acc": 0.5145446880269815,
+            "n": 4744
+          },
+          "after_numeral": {
+            "acc": 0.4596774193548387,
+            "n": 1860
+          },
+          "numeral": {
+            "acc": 0.010752688172043012,
+            "n": 1860
+          },
+          "copy": {
+            "acc": 0.005089058524173028,
+            "n": 393
+          },
+          "fresh": {
+            "acc": 0.012269938650306749,
+            "n": 1467
+          }
+        },
+        "test_holdout": {
+          "overall": {
+            "acc": 0.33593528242974735,
+            "n": 7046
+          },
+          "structure": {
+            "acc": 0.4656698799921306,
+            "n": 5083
+          },
+          "after_numeral": {
+            "acc": 0.380539989811513,
+            "n": 1963
+          },
+          "numeral": {
+            "acc": 0.0,
+            "n": 1963
+          },
+          "copy": {
+            "acc": 0.0,
+            "n": 505
+          },
+          "fresh": {
+            "acc": 0.0,
+            "n": 1458
+          }
+        },
+        "test_far": {
+          "overall": {
+            "acc": 0.2375774052257967,
+            "n": 6621
+          },
+          "structure": {
+            "acc": 0.3298385405745439,
+            "n": 4769
+          },
+          "after_numeral": {
+            "acc": 0.058315334773218146,
+            "n": 1852
+          },
+          "numeral": {
+            "acc": 0.0,
+            "n": 1852
+          },
+          "copy": {
+            "acc": 0.0,
+            "n": 348
+          },
+          "fresh": {
+            "acc": 0.0,
+            "n": 1504
+          }
+        }
+      },
+      "0.05": {
+        "test": {
+          "overall": {
+            "acc": 0.14248940036341612,
+            "n": 6604
+          },
+          "structure": {
+            "acc": 0.19793423271500843,
+            "n": 4744
+          },
+          "after_numeral": {
+            "acc": 0.043548387096774194,
+            "n": 1860
+          },
+          "numeral": {
+            "acc": 0.001075268817204301,
+            "n": 1860
+          },
+          "copy": {
+            "acc": 0.002544529262086514,
+            "n": 393
+          },
+          "fresh": {
+            "acc": 0.0006816632583503749,
+            "n": 1467
+          }
+        },
+        "test_holdout": {
+          "overall": {
+            "acc": 0.10317910871416407,
+            "n": 7046
+          },
+          "structure": {
+            "acc": 0.14302577218178242,
+            "n": 5083
+          },
+          "after_numeral": {
+            "acc": 0.03565970453387672,
+            "n": 1963
+          },
+          "numeral": {
+            "acc": 0.0,
+            "n": 1963
+          },
+          "copy": {
+            "acc": 0.0,
+            "n": 505
+          },
+          "fresh": {
+            "acc": 0.0,
+            "n": 1458
+          }
+        },
+        "test_far": {
+          "overall": {
+            "acc": 0.10285455369279566,
+            "n": 6621
+          },
+          "structure": {
+            "acc": 0.14279723212413503,
+            "n": 4769
+          },
+          "after_numeral": {
+            "acc": 0.03185745140388769,
+            "n": 1852
+          },
+          "numeral": {
+            "acc": 0.0,
+            "n": 1852
+          },
+          "copy": {
+            "acc": 0.0,
+            "n": 348
+          },
+          "fresh": {
+            "acc": 0.0,
+            "n": 1504
+          }
+        }
+      }
+    }
+  }
+}

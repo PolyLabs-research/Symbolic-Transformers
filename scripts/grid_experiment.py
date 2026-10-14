@@ -31,7 +31,11 @@ ARMS = {
     "learned": ["--embedding", "learned", "--tie-weights"],
     "grid_linear": ["--embedding", "grid_linear", "--tie-weights"],
     "grid_conv": ["--embedding", "grid_conv", "--tie-weights"],
+    # Control: the original untied model. Unseen rows keep their random init
+    # instead of being pushed away from hidden states by the tied softmax.
+    "learned_untied": ["--embedding", "learned"],
 }
+DEFAULT_ARMS = ["learned", "grid_linear", "grid_conv"]
 SPLITS = ("test", "test_holdout", "test_far")
 CATEGORIES = ("overall", "structure", "after_numeral", "numeral", "copy", "fresh")
 
@@ -130,7 +134,7 @@ def collate(results, out_dir: Path):
 def main() -> int:
     ap = argparse.ArgumentParser(description="Grid embedding ablation driver")
     ap.add_argument("--out-dir", default="runs/grid_experiment")
-    ap.add_argument("--arms", nargs="+", default=list(ARMS), choices=list(ARMS))
+    ap.add_argument("--arms", nargs="+", default=DEFAULT_ARMS, choices=list(ARMS))
     ap.add_argument("--seeds", nargs="+", type=int, default=[1])
     ap.add_argument("--n-train", type=int, default=2000)
     ap.add_argument("--n-val", type=int, default=300)
@@ -177,11 +181,15 @@ def main() -> int:
                     raise SystemExit(f"training {arm} seed {seed} failed, see {out_dir / f'{arm}_s{seed}' / 'train.log'}")
         print(f"✓ training finished in {(time.time() - t0) / 60:.1f} min")
 
-    results = {}
     for arm, seed in jobs:
         run_dir = out_dir / f"{arm}_s{seed}"
         print(f"→ evaluating {run_dir}")
-        results[f"{arm}_s{seed}"] = evaluate_arm(args, run_dir, data_dir)
+        evaluate_arm(args, run_dir, data_dir)
+    # Collate every evaluated arm in the output directory, so arms added in
+    # later invocations (e.g. --arms learned_untied) join the same table.
+    results = {}
+    for eval_path in sorted(out_dir.glob("*_s*/eval.json")):
+        results[eval_path.parent.name] = json.load(open(eval_path))
     collate(results, out_dir)
     return 0
 
