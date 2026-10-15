@@ -90,6 +90,12 @@ ARMS = {
     "grid_ramp_res_orth_anneal_geo_long": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                            "--shared-residual", "--residual-orthogonal", "--residual-anneal", "0.2", "0.4667",
                                            "--residual-anneal-floor", "0.001"],
+    # Geometric anneal with a learning-rate re-warm-up at the step to zero: the
+    # schedule restarts (100 warm-up steps to the base rate, then cosine) at epoch 56
+    # so the comparator does not have to find the ramp route on the cosine tail.
+    "grid_ramp_res_orth_anneal_geo_rewarm": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                                             "--shared-residual", "--residual-orthogonal", "--residual-anneal", "0.3", "0.7",
+                                             "--residual-anneal-floor", "0.001", "--residual-anneal-rewarm", "100"],
     # Anneal and hold: geometric to 0.01 by 70% of training, then held there, so
     # the comparator keeps a small residual it has tuned itself to read.
     "grid_ramp_res_orth_anneal_hold": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",

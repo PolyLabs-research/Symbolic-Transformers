@@ -104,7 +104,37 @@ class TrainingConfig:
     residual_anneal_floor: Optional[float] = None
     # Keep the scale at the floor after end instead of dropping it to zero.
     residual_anneal_hold: bool = False
+    # Restart the learning-rate schedule when the anneal window ends: linear
+    # warm-up over this many steps back to the base rate, then cosine decay to
+    # 10% over the remaining steps. Gives the comparator a fresh rate to find
+    # a route without the residual instead of the tail of the cosine.
+    residual_anneal_rewarm: Optional[int] = None
     seed: int = 42
+
+
+def anneal_end_epoch(num_epochs: int, end: float) -> int:
+    """First 1-based epoch at which the anneal has reached its final value."""
+    return int(math.ceil(end * num_epochs - 1e-9))
+
+
+def make_lr_lambda(total_steps: int, warmup: int, restart_step: Optional[int] = None,
+                   rewarm: Optional[int] = None):
+    """Linear warm-up then cosine decay to 10%; with ``restart_step`` the same
+    shape starts again from that step with a ``rewarm``-step warm-up."""
+    total_steps = max(1, total_steps)
+    warmup = max(1, warmup)
+
+    def segment(step: int, warm: int, length: int) -> float:
+        if step < warm:
+            return (step + 1) / warm
+        progress = min(1.0, (step - warm) / max(1, length - warm))
+        return max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
+
+    def lr_lambda(step: int) -> float:
+        if restart_step is not None and step >= restart_step:
+            return segment(step - restart_step, max(1, rewarm or 1), total_steps - restart_step)
+        return segment(step, warmup, total_steps)
+    return lr_lambda
 
 
 def residual_scale_at(epoch: int, num_epochs: int, start: float, end: float,
@@ -237,17 +267,15 @@ class Trainer:
             eps=1e-9
         )
         
-        # Learning rate scheduler: linear warmup, then cosine decay to 10%.
+        # Learning rate scheduler: linear warmup, then cosine decay to 10%,
+        # restarted at the end of the residual anneal when --residual-anneal-rewarm is set.
         total_steps = max(1, len(train_loader) * config.num_epochs)
-        warmup = max(1, config.warmup_steps)
-
-        def lr_lambda(step: int) -> float:
-            if step < warmup:
-                return (step + 1) / warmup
-            progress = min(1.0, (step - warmup) / max(1, total_steps - warmup))
-            return max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
-        
-        self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda)
+        restart_step = None
+        if config.residual_anneal is not None and config.residual_anneal_rewarm is not None:
+            restart_step = (anneal_end_epoch(config.num_epochs, config.residual_anneal[1]) - 1) * len(train_loader)
+        self.restart_step = restart_step
+        self.lr_lambda = make_lr_lambda(total_steps, config.warmup_steps, restart_step, config.residual_anneal_rewarm)
+        self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, self.lr_lambda)
         # No ignore_index: targets are never padding, and token 0 is the
         # numeral NUM_000 (ignoring it silently dropped ~6% of training targets).
         self.criterion = nn.CrossEntropyLoss()
@@ -403,6 +431,9 @@ class Trainer:
                      and self.config.residual_anneal_floor else "0")
             print(f"Residual anneal ({shape}): scale 1 until epoch {anneal[0] * self.config.num_epochs:.0f}, "
                   f"{final} from epoch {anneal[1] * self.config.num_epochs:.0f}; best_model.pt from the epochs after that only")
+            if self.restart_step is not None:
+                print(f"Learning-rate re-warm-up at step {self.restart_step} (epoch "
+                      f"{anneal_end_epoch(self.config.num_epochs, anneal[1])}): {self.config.residual_anneal_rewarm} warm-up steps, then cosine")
 
         for epoch in range(start_epoch, self.config.num_epochs):
             self.epoch = epoch + 1
@@ -480,6 +511,9 @@ def main():
                         help="with --residual-anneal: anneal geometrically from 1 to F (0 < F < 1) instead of linearly to 0")
     parser.add_argument("--residual-anneal-hold", action="store_true",
                         help="with --residual-anneal-floor: keep the scale at F after END instead of dropping it to 0")
+    parser.add_argument("--residual-anneal-rewarm", type=int, default=None, metavar="N",
+                        help="with --residual-anneal: restart the learning-rate schedule when the anneal ends "
+                             "(N warm-up steps back to the base rate, then cosine decay to 10%%)")
     parser.add_argument("--residual-lr-mult", type=float, default=1.0,
                         help="grid_shared residual: learning-rate multiplier for its own optimiser group")
     parser.add_argument("--residual-wd", type=float, default=None,
@@ -539,6 +573,12 @@ def main():
         if args.residual_anneal_floor is None:
             parser.error("--residual-anneal-hold needs --residual-anneal-floor")
         config.residual_anneal_hold = True
+    if args.residual_anneal_rewarm is not None:
+        if args.residual_anneal is None:
+            parser.error("--residual-anneal-rewarm needs --residual-anneal")
+        if args.residual_anneal_rewarm < 1:
+            parser.error("--residual-anneal-rewarm N needs N >= 1")
+        config.residual_anneal_rewarm = args.residual_anneal_rewarm
     config.save_every = args.save_every
     set_seed(config.seed)
     vocab = Vocabulary(args.vocab)
@@ -558,7 +598,7 @@ def main():
         for key in ('shared_min_period', 'shared_axis_freq', 'shared_residual', 'shared_basis',
                     'shared_residual_orthogonal', 'shared_residual_dropout',
                     'shared_residual_dropout_cell', 'sinusoid_min_period', 'residual_anneal',
-                    'residual_anneal_floor', 'residual_anneal_hold'):
+                    'residual_anneal_floor', 'residual_anneal_hold', 'residual_anneal_rewarm'):
             if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 

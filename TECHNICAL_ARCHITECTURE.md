@@ -235,6 +235,8 @@ The residual has four knobs, all used in the precision study (`experiments/magni
   end on the ramp alone; `best_model.pt` is chosen among the residual-free epochs only. With
   `--residual-anneal-floor F` the scale falls geometrically from 1 to F over the window instead of linearly,
   and `--residual-anneal-hold` keeps it at F afterwards instead of dropping it to zero.
+  `--residual-anneal-rewarm N` restarts the learning-rate schedule when the window ends (N warm-up steps
+  back to the base rate, then cosine decay), so the residual-free phase does not run on the cosine tail.
 
 For numerals `g_k` is the thermometer code (first k cells set), so `W g_k` is the cumulative sum of
 the first k columns of `W`: adjacent indices get adjacent embeddings and an index absent from training

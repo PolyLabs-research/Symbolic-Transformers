@@ -160,3 +160,29 @@ def test_anneal_requires_a_residual(vocab):
                           "length": torch.tensor(4)}], batch_size=1)
     with pytest.raises(ValueError, match="residual"):
         Trainer(model, loader, loader, cfg, vocab).train()
+
+
+def test_rewarm_restarts_the_schedule_at_the_anneal_end():
+    from training.train import anneal_end_epoch, make_lr_lambda
+
+    assert anneal_end_epoch(80, 0.7) == 56 and anneal_end_epoch(120, 0.4667) == 57 and anneal_end_epoch(10, 0.7) == 7
+    steps_per_epoch, n_epochs = 313, 80
+    total = steps_per_epoch * n_epochs
+    restart = (anneal_end_epoch(n_epochs, 0.7) - 1) * steps_per_epoch
+    plain = make_lr_lambda(total, 100)
+    rewarm = make_lr_lambda(total, 100, restart, 100)
+    # Identical before the restart, including the initial warm-up and the cosine.
+    for s in (0, 50, 99, 100, 5000, restart - 1):
+        assert rewarm(s) == plain(s)
+    assert plain(0) == pytest.approx(0.01) and plain(99) == 1.0
+    assert plain(restart) < 0.3                       # deep in the cosine tail by epoch 56
+    # At the restart the rate drops to the start of a fresh warm-up and climbs back to the base rate.
+    assert rewarm(restart) == pytest.approx(0.01)
+    assert rewarm(restart + 99) == 1.0
+    assert rewarm(restart + 101) < 1.0
+    # ... then decays by cosine to the 10% floor by the last step.
+    assert rewarm(total - 1) == pytest.approx(0.1, abs=1e-3)
+    mid = restart + 100 + (total - restart - 100) // 2
+    assert 0.4 < rewarm(mid) < 0.6
+    # Without a restart step the schedule is the plain one.
+    assert make_lr_lambda(total, 100, None, 100)(restart) == plain(restart)
