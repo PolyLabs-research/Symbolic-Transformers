@@ -358,3 +358,23 @@ def test_constant_basis_is_count_times_one_direction(tmp_path, vocab, bank):
     loaded, _ = load_model_from_checkpoint(tmp_path / "t.pt", vocab.vocab_size, "cpu", verbose=False)
     with torch.no_grad():
         assert torch.allclose(before, loaded(ids))
+
+
+def test_constant_basis_collapses_under_layernorm_and_ramp_does_not(vocab, bank):
+    """LayerNorm is scale-invariant, so k × one direction maps every k > 0 to the same vector."""
+    torch = pytest.importorskip("torch")
+    from models.transformer import create_model
+
+    def table(basis):
+        torch.manual_seed(0)
+        m = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True,
+                         grid_bank=bank, verbose=False, shared_basis=basis)
+        with torch.no_grad():
+            return m.embedding_table()
+
+    const, ramp = table("constant"), table("ramp")
+    assert torch.allclose(const[100], const[400], atol=1e-5)           # collapsed
+    assert not torch.allclose(ramp[100], ramp[400], atol=1e-3)         # rotates with k
+    # Ramp path: direction changes monotonically, so distance grows with the gap.
+    d = [(ramp[100] - ramp[100 + g]).norm().item() for g in (1, 10, 100, 300)]
+    assert d == sorted(d)

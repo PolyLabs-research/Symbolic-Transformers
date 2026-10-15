@@ -374,7 +374,7 @@ def main():
                         help="grid_shared: number of row/col frequencies (0 = index features only)")
     parser.add_argument("--shared-residual", action="store_true",
                         help="grid_shared: add a zero-initialised per-cell residual weight")
-    parser.add_argument("--shared-basis", default="full", choices=["full", "constant"],
+    parser.add_argument("--shared-basis", default="full", choices=["full", "constant", "ramp"],
                         help="grid_shared: 'constant' gives every cell the same generated weight (count × one direction)")
     parser.add_argument("--device", default=None, help="cuda or cpu (default: cuda if available)")
     parser.add_argument("--num-workers", type=int, default=4,

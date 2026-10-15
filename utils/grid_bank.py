@@ -146,8 +146,15 @@ def cell_position_features(n_index_freq: int = 8, n_axis_freq: int = 4,
     """
     if basis == "constant":
         return np.ones((GRID_CELLS, 1), dtype=np.float32)
+    if basis == "ramp":
+        # [1, i/625]: increments drift linearly with the cell index, so a panel's
+        # embedding is k·a + (k²/1250)·c + b and its *direction* rotates
+        # uniformly with k. A single direction (basis 'constant') collapses
+        # under LayerNorm, which is scale-invariant.
+        idx = np.arange(GRID_CELLS, dtype=np.float32) / GRID_CELLS
+        return np.stack([np.ones(GRID_CELLS, dtype=np.float32), idx], axis=1)
     if basis != "full":
-        raise ValueError(f"unknown basis {basis!r}; use 'full' or 'constant'")
+        raise ValueError(f"unknown basis {basis!r}; use 'full', 'constant' or 'ramp'")
 
     i = np.arange(GRID_CELLS, dtype=np.float64)
     row = i // GRID_N

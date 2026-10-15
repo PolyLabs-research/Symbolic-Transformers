@@ -47,6 +47,12 @@ ARMS = {
     "grid_tied": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "constant"],
     "grid_tied_res": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "constant",
                       "--shared-residual"],
+    # [1, i/625] basis: embedding = k·a + (k²/1250)·c + b, whose direction rotates
+    # uniformly with k, so LayerNorm cannot collapse it. Straight walk through gaps
+    # and beyond the range by construction; grid_ramp_res adds the residual.
+    "grid_ramp": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp"],
+    "grid_ramp_res": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                      "--shared-residual"],
     # Control: the original untied model. Unseen rows keep their random init
     # instead of being pushed away from hidden states by the tied softmax.
     "learned_untied": ["--embedding", "learned"],
