@@ -65,6 +65,9 @@ ARMS = {
     "grid_ramp_res_fast_orth": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                 "--shared-residual", "--residual-orthogonal",
                                 "--residual-lr-mult", "10", "--residual-wd", "0.1"],
+    "grid_ramp_res_mid_orth": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                               "--shared-residual", "--residual-orthogonal",
+                               "--residual-lr-mult", "3", "--residual-wd", "0.03"],
     # Middle residual strength between grid_ramp_res (x1, 0.01) and _fast (x10, 0.1).
     "grid_ramp_res_mid": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                           "--shared-residual", "--residual-lr-mult", "3", "--residual-wd", "0.03"],
