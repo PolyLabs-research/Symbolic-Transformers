@@ -279,9 +279,10 @@ at gaps 6-20 and 100% beyond on pairs of two unseen values; trained twice as lon
 seen pairs and resolves never-seen values past the trained range down to gap 1 (78%), at the cost of the
 held-out band inside it. Annealing the residual instead (`--residual-anneal`) shows the comparator follows
 it down to any nonzero scale and collapses at exactly zero; stopping at a hundredth and holding gives
-90% / 99% on seen pairs and 95% on held-out pairs of two unseen values, and in the seeds that recover from
-the step to zero a residual-free model reaches 95% / 100% and 98-99%, resolving neighbouring unseen values
-from the two shared directions alone (`experiments/magnitude_precision.md`).
+90% / 99% on seen pairs and 95% on held-out pairs of two unseen values. Continuing the anneal below that
+floor to a millionth lets the residual fade into float noise instead of being switched off, and every seed
+then crosses to a residual-free comparator (88% / 99% seen, 93% held-out both unseen) that resolves
+neighbouring unseen values from the two shared directions alone (`experiments/magnitude_precision.md`).
 
 Manual equivalents for the FOL experiment:
 
