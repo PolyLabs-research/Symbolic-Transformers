@@ -271,7 +271,11 @@ sides, but it cannot extrapolate because cells past the largest trained value ne
 Cell weights generated from a shared function of position extrapolate order but invert inside a gap.
 A ramp basis plus a per-cell residual (`grid_ramp_res`) does both: 94-96% on the held-out band and 76-86% on
 the never-trained band, at some cost in close-pair precision. A single shared direction collapses under
-LayerNorm, which is scale-invariant.
+LayerNorm, which is scale-invariant. Training on close pairs then raises seen precision, but any residual
+strong enough to resolve neighbours makes the comparator read per-cell texture and invert on unseen values;
+keeping the residual off the magnitude plane and dropping it in half the training batches
+(`grid_ramp_res_orth_drop`) is the best of both so far: 95% at gaps 2-5 and 81% at gap 1 on seen pairs, 94%
+at gaps 6-20 and 100% beyond on pairs of two unseen values (`experiments/magnitude_precision.md`).
 
 Manual equivalents for the FOL experiment:
 
