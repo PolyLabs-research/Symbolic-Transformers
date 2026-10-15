@@ -164,7 +164,8 @@ class SharedCellEncoder(nn.Module):
             state_dict[key] = torch.ones(())
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
-    def effective_residual(self) -> Optional[torch.Tensor]:
+    def effective_residual(self, unscaled: bool = False) -> Optional[torch.Tensor]:
+        """The residual as it enters the weights: projected if orthogonal, times the scale (unless ``unscaled``)."""
         if self.residual is None:
             return None
         r = self.residual
@@ -173,7 +174,7 @@ class SharedCellEncoder(nn.Module):
             # through the projection itself.
             q, _ = torch.linalg.qr(self.proj.weight.detach())
             r = r - (r @ q) @ q.t()
-        if float(self.residual_scale) != 1.0:
+        if not unscaled and float(self.residual_scale) != 1.0:
             r = r * self.residual_scale
         return r
 
@@ -193,8 +194,15 @@ class SharedCellEncoder(nn.Module):
             return r * keep
         return None if torch.rand(()).item() < self.residual_dropout else r
 
-    def forward(self, bits: torch.Tensor) -> torch.Tensor:
+    def forward(self, bits: torch.Tensor, row_scale: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """Embed panels. ``row_scale`` (N,) replaces the global residual scale per row (evaluation probes:
+        e.g. numerals at one scale and glyph rows at the saved scale)."""
         W = self.phi @ self.proj.weight.t()
+        if row_scale is not None:
+            r = self.effective_residual(unscaled=True)
+            if r is None:
+                raise ValueError("row_scale needs a residual")
+            return bits @ W + row_scale.to(bits.dtype).unsqueeze(1) * (bits @ r) + self.proj.bias
         r = self.training_residual()
         if r is not None:
             W = W + r
@@ -242,6 +250,9 @@ class GridEmbedding(nn.Module):
         self.fallback = nn.Embedding(vocab_size, d_model)
         nn.init.normal_(self.fallback.weight, mean=0.0, std=init_std)
         self.noise_flip: float = 0.0  # evaluation-time bit-flip probability
+        # Evaluation-time probe: a (vocab_size,) tensor of per-row residual scales for the
+        # grid_shared encoder, or None to use the encoder's global scale for every row.
+        self.residual_row_scale: Optional[torch.Tensor] = None
 
     @property
     def num_embeddings(self) -> int:
@@ -256,7 +267,10 @@ class GridEmbedding(nn.Module):
 
     def table(self) -> torch.Tensor:
         """Full embedding table, shape (vocab_size, d_model)."""
-        encoded = self.norm(self.encoder(self.panels()))
+        if self.residual_row_scale is not None and self.kind == "grid_shared":
+            encoded = self.norm(self.encoder(self.panels(), row_scale=self.residual_row_scale))
+        else:
+            encoded = self.norm(self.encoder(self.panels()))
         return torch.where(self.has_grid.unsqueeze(1), encoded, self.fallback.weight)
 
     def forward(self, ids: torch.Tensor) -> torch.Tensor:

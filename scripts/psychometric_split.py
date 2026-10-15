@@ -26,13 +26,33 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--metadata", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--values", nargs="+", type=int, default=[375, 425, 520, 580])
+    ap.add_argument("--values", nargs="+", type=int, default=None,
+                    help="comparison values c (default: the quartiles of the held-out band and of the far band)")
+    ap.add_argument("--vocab", default=None, help="vocabulary path (default: the metadata's, resolved against the repository root)")
     ap.add_argument("--ops", nargs="+", default=["LESS_THAN", "GREATER_THAN"])
     args = ap.parse_args()
 
     meta = json.load(open(args.metadata))
-    vocab = Vocabulary(meta.get("vocab_path", str(ROOT / "unified_vocabulary.json")))
-    train_pool = set(pools_from_metadata(meta)["train"])
+    vp = Path(args.vocab or meta.get("vocab_path", "unified_vocabulary.json"))
+    vocab = Vocabulary(str(vp if vp.is_absolute() else ROOT / vp))
+    pools = pools_from_metadata(meta)
+    train_pool = set(pools["train"])
+    bands = {name: (min(v), max(v)) for name, v in pools.items() if v and name != "train"}
+    if args.values is None:
+        args.values = []
+        for name in ("holdout", "far"):
+            if name in bands:
+                lo, hi = bands[name]
+                args.values += [lo + (hi - lo) // 4, lo + 3 * (hi - lo) // 4]
+        if not args.values:
+            ap.error("no held-out or far band in the metadata; pass --values")
+    lo_n, hi_n = vocab.numeral_range
+    bad = [c for c in args.values if not lo_n <= c <= hi_n]
+    if bad:
+        ap.error(f"values must be numerals in {lo_n}..{hi_n}; got {bad}")
+    for c in args.values:
+        where = next((name for name, (lo, hi) in bands.items() if lo <= c <= hi), "train")
+        print(f"  c = {c}: {where} band" + (" (a trained value, not a never-seen threshold)" if where == "train" else ""))
     gen = MagnitudeGenerator(vocab, ops=args.ops)
     samples = [gen.make_sample(k, c, op, train_pool) for c in args.values for op in args.ops for k in range(GRID_CELLS)]
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)

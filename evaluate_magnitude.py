@@ -22,6 +22,7 @@ Usage:
 """
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -129,13 +130,46 @@ def evaluate_split(model, dataset: FOLDataset, vocab: Vocabulary, device: torch.
     return (out, rows) if return_rows else out
 
 
-def set_residual_scale(model, scale: float) -> None:
-    """Override the grid_shared residual scale of a loaded model (the buffer is applied after the
-    orthogonal projection on every forward pass, so this is live for all later evaluation)."""
-    enc = getattr(getattr(model, "symbol_embed", None), "encoder", None)
+ROW_CHOICES = ("all", "numerals", "glyphs")
+
+
+def set_residual_scale(model, scale: float, rows: str = "all", vocab: Optional[Vocabulary] = None) -> None:
+    """Override the grid_shared residual scale of a loaded model for evaluation.
+
+    rows="all": the encoder's global scale buffer is set (every grid-backed row, numerals and glyph
+    tokens alike). rows="numerals" / "glyphs": only those rows take ``scale``; the others keep the
+    scale the checkpoint was saved with. The operator and answer tokens are grid panels through the
+    same encoder, and under the ramp basis their generated parts are nearly identical, so an all-rows
+    override also removes the operator distinction; the per-row forms separate the two effects.
+    """
+    if not 0.0 <= scale <= 1.0:
+        raise ValueError("residual scale must be in [0, 1]")
+    if rows not in ROW_CHOICES:
+        raise ValueError(f"rows must be one of {ROW_CHOICES}")
+    emb = getattr(model, "symbol_embed", None)
+    enc = getattr(emb, "encoder", None)
     if enc is None or getattr(enc, "residual", None) is None:
         raise ValueError("--residual-scale needs a grid_shared model with a residual")
-    enc.set_residual_scale(scale)
+    if rows == "all":
+        emb.residual_row_scale = None
+        enc.set_residual_scale(scale)
+        return
+    if vocab is None:
+        raise ValueError("per-row override needs the vocabulary (numeral range)")
+    saved = float(enc.residual_scale) if emb.residual_row_scale is None else None
+    base = (emb.residual_row_scale.clone() if emb.residual_row_scale is not None
+            else torch.full((emb.num_embeddings,), saved, dtype=torch.float32, device=enc.residual.device))
+    lo, hi = vocab.numeral_range
+    numerals = torch.zeros(emb.num_embeddings, dtype=torch.bool, device=base.device)
+    numerals[lo:hi + 1] = True
+    base[numerals if rows == "numerals" else ~numerals] = scale
+    emb.residual_row_scale = base
+
+
+def clear_residual_row_scale(model) -> None:
+    emb = getattr(model, "symbol_embed", None)
+    if emb is not None and hasattr(emb, "residual_row_scale"):
+        emb.residual_row_scale = None
 
 
 def saved_residual_scale(model) -> Optional[float]:
@@ -202,16 +236,24 @@ def main() -> int:
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out", default=None)
     ap.add_argument("--residual-scale", type=float, default=None,
-                    help="grid_shared models: evaluate with the residual scaled by this instead of the saved scale (0 = ramp only)")
+                    help="grid_shared models: evaluate with the residual scaled by this (in [0, 1]) instead of the saved scale; 0 = ramp only")
+    ap.add_argument("--residual-scale-rows", default="all", choices=ROW_CHOICES,
+                    help="which rows the override applies to; the others keep the saved scale (default all)")
     ap.add_argument("--dump-rows", default=None, help="write every evaluated pair (a, b, op, p_true, correct, ...) as JSON lines")
     args = ap.parse_args()
+    if args.residual_scale is not None and not 0.0 <= args.residual_scale <= 1.0:
+        ap.error("--residual-scale must be in [0, 1]")
+    stems = [Path(p).stem for p in args.splits]
+    if len(set(stems)) != len(stems):
+        ap.error(f"split file names must be distinct (got {stems}); results are keyed by file stem")
 
     device = torch.device(args.device)
     vocab = Vocabulary(args.vocab)
     model, ckpt = load_model_from_checkpoint(args.checkpoint, vocab.vocab_size, device)
     cfg = ckpt.get("config", {})
+    residual_scale_saved = saved_residual_scale(model)
     if args.residual_scale is not None:
-        set_residual_scale(model, args.residual_scale)
+        set_residual_scale(model, args.residual_scale, args.residual_scale_rows, vocab)
     pad_id = vocab.pad_token if vocab.pad_token is not None else 0
 
     meta_path = Path(args.metadata) if args.metadata else Path(args.splits[0]).parent / "metadata.json"
@@ -223,7 +265,9 @@ def main() -> int:
         "tie_weights": bool(cfg.get("tie_weights", False)),
         "epoch": ckpt.get("epoch"), "best_val_loss": ckpt.get("best_val_loss"),
         "params": model.count_parameters(),
-        "residual_scale": saved_residual_scale(model),
+        "residual_scale_saved": residual_scale_saved,
+        "residual_scale": args.residual_scale if args.residual_scale is not None else residual_scale_saved,
+        "residual_scale_rows": args.residual_scale_rows if args.residual_scale is not None else None,
         "residual_scale_overridden": args.residual_scale is not None,
         "splits": {},
         "geometry": geometry_probe(model, vocab),
@@ -232,20 +276,23 @@ def main() -> int:
         table = model.embedding_table().detach().cpu().numpy()
     results["magnitude_axis"] = magnitude_axis_probe(table, pools)
 
-    dump = open(args.dump_rows, "w") if args.dump_rows else None
-    for path in args.splits:
-        ds = FOLDataset(path, pad_id=pad_id)
-        out, rows = evaluate_split(model, ds, vocab, device, args.batch_size, args.max_samples, return_rows=True)
-        results["splits"][Path(path).stem] = out
-        if dump:
-            for r in rows:
-                dump.write(json.dumps({"split": Path(path).stem, **r}) + "\n")
-    if dump:
-        dump.close()
+    if args.dump_rows:
+        Path(args.dump_rows).parent.mkdir(parents=True, exist_ok=True)
+    with (open(args.dump_rows, "w") if args.dump_rows else contextlib.nullcontext()) as dump:
+        for path in args.splits:
+            ds = FOLDataset(path, pad_id=pad_id)
+            out, rows = evaluate_split(model, ds, vocab, device, args.batch_size, args.max_samples, return_rows=True)
+            results["splits"][Path(path).stem] = out
+            if dump:
+                for r in rows:
+                    dump.write(json.dumps({"split": Path(path).stem, "split_path": path, **r}) + "\n")
 
     tag = f"{results['embedding_type']}{' (tied)' if results['tie_weights'] else ''}"
-    scale_note = (f"  residual scale {results['residual_scale']:g}" + (" (override)" if results["residual_scale_overridden"] else "")
-                  if results["residual_scale"] is not None else "")
+    scale_note = ""
+    if results["residual_scale"] is not None:
+        scale_note = f"  residual scale {results['residual_scale']:g}"
+        if results["residual_scale_overridden"]:
+            scale_note += f" ({results['residual_scale_rows']} rows; saved {results['residual_scale_saved']:g})"
     print(f"\n{tag}  epoch {results['epoch']}  val {results['best_val_loss']}{scale_note}")
     gaps = [bin_label(lo, hi) for lo, hi in GAP_BINS]
     print("| split | acc | acc_tf | " + " | ".join(f"gap {g}" for g in gaps) + " | 1 unseen | 2 unseen |")

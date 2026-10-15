@@ -262,9 +262,68 @@ def test_evaluator_residual_scale_override_matches_zeroed_residual(tmp_path, voc
     # ... and differs from the full-residual model (the random residual changes the embeddings).
     assert any(abs(x["p_true"] - y["p_true"]) > 1e-4 for x, y in zip(rows_full, rows_zero))
     assert all(set(r) >= {"a", "b", "op", "p_true", "correct"} for r in rows_full)
+    # The override is reversible and touches no parameter: restoring scale 1 reproduces the full rows,
+    # and an intermediate scale differs from both ends.
+    model2 = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
+                          verbose=False, shared_basis="ramp", shared_residual=True, shared_residual_orthogonal=True)
+    model2.load_state_dict({k: v for k, v in model.state_dict().items()}); model2.eval()
+    with torch.no_grad():
+        model2.symbol_embed.encoder.residual.normal_()
+        before = model2.symbol_embed.encoder.residual.clone()
+        _, r_full = evaluate_split(model2, ds, vocab, device, return_rows=True)
+        set_residual_scale(model2, 0.0)
+        _, r_zero = evaluate_split(model2, ds, vocab, device, return_rows=True)
+        set_residual_scale(model2, 0.5)
+        _, r_half = evaluate_split(model2, ds, vocab, device, return_rows=True)
+        set_residual_scale(model2, 1.0)
+        _, r_back = evaluate_split(model2, ds, vocab, device, return_rows=True)
+    assert torch.equal(model2.symbol_embed.encoder.residual, before)
+    assert [r["p_true"] for r in r_back] == pytest.approx([r["p_true"] for r in r_full], abs=1e-6)
+    assert any(abs(x["p_true"] - y["p_true"]) > 1e-4 for x, y in zip(r_half, r_zero))
+    assert any(abs(x["p_true"] - y["p_true"]) > 1e-4 for x, y in zip(r_half, r_full))
     # Residual-free models have no scale to override.
     plain = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
                          verbose=False, shared_basis="ramp", shared_residual=False)
     assert saved_residual_scale(plain) is None
     with pytest.raises(ValueError):
         set_residual_scale(plain, 0.5)
+
+
+def test_per_row_residual_scale_touches_only_the_chosen_rows(vocab):
+    torch = pytest.importorskip("torch")
+    from evaluate_magnitude import clear_residual_row_scale, set_residual_scale
+    from models.transformer import create_model
+    from utils.grid_bank import GridBank
+
+    torch.manual_seed(1)
+    bank = GridBank.load(ROOT / "grids" / "grid_bank.npz")
+    model = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
+                         verbose=False, shared_basis="ramp", shared_residual=True)
+    with torch.no_grad():
+        model.symbol_embed.encoder.residual.normal_()
+    model.eval()
+    lo, hi = vocab.numeral_range
+    glyphs = [vocab.encode_label(t) for t in ("LESS_THAN", "GREATER_THAN", "TRUE", "FALSE")]
+    with torch.no_grad():
+        full = model.embedding_table().clone()
+        set_residual_scale(model, 0.0)                       # all rows
+        all_zero = model.embedding_table().clone()
+        set_residual_scale(model, 1.0)
+        set_residual_scale(model, 0.0, "numerals", vocab)    # numerals at 0, glyphs stay at 1
+        num_zero = model.embedding_table().clone()
+        clear_residual_row_scale(model)
+        set_residual_scale(model, 0.0, "glyphs", vocab)      # glyphs at 0, numerals stay at 1
+        gly_zero = model.embedding_table().clone()
+        clear_residual_row_scale(model)
+        restored = model.embedding_table().clone()
+    assert torch.allclose(restored, full)
+    assert torch.allclose(num_zero[lo:hi + 1], all_zero[lo:hi + 1]) and torch.allclose(num_zero[glyphs], full[glyphs])
+    assert torch.allclose(gly_zero[glyphs], all_zero[glyphs]) and torch.allclose(gly_zero[lo:hi + 1], full[lo:hi + 1])
+    assert not torch.allclose(num_zero[lo:hi + 1], full[lo:hi + 1])
+    # The two operator rows are nearly identical without their residual under the ramp basis.
+    a, b = all_zero[vocab.encode_label("LESS_THAN")], all_zero[vocab.encode_label("GREATER_THAN")]
+    assert torch.nn.functional.cosine_similarity(a, b, dim=0) > 0.99
+    with pytest.raises(ValueError):
+        set_residual_scale(model, 0.5, "numerals")           # needs the vocabulary
+    with pytest.raises(ValueError):
+        set_residual_scale(model, 1.5)
