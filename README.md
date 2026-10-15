@@ -282,7 +282,9 @@ it down to any nonzero scale and collapses at exactly zero; stopping at a hundre
 90% / 99% on seen pairs and 95% on held-out pairs of two unseen values. Continuing the anneal below that
 floor to a millionth lets the residual fade into float noise instead of being switched off, and every seed
 then crosses to a residual-free comparator (92% / 99% seen, 95% held-out both unseen) that resolves
-neighbouring unseen values from the two shared directions alone (`experiments/magnitude_precision.md`).
+neighbouring unseen values from the two shared directions alone. The scaffold is necessary: the same ramp
+trained from scratch never leaves chance, and smooth sinusoid features of the value fit seen pairs
+perfectly but invert on unseen ones (`experiments/magnitude_precision.md`).
 
 Manual equivalents for the FOL experiment:
 
