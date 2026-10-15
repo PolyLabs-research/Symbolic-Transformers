@@ -173,7 +173,20 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
    pairs with +10 points at seen gap 1; against the 80-epoch dropout arm it keeps the seen precision and
    trades 10 points of far band for 22 points of held-out band. A residual one hundredth of its trained
    size, which the comparator has tuned itself to read, gives trained cells their precision without
-   letting the comparator lean on texture for the coarse decisions. %%LONG%%
+   letting the comparator lean on texture for the coarse decisions.
+
+11. **With a long, properly paced residual-free phase, the step to zero still succeeds in one seed of
+   three, and that seed is the best model of the study.** `grid_ramp_res_orth_anneal_geo_long` runs the
+   same geometric anneal at epochs 24-56 of a 120-epoch run, so the residual-free phase has 64 epochs
+   and starts at a learning rate of 1.9e-4 instead of 6e-5. Seed 2 recovers again (validation loss 0.19
+   at epoch 73, 0.08 by epoch 120) and its residual-free model scores 99.9% on seen pairs (95% at gap 1,
+   100% at gaps 2-5), 99.2% on the held-out band with both-unseen pairs at 98% (79% at gap 1, 100% from
+   gap 2 up) and 89.3% on the far band with both-unseen pairs at 79%. Seeds 1 and 3 fall to a validation
+   loss of 0.70-0.71, the entropy of a coin, by epoch 80 and stay there: after the step they settle on
+   predicting each operator's prior and the gradient of that fixed point does not point toward the ramp.
+   Their best residual-free checkpoints score 51.8% and 52.5% on seen pairs and 49.7-49.5% on the
+   held-out band. Which seeds recover is not about the budget, then, but about where the comparator stands at
+   the moment the residual vanishes; the same seed recovered in both the 80- and the 120-epoch run.
 
 
 
@@ -183,21 +196,29 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
 
 ## Where precision stands
 
-- Seen pairs: 81% at gap 1 and 95% at gaps 2-5 with the dropout arm at 40 epochs; 92% / 99.4% at 80
-  epochs.
-- Both operands unseen, held-out band (interpolation): 94% at gaps 6-20 and 100% beyond at 40 epochs; gaps
-  2-5 sit at 66% and gap 1 at 54%. At 80 epochs this band erodes to chance-or-inverted in two seeds of
-  three.
-- Both operands unseen, far band (extrapolation): 82% at gaps 6-20 and 100% beyond at 40 epochs; at 80
-  epochs 99.5% at gaps 6-20, 86% at gaps 2-5 and 78% at gap 1, so neighbouring never-seen values can be
-  resolved after all, in that band.
-- So 40 and 80 epochs are two points on a curve, not a best and a worst: the one keeps interpolation, the
-  other buys seen precision and extrapolation. Model selection currently sees only in-range validation
-  pairs, so "best epoch" tracks seen loss; a validation set with its own unseen band would let early
-  stopping find the compromise instead of a fixed epoch count. The structural next step is still to make
-  the ramp-only route real: a residual that is strong early and annealed to zero, or a residual-free
-  fine-tuning stage, so that the comparator learns to read the shared code rather than merely tolerate a
-  smaller residual.
+| configuration | seen gap 1 / gaps 2-5 | held-out band, both unseen (gap 1 / 2-5 / 6-20) | far band, both unseen |
+|---|---|---|---|
+| dropout 0.5, 40 epochs | 81 / 95 | 84% (54 / 66 / 94) | 78% |
+| dropout 0.5, 80 epochs | 92 / 99 | 52% (50 / 51 / 53) | 93% |
+| anneal to 0.01 and hold, 80 epochs | 90 / 99 | 95% (75 / 94 / 100) | 74% |
+| anneal to zero, geometric, the seeds that recover (2 of 6) | 94-95 / 99-100 | 98-99% (79-91 / 100 / 100) | 60-79% |
+
+- Seen pairs: 90% at gap 1 and 99% at gaps 2-5 are now routine (hold arm, three seeds); 95% / 100%
+  from the recovered residual-free models.
+- Both operands unseen, held-out band: 95% with the hold arm, 98-99% residual-free, with gap 1 at 75-91%
+  and everything from gap 2 up at 94-100%. The earlier claim that a shared code cannot separate
+  neighbouring unseen values was wrong: the comparator resolves the ramp at unit resolution when the
+  residual is small or gone.
+- Both operands unseen, far band: 74-79% with the hold and recovered models, 93% with the 80-epoch
+  dropout arm, which is the one place the dropout arm still leads. Extrapolation and interpolation are
+  not yet maximised by the same model.
+- The residual is never a route of its own: zeroing it in any model trained with it at full strength
+  gives chance, the comparator follows it down to any nonzero scale, and the only way to a ramp-only
+  comparator found so far is the step to zero, which works in a third of seeds. The reliable version is
+  to stop at a floor: `--residual-anneal 0.3 0.7 --residual-anneal-floor 0.01 --residual-anneal-hold`.
+- Next: make the recovery after the step reliable (a short re-warm-up of the learning rate at the step,
+  or keeping the residual-free phase's best checkpoint only if it beats the pre-step one), and a
+  validation set with its own unseen band so that best-epoch selection sees generalisation at all.
 
 ## Results (all arms, mean ± std over seeds)
 
@@ -220,6 +241,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_cdrop | 3 | 55.0 ± 3.3 | 51.4 ± 2.8 | 48.0 ± 4.8 |
 | grid_ramp_res_orth_drop | 3 | 98.6 ± 0.3 | 91.9 ± 2.2 | 88.5 ± 3.6 |
 | grid_ramp_res_orth_drop_80ep | 3 | 99.4 ± 0.3 | 75.9 ± 8.0 | 96.3 ± 1.9 |
+| grid_ramp_res_orth_anneal_geo_long | 3 | 68.0 ± 22.5 | 66.1 ± 23.4 | 64.0 ± 17.9 |
 | grid_ramp_res_orth_anneal_geo | 3 | 68.6 ± 22.0 | 66.6 ± 23.3 | 60.7 ± 13.2 |
 | grid_ramp_res_orth_anneal_hold | 3 | 99.4 ± 0.2 | 97.5 ± 2.0 | 86.6 ± 3.6 |
 | grid_ramp_res_orth_anneal | 3 | 52.6 ± 0.1 | 49.6 ± 0.0 | 51.0 ± 0.4 |
@@ -240,6 +262,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_cdrop | 53.3 ± 5.5 | 49.3 ± 0.2 |
 | grid_ramp_res_orth_drop | 99.5 ± 0.2 | 83.8 ± 4.3 |
 | grid_ramp_res_orth_drop_80ep | 97.9 ± 1.0 | 52.3 ± 15.6 |
+| grid_ramp_res_orth_anneal_geo_long | 66.5 ± 23.7 | 65.8 ± 23.1 |
 | grid_ramp_res_orth_anneal_geo | 67.2 ± 23.2 | 66.1 ± 23.5 |
 | grid_ramp_res_orth_anneal_hold | 99.9 ± 0.1 | 95.0 ± 4.0 |
 | grid_ramp_res_orth_anneal | 49.7 ± 0.1 | 49.5 ± 0.0 |
@@ -260,6 +283,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_cdrop | 46.1 ± 6.6 | 49.8 ± 3.1 |
 | grid_ramp_res_orth_drop | 99.8 ± 0.1 | 77.6 ± 7.0 |
 | grid_ramp_res_orth_drop_80ep | 100.0 ± 0.0 | 92.8 ± 3.8 |
+| grid_ramp_res_orth_anneal_geo_long | 67.0 ± 23.2 | 61.0 ± 12.8 |
 | grid_ramp_res_orth_anneal_geo | 67.0 ± 23.0 | 54.5 ± 3.6 |
 | grid_ramp_res_orth_anneal_hold | 99.9 ± 0.1 | 73.6 ± 7.2 |
 | grid_ramp_res_orth_anneal | 50.1 ± 0.6 | 51.8 ± 0.2 |
@@ -282,6 +306,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_cdrop | 85.0 ± 21.2 | 46.4 ± 0.9 | 48.7 ± 1.3 | 48.8 ± 0.1 | 45.6 ± 1.3 | n/a |
 | grid_ramp_res_orth_drop | 92.0 ± 11.3 | 54.3 ± 10.3 | 65.7 ± 9.4 | 94.0 ± 2.9 | 100.0 ± 0.0 | n/a |
 | grid_ramp_res_orth_drop_80ep | 87.8 ± 16.3 | 49.7 ± 2.4 | 51.1 ± 6.7 | 52.9 ± 17.4 | 47.0 ± 38.6 | n/a |
+| grid_ramp_res_orth_anneal_geo_long | 100.0 ± 0.0 | 57.8 ± 15.3 | 65.2 ± 24.6 | 65.8 ± 24.2 | 63.1 ± 26.1 | n/a |
 | grid_ramp_res_orth_anneal_geo | 100.0 ± 0.0 | 61.6 ± 20.6 | 65.2 ± 24.6 | 65.8 ± 24.2 | 63.1 ± 26.1 | n/a |
 | grid_ramp_res_orth_anneal_hold | 72.8 ± 19.3 | 75.1 ± 17.7 | 93.5 ± 7.9 | 99.6 ± 0.5 | 100.0 ± 0.0 | n/a |
 | grid_ramp_res_orth_anneal | 100.0 ± 0.0 | 47.0 ± 0.0 | 47.8 ± 0.0 | 48.7 ± 0.0 | 44.7 ± 0.0 | n/a |
@@ -304,6 +329,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_cdrop | 71.1 ± 40.9 | 51.0 ± 5.5 | 49.5 ± 0.6 | 49.9 ± 0.7 | 45.9 ± 5.2 | 34.7 ± 9.8 |
 | grid_ramp_res_orth_drop | 87.1 ± 9.9 | 59.1 ± 6.1 | 60.5 ± 11.4 | 82.4 ± 9.1 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_drop_80ep | 70.2 ± 23.1 | 78.1 ± 15.5 | 86.0 ± 10.5 | 99.5 ± 0.7 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_ramp_res_orth_anneal_geo_long | 89.8 ± 14.5 | 55.5 ± 0.9 | 58.6 ± 13.5 | 60.1 ± 13.6 | 63.5 ± 19.7 | 59.7 ± 25.5 |
 | grid_ramp_res_orth_anneal_geo | 87.1 ± 18.2 | 54.2 ± 0.9 | 52.6 ± 4.9 | 53.2 ± 3.9 | 54.1 ± 6.3 | 54.2 ± 17.7 |
 | grid_ramp_res_orth_anneal_hold | 49.3 ± 5.0 | 53.1 ± 5.4 | 64.0 ± 1.7 | 79.5 ± 12.1 | 88.4 ± 14.9 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_anneal | 99.1 ± 1.3 | 54.8 ± 0.0 | 49.1 ± 0.0 | 50.2 ± 0.4 | 49.6 ± 0.0 | 41.7 ± 0.0 |
@@ -324,6 +350,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_cdrop | 90.6 ± 13.2 | 55.7 ± 4.3 | 55.0 ± 0.6 | 52.4 ± 0.1 | 54.5 ± 2.9 | 55.0 ± 6.4 |
 | grid_ramp_res_orth_drop | 74.3 ± 5.0 | 81.0 ± 3.8 | 95.3 ± 1.7 | 99.7 ± 0.3 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_drop_80ep | 80.1 ± 18.2 | 91.7 ± 2.0 | 99.4 ± 0.4 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_ramp_res_orth_anneal_geo_long | 99.4 ± 0.8 | 70.9 ± 17.3 | 69.8 ± 21.3 | 68.5 ± 22.2 | 68.7 ± 22.1 | 66.0 ± 24.0 |
 | grid_ramp_res_orth_anneal_geo | 98.8 ± 1.7 | 71.3 ± 15.8 | 70.0 ± 20.7 | 69.0 ± 21.9 | 68.5 ± 22.3 | 67.3 ± 23.2 |
 | grid_ramp_res_orth_anneal_hold | 82.5 ± 7.6 | 90.5 ± 7.5 | 99.1 ± 1.0 | 99.9 ± 0.1 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_anneal | 100.0 ± 0.0 | 58.7 ± 0.0 | 55.5 ± 0.1 | 52.4 ± 0.1 | 52.9 ± 0.2 | 50.2 ± 0.2 |
@@ -344,6 +371,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_cdrop | 85.0 ± 21.2 | 46.3 ± 0.6 | 48.3 ± 1.6 | 48.9 ± 0.1 | 47.2 ± 1.0 | 55.0 ± 7.2 |
 | grid_ramp_res_orth_drop | 92.0 ± 11.3 | 54.2 ± 10.5 | 65.8 ± 9.4 | 94.5 ± 2.7 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_drop_80ep | 87.8 ± 16.3 | 49.3 ± 2.3 | 51.6 ± 6.6 | 56.0 ± 16.2 | 73.4 ± 19.4 | 99.9 ± 0.1 |
+| grid_ramp_res_orth_anneal_geo_long | 100.0 ± 0.0 | 57.7 ± 15.5 | 64.8 ± 24.9 | 66.0 ± 24.1 | 64.3 ± 25.2 | 66.9 ± 23.4 |
 | grid_ramp_res_orth_anneal_geo | 100.0 ± 0.0 | 61.4 ± 20.8 | 64.8 ± 24.9 | 66.0 ± 24.1 | 64.6 ± 25.0 | 67.7 ± 22.9 |
 | grid_ramp_res_orth_anneal_hold | 72.8 ± 19.3 | 75.0 ± 17.7 | 93.6 ± 7.7 | 99.6 ± 0.5 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_anneal | 100.0 ± 0.0 | 46.7 ± 0.0 | 47.2 ± 0.0 | 49.0 ± 0.0 | 46.5 ± 0.0 | 50.3 ± 0.1 |
@@ -364,6 +392,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_cdrop | 71.1 ± 40.9 | 51.2 ± 5.1 | 49.6 ± 0.8 | 49.9 ± 0.5 | 44.9 ± 5.3 | 46.1 ± 7.0 |
 | grid_ramp_res_orth_drop | 87.1 ± 9.9 | 59.0 ± 6.0 | 60.4 ± 11.3 | 83.1 ± 8.8 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_drop_80ep | 70.2 ± 23.1 | 78.1 ± 15.5 | 86.1 ± 10.4 | 99.6 ± 0.6 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_ramp_res_orth_anneal_geo_long | 89.8 ± 14.5 | 55.4 ± 0.9 | 58.7 ± 13.5 | 60.3 ± 14.2 | 63.7 ± 21.3 | 67.2 ± 23.0 |
 | grid_ramp_res_orth_anneal_geo | 87.1 ± 18.2 | 54.1 ± 0.9 | 52.7 ± 5.0 | 53.8 ± 5.0 | 56.9 ± 11.7 | 67.1 ± 22.7 |
 | grid_ramp_res_orth_anneal_hold | 49.3 ± 5.0 | 53.5 ± 5.4 | 64.2 ± 1.7 | 80.5 ± 11.5 | 91.7 ± 10.7 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_anneal | 99.1 ± 1.3 | 54.8 ± 0.0 | 49.1 ± 0.0 | 50.0 ± 0.3 | 48.7 ± 0.0 | 50.4 ± 0.7 |
@@ -387,6 +416,7 @@ training-pool rows correlated with k.
 | grid_ramp_res_orth_cdrop | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.951 ± 0.021 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_drop | 1.000 ± 0.000 | 0.999 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_drop_80ep | 1.000 ± 0.000 | 0.999 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
+| grid_ramp_res_orth_anneal_geo_long | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.862 ± 0.194 | 0.992 ± 0.009 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_anneal_geo | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_anneal_hold | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_anneal | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
@@ -407,6 +437,7 @@ training-pool rows correlated with k.
 | grid_ramp_res_orth_cdrop | 3 | 563,999 | 0.675 ± 0.026 | 38, 15, 8 |
 | grid_ramp_res_orth_drop | 3 | 563,999 | 0.103 ± 0.016 | 40, 40, 40 |
 | grid_ramp_res_orth_drop_80ep | 3 | 563,999 | 0.035 ± 0.003 | 79, 75, 75 |
+| grid_ramp_res_orth_anneal_geo_long | 3 | 563,999 | 0.495 ± 0.294 | 120, 110, 119 |
 | grid_ramp_res_orth_anneal_geo | 3 | 563,999 | 0.743 ± 0.393 | 80, 78, 80 |
 | grid_ramp_res_orth_anneal_hold | 3 | 563,999 | 0.067 ± 0.009 | 75, 71, 72 |
 | grid_ramp_res_orth_anneal | 3 | 563,999 | 1.199 ± 0.035 | 80, 80, 80 |
