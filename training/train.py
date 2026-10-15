@@ -85,6 +85,7 @@ class TrainingConfig:
     shared_min_period: float = 32.0
     shared_axis_freq: int = 4
     shared_residual: bool = False
+    shared_basis: str = "full"
     seed: int = 42
 
 
@@ -373,6 +374,8 @@ def main():
                         help="grid_shared: number of row/col frequencies (0 = index features only)")
     parser.add_argument("--shared-residual", action="store_true",
                         help="grid_shared: add a zero-initialised per-cell residual weight")
+    parser.add_argument("--shared-basis", default="full", choices=["full", "constant"],
+                        help="grid_shared: 'constant' gives every cell the same generated weight (count × one direction)")
     parser.add_argument("--device", default=None, help="cuda or cpu (default: cuda if available)")
     parser.add_argument("--num-workers", type=int, default=4,
                         help="DataLoader worker processes (use 0 for tiny samples or when running several trainings in parallel)")
@@ -404,6 +407,7 @@ def main():
     config.shared_min_period = args.shared_min_period
     config.shared_axis_freq = args.shared_axis_freq
     config.shared_residual = args.shared_residual
+    config.shared_basis = args.shared_basis
     set_seed(config.seed)
     vocab = Vocabulary(args.vocab)
     config.vocab_size = vocab.vocab_size
@@ -419,7 +423,7 @@ def main():
         config.embedding_type = ckpt_config.get('embedding_type', 'learned')
         config.tie_weights = bool(ckpt_config.get('tie_weights', False))
         if ckpt_config.get('grid_bank'): config.grid_bank = ckpt_config['grid_bank']
-        for key in ('shared_min_period', 'shared_axis_freq', 'shared_residual', 'sinusoid_min_period'):
+        for key in ('shared_min_period', 'shared_axis_freq', 'shared_residual', 'shared_basis', 'sinusoid_min_period'):
             if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
@@ -444,7 +448,8 @@ def main():
                          sinusoid_min_period=config.sinusoid_min_period,
                          shared_min_period=config.shared_min_period,
                          shared_axis_freq=config.shared_axis_freq,
-                         shared_residual=config.shared_residual)
+                         shared_residual=config.shared_residual,
+                         shared_basis=config.shared_basis)
     trainer = Trainer(model, train_loader, val_loader, config, vocab)
 
     start_epoch = 0

@@ -124,8 +124,15 @@ def sinusoid_features(k: np.ndarray, n_freq: int = 32, max_period: float = 2 * G
 
 def cell_position_features(n_index_freq: int = 8, n_axis_freq: int = 4,
                            index_periods: Tuple[float, float] = (32.0, 2 * GRID_CELLS),
-                           axis_periods: Tuple[float, float] = (5.0, 2 * GRID_N)) -> np.ndarray:
+                           axis_periods: Tuple[float, float] = (5.0, 2 * GRID_N),
+                           basis: str = "full") -> np.ndarray:
     """Fixed smooth features of every panel cell's position, shape (625, F).
+
+    ``basis="constant"`` returns a single all-ones column: every cell then gets
+    the *same* generated weight, so a panel's embedding is (number of filled
+    cells) × one learned direction. For the thermometer code that makes the
+    walk through any gap, and beyond the trained range, a straight line by
+    construction.
 
     For cell i at (row, col): sin/cos of the row-major index i at ``n_index_freq``
     periods, sin/cos of row and of col at ``n_axis_freq`` periods each, plus
@@ -137,6 +144,11 @@ def cell_position_features(n_index_freq: int = 8, n_axis_freq: int = 4,
     independent weight columns. A cell that is never filled in training still
     gets a weight consistent with its neighbours.
     """
+    if basis == "constant":
+        return np.ones((GRID_CELLS, 1), dtype=np.float32)
+    if basis != "full":
+        raise ValueError(f"unknown basis {basis!r}; use 'full' or 'constant'")
+
     i = np.arange(GRID_CELLS, dtype=np.float64)
     row = i // GRID_N
     col = i % GRID_N

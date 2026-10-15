@@ -112,11 +112,12 @@ class SharedCellEncoder(nn.Module):
     """
 
     def __init__(self, d_model: int, min_period: float = 32.0, n_index_freq: int = 8,
-                 n_axis_freq: int = 4, residual: bool = False):
+                 n_axis_freq: int = 4, residual: bool = False, basis: str = "full"):
         super().__init__()
         phi = torch.tensor(cell_position_features(n_index_freq=n_index_freq, n_axis_freq=n_axis_freq,
-                                                  index_periods=(min_period, 2 * GRID_CELLS)),
+                                                  index_periods=(min_period, 2 * GRID_CELLS), basis=basis),
                            dtype=torch.float32)  # (625, F)
+        self.basis = basis
         self.register_buffer("phi", phi)
         self.proj = nn.Linear(phi.shape[1], d_model)
         # Optional per-cell residual on top of the generated weight: zero at init
@@ -143,7 +144,8 @@ class GridEmbedding(nn.Module):
     """
 
     def __init__(self, grid_bank: GridBank, d_model: int, kind: str = "grid_linear", init_std: float = 0.02,
-                 shared_min_period: float = 32.0, shared_axis_freq: int = 4, shared_residual: bool = False):
+                 shared_min_period: float = 32.0, shared_axis_freq: int = 4, shared_residual: bool = False,
+                 shared_basis: str = "full"):
         super().__init__()
         if kind not in ("grid_linear", "grid_conv", "grid_shared", "sinusoid"):
             raise ValueError(f"Unknown grid embedding kind: {kind}")
@@ -158,7 +160,8 @@ class GridEmbedding(nn.Module):
             self.encoder = ConvGridEncoder(d_model)
         elif kind == "grid_shared":
             self.encoder = SharedCellEncoder(d_model, min_period=shared_min_period,
-                                             n_axis_freq=shared_axis_freq, residual=shared_residual)
+                                             n_axis_freq=shared_axis_freq, residual=shared_residual,
+                                             basis=shared_basis)
         else:
             self.encoder = nn.Linear(grid_bank.n_features, d_model)
         # LayerNorm keeps every panel embedding at the same scale regardless of
@@ -222,6 +225,7 @@ class SymbolicTransformer(nn.Module):
         shared_min_period: float = 32.0,
         shared_axis_freq: int = 4,
         shared_residual: bool = False,
+        shared_basis: str = "full",
     ):
         """
         Args:
@@ -263,7 +267,8 @@ class SymbolicTransformer(nn.Module):
             self.symbol_embed = GridEmbedding(grid_bank, d_model, kind=embedding_type,
                                               shared_min_period=shared_min_period,
                                               shared_axis_freq=shared_axis_freq,
-                                              shared_residual=shared_residual)
+                                              shared_residual=shared_residual,
+                                              shared_basis=shared_basis)
         
         # 2. Positional encoding
         self.pos_encoder = PositionalEncoding(d_model, max_seq_len, dropout)
@@ -454,6 +459,7 @@ def create_model(
     shared_min_period: float = 32.0,
     shared_axis_freq: int = 4,
     shared_residual: bool = False,
+    shared_basis: str = "full",
 ) -> SymbolicTransformer:
     """
     Factory function for creating models of different sizes.
@@ -495,6 +501,7 @@ def create_model(
         shared_min_period=shared_min_period,
         shared_axis_freq=shared_axis_freq,
         shared_residual=shared_residual,
+        shared_basis=shared_basis,
         **config
     )
     
@@ -534,7 +541,8 @@ def load_model_from_checkpoint(
                          tie_weights=tie_weights, grid_bank=bank, verbose=verbose,
                          shared_min_period=float(config.get('shared_min_period', 32.0)),
                          shared_axis_freq=int(config.get('shared_axis_freq', 4)),
-                         shared_residual=bool(config.get('shared_residual', False)))
+                         shared_residual=bool(config.get('shared_residual', False)),
+                         shared_basis=str(config.get('shared_basis', 'full')))
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     model.eval()

@@ -41,6 +41,12 @@ ARMS = {
     # Smooth basis plus a zero-initialised per-cell residual for precision on trained cells.
     "grid_hybrid": ["--embedding", "grid_shared", "--tie-weights", "--shared-min-period", "128",
                     "--shared-axis-freq", "0", "--shared-residual"],
+    # Every cell gets the same generated weight: embedding = count × one direction.
+    # The walk through any gap, and beyond the trained range, is a straight line
+    # by construction. grid_tied_res adds the per-cell residual for precision.
+    "grid_tied": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "constant"],
+    "grid_tied_res": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "constant",
+                      "--shared-residual"],
     # Control: the original untied model. Unseen rows keep their random init
     # instead of being pushed away from hidden states by the tied softmax.
     "learned_untied": ["--embedding", "learned"],

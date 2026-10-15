@@ -331,3 +331,30 @@ def test_grid_shared_basis_options_and_residual(tmp_path, vocab, bank):
     loaded, _ = load_model_from_checkpoint(tmp_path / "h.pt", vocab.vocab_size, "cpu", verbose=False)
     with torch.no_grad():
         assert torch.allclose(before, loaded(ids))
+
+
+def test_constant_basis_is_count_times_one_direction(tmp_path, vocab, bank):
+    torch = pytest.importorskip("torch")
+    from models.transformer import SharedCellEncoder, create_model, load_model_from_checkpoint
+
+    enc = SharedCellEncoder(8, basis="constant")
+    assert enc.phi.shape == (625, 1) and torch.all(enc.phi == 1)
+    W = enc.cell_weights()
+    assert torch.allclose(W, W[0].expand_as(W))  # every cell shares the same weight
+    bits = torch.tensor(bank.grids[:625], dtype=torch.float32)
+    out = enc(bits) - enc.proj.bias
+    k = torch.arange(625, dtype=torch.float32)[:, None]
+    assert torch.allclose(out, k * W[0], atol=1e-4)  # embedding = count × direction
+
+    model = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
+                         verbose=False, shared_basis="constant", shared_residual=True)
+    model.eval()
+    ids = torch.tensor([[vocab.message_start, 17, vocab.encode_label("LESS_THAN"), 599, vocab.answer_token]])
+    with torch.no_grad():
+        before = model(ids)
+    torch.save({"model_state_dict": model.state_dict(),
+                "config": {"model_size": "tiny", "embedding_type": "grid_shared", "tie_weights": True,
+                           "shared_basis": "constant", "shared_residual": True}}, tmp_path / "t.pt")
+    loaded, _ = load_model_from_checkpoint(tmp_path / "t.pt", vocab.vocab_size, "cpu", verbose=False)
+    with torch.no_grad():
+        assert torch.allclose(before, loaded(ids))
