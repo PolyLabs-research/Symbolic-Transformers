@@ -84,6 +84,11 @@ ARMS = {
     "grid_ramp_res_orth_anneal_geo": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                       "--shared-residual", "--residual-orthogonal", "--residual-anneal", "0.3", "0.7",
                                       "--residual-anneal-floor", "0.001"],
+    # Anneal and hold: geometric to 0.01 by 70% of training, then held there, so
+    # the comparator keeps a small residual it has tuned itself to read.
+    "grid_ramp_res_orth_anneal_hold": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                                       "--shared-residual", "--residual-orthogonal", "--residual-anneal", "0.3", "0.7",
+                                       "--residual-anneal-floor", "0.01", "--residual-anneal-hold"],
     # Per-cell variant: each cell's residual row is dropped independently.
     "grid_ramp_res_orth_cdrop": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                  "--shared-residual", "--residual-orthogonal", "--residual-dropout", "0.5",

@@ -95,6 +95,11 @@ def test_residual_scale_schedule():
     assert residual_scale_at(56, 80, 0.3, 0.7, floor=1e-3) == 0.0
     geo = [residual_scale_at(e, 80, 0.3, 0.7, floor=1e-3) for e in range(25, 56)]
     assert all(a > b for a, b in zip(geo, geo[1:])) and geo[-1] > 1e-3
+    # Hold: the floor is kept after the window instead of 0.
+    assert residual_scale_at(56, 80, 0.3, 0.7, floor=0.01, hold=True) == 0.01
+    assert residual_scale_at(80, 80, 0.3, 0.7, floor=0.01, hold=True) == 0.01
+    assert residual_scale_at(40, 80, 0.3, 0.7, floor=0.01, hold=True) == pytest.approx(0.1)
+    assert residual_scale_at(80, 80, 0.3, 0.7, floor=None, hold=True) == 0.0   # no floor: nothing to hold
 
 
 def test_trainer_anneals_and_picks_a_residual_free_best(tmp_path, vocab):

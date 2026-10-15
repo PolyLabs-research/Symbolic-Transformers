@@ -233,7 +233,8 @@ The residual has four knobs, all used in the precision study (`experiments/magni
   falls linearly to 0 at END × epochs and stays 0, in training and evaluation alike (the scale is saved
   with the model). The residual scaffolds early learning and is then withdrawn, so the comparator has to
   end on the ramp alone; `best_model.pt` is chosen among the residual-free epochs only. With
-  `--residual-anneal-floor F` the scale falls geometrically from 1 to F over the window instead of linearly.
+  `--residual-anneal-floor F` the scale falls geometrically from 1 to F over the window instead of linearly,
+  and `--residual-anneal-hold` keeps it at F afterwards instead of dropping it to zero.
 
 For numerals `g_k` is the thermometer code (first k cells set), so `W g_k` is the cumulative sum of
 the first k columns of `W`: adjacent indices get adjacent embeddings and an index absent from training

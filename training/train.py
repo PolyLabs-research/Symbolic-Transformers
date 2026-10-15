@@ -102,24 +102,27 @@ class TrainingConfig:
     # floor log-linearly between start and end (then 0), so most of the anneal
     # is spent where the residual is small rather than large.
     residual_anneal_floor: Optional[float] = None
+    # Keep the scale at the floor after end instead of dropping it to zero.
+    residual_anneal_hold: bool = False
     seed: int = 42
 
 
 def residual_scale_at(epoch: int, num_epochs: int, start: float, end: float,
-                      floor: Optional[float] = None) -> float:
+                      floor: Optional[float] = None, hold: bool = False) -> float:
     """Residual multiplier for 1-based ``epoch`` under a (start, end) anneal.
 
-    1 while epoch <= start * num_epochs, 0 from epoch >= end * num_epochs; in
-    between linear, or geometric from 1 down to ``floor`` when one is given.
-    start == end is a step.
+    1 while epoch <= start * num_epochs; from epoch >= end * num_epochs, 0 (or
+    ``floor`` with ``hold``); in between linear, or geometric from 1 down to
+    ``floor`` when one is given. start == end is a step.
     """
     e0, e1 = start * num_epochs, end * num_epochs
+    final = floor if (hold and floor) else 0.0
     if e1 <= e0:
-        return 1.0 if epoch < e1 else 0.0
+        return 1.0 if epoch < e1 else final
     if epoch <= e0:
         return 1.0
     if epoch >= e1:
-        return 0.0
+        return final
     t = (epoch - e0) / (e1 - e0)
     if floor is None:
         return float(1.0 - t)
@@ -396,8 +399,10 @@ class Trainer:
         if anneal is not None:
             shape = (f"geometric to {self.config.residual_anneal_floor:g}" if self.config.residual_anneal_floor
                      else "linear")
+            final = (f"held at {self.config.residual_anneal_floor:g}" if self.config.residual_anneal_hold
+                     and self.config.residual_anneal_floor else "0")
             print(f"Residual anneal ({shape}): scale 1 until epoch {anneal[0] * self.config.num_epochs:.0f}, "
-                  f"0 from epoch {anneal[1] * self.config.num_epochs:.0f}; best_model.pt from residual-free epochs only")
+                  f"{final} from epoch {anneal[1] * self.config.num_epochs:.0f}; best_model.pt from the epochs after that only")
 
         for epoch in range(start_epoch, self.config.num_epochs):
             self.epoch = epoch + 1
@@ -406,7 +411,7 @@ class Trainer:
             scale = 1.0
             if anneal is not None:
                 scale = residual_scale_at(self.epoch, self.config.num_epochs, anneal[0], anneal[1],
-                                          self.config.residual_anneal_floor)
+                                          self.config.residual_anneal_floor, self.config.residual_anneal_hold)
                 encoder.set_residual_scale(scale)
                 print(f"  Residual scale: {scale:.3f}")
             
@@ -418,7 +423,8 @@ class Trainer:
             self.history['learning_rate'].append(self.scheduler.get_last_lr()[0])
             self.history.setdefault('residual_scale', []).append(scale)
             
-            is_best = val_loss < self.best_val_loss and (anneal is None or scale == 0.0)
+            anneal_done = anneal is None or self.epoch >= anneal[1] * self.config.num_epochs
+            is_best = val_loss < self.best_val_loss and anneal_done
             if is_best:
                 self.best_val_loss = val_loss
             
@@ -472,6 +478,8 @@ def main():
                              "0 after (fractions in [0, 1]); best_model.pt is then chosen among residual-free epochs")
     parser.add_argument("--residual-anneal-floor", type=float, default=None, metavar="F",
                         help="with --residual-anneal: anneal geometrically from 1 to F (0 < F < 1) instead of linearly to 0")
+    parser.add_argument("--residual-anneal-hold", action="store_true",
+                        help="with --residual-anneal-floor: keep the scale at F after END instead of dropping it to 0")
     parser.add_argument("--residual-lr-mult", type=float, default=1.0,
                         help="grid_shared residual: learning-rate multiplier for its own optimiser group")
     parser.add_argument("--residual-wd", type=float, default=None,
@@ -527,6 +535,10 @@ def main():
         if not (0.0 < args.residual_anneal_floor < 1.0):
             parser.error("--residual-anneal-floor F needs 0 < F < 1")
         config.residual_anneal_floor = args.residual_anneal_floor
+    if args.residual_anneal_hold:
+        if args.residual_anneal_floor is None:
+            parser.error("--residual-anneal-hold needs --residual-anneal-floor")
+        config.residual_anneal_hold = True
     config.save_every = args.save_every
     set_seed(config.seed)
     vocab = Vocabulary(args.vocab)
@@ -546,7 +558,7 @@ def main():
         for key in ('shared_min_period', 'shared_axis_freq', 'shared_residual', 'shared_basis',
                     'shared_residual_orthogonal', 'shared_residual_dropout',
                     'shared_residual_dropout_cell', 'sinusoid_min_period', 'residual_anneal',
-                    'residual_anneal_floor'):
+                    'residual_anneal_floor', 'residual_anneal_hold'):
             if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
