@@ -33,7 +33,53 @@ the scale it was trained at (chance at 1e-3, 97.5% at 1e-2, 78.5% at 0.1, chance
 is not merely indifferent to the residual but hurt by it from 1e-3 up: a comparator tuned to the ramp has no
 use for per-cell texture, and at full scale that texture dominates the normalised embedding.
 
-%%SWEEP_ALL%%
+Accuracy (%) on held-out band, both operands unseen, every existing model re-evaluated at each residual scale (mean ± std over seeds;
+per-seed numbers in `runs/magnitude_precision_routes/sweeps/existing_models.json`):
+
+| trained as | saved scale | 0 | 1e-06 | 1e-05 | 0.0001 | 0.001 | 0.01 | 0.1 | 1 |
+|---|---|---|---|---|---|---|---|---|---|
+| residual at full scale, 40 epochs | 1 | 35 ± 21 | 35 ± 21 | 35 ± 21 | 36 ± 20 | 39 ± 15 | 50 ± 1 | 52 ± 1 | 76 ± 5 |
+| residual dropout 0.5, 40 epochs | 1 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 51 ± 0 | 84 ± 4 |
+| residual dropout 0.5, 80 epochs | 1 | 51 ± 0 | 51 ± 0 | 51 ± 0 | 51 ± 0 | 51 ± 0 | 49 ± 1 | 50 ± 1 | 52 ± 16 |
+| linear anneal to zero (collapsed) | 0 | 49 ± 0 | 49 ± 0 | 49 ± 0 | 49 ± 0 | 49 ± 0 | 50 ± 1 | 51 ± 0 | 49 ± 0 |
+| geometric anneal to zero, 80 epochs | 0 | 66 ± 23 | 66 ± 23 | 66 ± 23 | 66 ± 23 | 63 ± 23 | 57 ± 9 | 51 ± 0 | 49 ± 0 |
+| geometric anneal to zero, 120 epochs | 0 | 66 ± 23 | 66 ± 23 | 66 ± 23 | 66 ± 24 | 66 ± 22 | 59 ± 12 | 50 ± 1 | 49 ± 0 |
+| geometric anneal + LR re-warm-up (collapsed) | 0 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 51 ± 0 | 51 ± 0 | 49 ± 0 | 49 ± 0 |
+| anneal and hold at 0.01 | 0.01 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 51 ± 2 | 58 ± 4 | 95 ± 4 | 56 ± 5 | 49 ± 0 |
+| deep anneal to 1e-6 (residual-free) | 1e-06 | 95 ± 2 | 95 ± 2 | 96 ± 2 | 95 ± 3 | 84 ± 9 | 63 ± 8 | 51 ± 0 | 49 ± 0 |
+| ramp alone from scratch (no residual) | none | 50 ± 1 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 50 ± 1 | 50 ± 1 |
+| smooth sinusoid features (no residual) | none | 46 ± 9 | 46 ± 9 | 46 ± 9 | 46 ± 9 | 46 ± 9 | 46 ± 9 | 46 ± 9 | 46 ± 9 |
+
+Accuracy (%) on seen pairs, every existing model re-evaluated at each residual scale (mean ± std over seeds;
+per-seed numbers in `runs/magnitude_precision_routes/sweeps/existing_models.json`):
+
+| trained as | saved scale | 0 | 1e-06 | 1e-05 | 0.0001 | 0.001 | 0.01 | 0.1 | 1 |
+|---|---|---|---|---|---|---|---|---|---|
+| residual at full scale, 40 epochs | 1 | 36 ± 7 | 36 ± 7 | 36 ± 7 | 36 ± 7 | 37 ± 6 | 41 ± 5 | 48 ± 0 | 98 ± 1 |
+| residual dropout 0.5, 40 epochs | 1 | 51 ± 2 | 51 ± 2 | 51 ± 2 | 51 ± 2 | 51 ± 3 | 51 ± 2 | 47 ± 0 | 99 ± 0 |
+| residual dropout 0.5, 80 epochs | 1 | 47 ± 0 | 47 ± 0 | 47 ± 0 | 47 ± 0 | 47 ± 0 | 50 ± 2 | 50 ± 3 | 99 ± 0 |
+| linear anneal to zero (collapsed) | 0 | 53 ± 0 | 53 ± 0 | 53 ± 0 | 53 ± 0 | 52 ± 0 | 50 ± 4 | 48 ± 0 | 54 ± 1 |
+| geometric anneal to zero, 80 epochs | 0 | 69 ± 22 | 69 ± 22 | 69 ± 22 | 68 ± 22 | 65 ± 24 | 56 ± 13 | 48 ± 1 | 53 ± 0 |
+| geometric anneal to zero, 120 epochs | 0 | 68 ± 23 | 68 ± 22 | 68 ± 22 | 68 ± 22 | 65 ± 24 | 55 ± 8 | 51 ± 2 | 54 ± 1 |
+| geometric anneal + LR re-warm-up (collapsed) | 0 | 51 ± 3 | 51 ± 3 | 51 ± 3 | 51 ± 3 | 47 ± 0 | 47 ± 0 | 53 ± 0 | 53 ± 0 |
+| anneal and hold at 0.01 | 0.01 | 52 ± 1 | 52 ± 1 | 52 ± 1 | 53 ± 2 | 70 ± 17 | 99 ± 0 | 80 ± 8 | 54 ± 2 |
+| deep anneal to 1e-6 (residual-free) | 1e-06 | 100 ± 0 | 100 ± 0 | 100 ± 0 | 99 ± 0 | 98 ± 1 | 76 ± 5 | 48 ± 0 | 51 ± 2 |
+| ramp alone from scratch (no residual) | none | 52 ± 0 | 52 ± 0 | 52 ± 0 | 52 ± 0 | 52 ± 0 | 52 ± 0 | 52 ± 0 | 52 ± 0 |
+| smooth sinusoid features (no residual) | none | 100 ± 0 | 100 ± 0 | 100 ± 0 | 100 ± 0 | 100 ± 0 | 100 ± 0 | 100 ± 0 | 100 ± 0 |
+Reading the curves:
+
+- Trained with the residual at full scale (plain, or with dropout), the comparator reads it only at full
+  scale: at 0.1 every such model is at chance and at 0 the 40-epoch plain models are inverted on seen pairs
+  (27-41%) and one is at 6% on both-unseen held-out pairs. Without its residual such a comparator is not
+  ignorant but confidently wrong.
+- Annealed and held at 0.01, the comparator reads a window around the scale it was trained at: chance at
+  1e-3, 90-100% at 1e-2, 51-63% at 0.1, chance at 1.
+- Faded below readability (deep arm) or recovered from the step (the two lucky geometric seeds), the
+  comparator is flat from 0 to 1e-4, degrades from 1e-3 and is at chance by 0.1: re-applying the residual
+  it was weaned off hurts it, because the residual parameter it no longer reads is still a norm-5 row.
+- Collapsed seeds and the residual-free codes are flat at chance (or, for the sinusoid features, flat at
+  their memorised seen-pair score) across the whole axis, as they must be.
+
 
 ### Psychometric decision curves
 
