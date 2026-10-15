@@ -281,7 +281,7 @@ held-out band inside it. Annealing the residual instead (`--residual-anneal`) sh
 it down to any nonzero scale and collapses at exactly zero; stopping at a hundredth and holding gives
 90% / 99% on seen pairs and 95% on held-out pairs of two unseen values. Continuing the anneal below that
 floor to a millionth lets the residual fade into float noise instead of being switched off, and every seed
-then crosses to a residual-free comparator (88% / 99% seen, 93% held-out both unseen) that resolves
+then crosses to a residual-free comparator (92% / 99% seen, 95% held-out both unseen) that resolves
 neighbouring unseen values from the two shared directions alone (`experiments/magnitude_precision.md`).
 
 Manual equivalents for the FOL experiment:
