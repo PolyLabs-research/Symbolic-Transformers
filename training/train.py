@@ -86,6 +86,7 @@ class TrainingConfig:
     shared_axis_freq: int = 4
     shared_residual: bool = False
     shared_basis: str = "full"
+    shared_residual_orthogonal: bool = False
     # Separate optimiser group for the grid_shared per-cell residual.
     residual_lr_mult: float = 1.0
     residual_weight_decay: Optional[float] = None
@@ -392,6 +393,8 @@ def main():
                         help="grid_shared: number of row/col frequencies (0 = index features only)")
     parser.add_argument("--shared-residual", action="store_true",
                         help="grid_shared: add a zero-initialised per-cell residual weight")
+    parser.add_argument("--residual-orthogonal", action="store_true",
+                        help="grid_shared residual: project it orthogonal to the generated directions (cannot carry magnitude)")
     parser.add_argument("--residual-lr-mult", type=float, default=1.0,
                         help="grid_shared residual: learning-rate multiplier for its own optimiser group")
     parser.add_argument("--residual-wd", type=float, default=None,
@@ -430,6 +433,7 @@ def main():
     config.shared_axis_freq = args.shared_axis_freq
     config.shared_residual = args.shared_residual
     config.shared_basis = args.shared_basis
+    config.shared_residual_orthogonal = args.residual_orthogonal
     config.residual_lr_mult = args.residual_lr_mult
     config.residual_weight_decay = args.residual_wd
     set_seed(config.seed)
@@ -447,7 +451,8 @@ def main():
         config.embedding_type = ckpt_config.get('embedding_type', 'learned')
         config.tie_weights = bool(ckpt_config.get('tie_weights', False))
         if ckpt_config.get('grid_bank'): config.grid_bank = ckpt_config['grid_bank']
-        for key in ('shared_min_period', 'shared_axis_freq', 'shared_residual', 'shared_basis', 'sinusoid_min_period'):
+        for key in ('shared_min_period', 'shared_axis_freq', 'shared_residual', 'shared_basis',
+                    'shared_residual_orthogonal', 'sinusoid_min_period'):
             if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
@@ -473,7 +478,8 @@ def main():
                          shared_min_period=config.shared_min_period,
                          shared_axis_freq=config.shared_axis_freq,
                          shared_residual=config.shared_residual,
-                         shared_basis=config.shared_basis)
+                         shared_basis=config.shared_basis,
+                         shared_residual_orthogonal=config.shared_residual_orthogonal)
     trainer = Trainer(model, train_loader, val_loader, config, vocab)
 
     start_epoch = 0

@@ -58,6 +58,16 @@ ARMS = {
     # cells decay back to the smooth ramp.
     "grid_ramp_res_fast": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                            "--shared-residual", "--residual-lr-mult", "10", "--residual-wd", "0.1"],
+    # Residual projected orthogonal to the ramp plane: texture for trained cells,
+    # magnitude only from the ramp (shared with unseen cells).
+    "grid_ramp_res_orth": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                           "--shared-residual", "--residual-orthogonal"],
+    "grid_ramp_res_fast_orth": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                                "--shared-residual", "--residual-orthogonal",
+                                "--residual-lr-mult", "10", "--residual-wd", "0.1"],
+    # Middle residual strength between grid_ramp_res (x1, 0.01) and _fast (x10, 0.1).
+    "grid_ramp_res_mid": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                          "--shared-residual", "--residual-lr-mult", "3", "--residual-wd", "0.03"],
     # Control: the original untied model. Unseen rows keep their random init
     # instead of being pushed away from hidden states by the tied softmax.
     "learned_untied": ["--embedding", "learned"],

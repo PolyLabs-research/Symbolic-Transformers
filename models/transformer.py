@@ -112,8 +112,15 @@ class SharedCellEncoder(nn.Module):
     """
 
     def __init__(self, d_model: int, min_period: float = 32.0, n_index_freq: int = 8,
-                 n_axis_freq: int = 4, residual: bool = False, basis: str = "full"):
+                 n_axis_freq: int = 4, residual: bool = False, basis: str = "full",
+                 residual_orthogonal: bool = False):
         super().__init__()
+        # With residual_orthogonal the per-cell residual is projected onto the
+        # complement of the span of the generated directions (for the ramp
+        # basis: the magnitude plane), so it can give trained cells distinctive
+        # texture but cannot carry magnitude. Magnitude then comes only from
+        # the generated part, which unseen cells share.
+        self.residual_orthogonal = residual_orthogonal
         phi = torch.tensor(cell_position_features(n_index_freq=n_index_freq, n_axis_freq=n_axis_freq,
                                                   index_periods=(min_period, 2 * GRID_CELLS), basis=basis),
                            dtype=torch.float32)  # (625, F)
@@ -125,10 +132,21 @@ class SharedCellEncoder(nn.Module):
         # smooth part while trained cells can sharpen their increment.
         self.residual = nn.Parameter(torch.zeros(GRID_CELLS, d_model)) if residual else None
 
+    def effective_residual(self) -> Optional[torch.Tensor]:
+        if self.residual is None:
+            return None
+        if not self.residual_orthogonal:
+            return self.residual
+        # Orthonormal basis of the generated directions (d_model, F), no gradient
+        # through the projection itself.
+        q, _ = torch.linalg.qr(self.proj.weight.detach())
+        return self.residual - (self.residual @ q) @ q.t()
+
     def cell_weights(self) -> torch.Tensor:
         """The (625, d_model) per-cell weight matrix: generated part plus residual."""
         W = self.phi @ self.proj.weight.t()
-        return W + self.residual if self.residual is not None else W
+        r = self.effective_residual()
+        return W + r if r is not None else W
 
     def forward(self, bits: torch.Tensor) -> torch.Tensor:
         return bits @ self.cell_weights() + self.proj.bias
@@ -145,7 +163,7 @@ class GridEmbedding(nn.Module):
 
     def __init__(self, grid_bank: GridBank, d_model: int, kind: str = "grid_linear", init_std: float = 0.02,
                  shared_min_period: float = 32.0, shared_axis_freq: int = 4, shared_residual: bool = False,
-                 shared_basis: str = "full"):
+                 shared_basis: str = "full", shared_residual_orthogonal: bool = False):
         super().__init__()
         if kind not in ("grid_linear", "grid_conv", "grid_shared", "sinusoid"):
             raise ValueError(f"Unknown grid embedding kind: {kind}")
@@ -161,7 +179,7 @@ class GridEmbedding(nn.Module):
         elif kind == "grid_shared":
             self.encoder = SharedCellEncoder(d_model, min_period=shared_min_period,
                                              n_axis_freq=shared_axis_freq, residual=shared_residual,
-                                             basis=shared_basis)
+                                             basis=shared_basis, residual_orthogonal=shared_residual_orthogonal)
         else:
             self.encoder = nn.Linear(grid_bank.n_features, d_model)
         # LayerNorm keeps every panel embedding at the same scale regardless of
@@ -226,6 +244,7 @@ class SymbolicTransformer(nn.Module):
         shared_axis_freq: int = 4,
         shared_residual: bool = False,
         shared_basis: str = "full",
+        shared_residual_orthogonal: bool = False,
     ):
         """
         Args:
@@ -268,7 +287,8 @@ class SymbolicTransformer(nn.Module):
                                               shared_min_period=shared_min_period,
                                               shared_axis_freq=shared_axis_freq,
                                               shared_residual=shared_residual,
-                                              shared_basis=shared_basis)
+                                              shared_basis=shared_basis,
+                                              shared_residual_orthogonal=shared_residual_orthogonal)
         
         # 2. Positional encoding
         self.pos_encoder = PositionalEncoding(d_model, max_seq_len, dropout)
@@ -460,6 +480,7 @@ def create_model(
     shared_axis_freq: int = 4,
     shared_residual: bool = False,
     shared_basis: str = "full",
+    shared_residual_orthogonal: bool = False,
 ) -> SymbolicTransformer:
     """
     Factory function for creating models of different sizes.
@@ -502,6 +523,7 @@ def create_model(
         shared_axis_freq=shared_axis_freq,
         shared_residual=shared_residual,
         shared_basis=shared_basis,
+        shared_residual_orthogonal=shared_residual_orthogonal,
         **config
     )
     
@@ -542,7 +564,8 @@ def load_model_from_checkpoint(
                          shared_min_period=float(config.get('shared_min_period', 32.0)),
                          shared_axis_freq=int(config.get('shared_axis_freq', 4)),
                          shared_residual=bool(config.get('shared_residual', False)),
-                         shared_basis=str(config.get('shared_basis', 'full')))
+                         shared_basis=str(config.get('shared_basis', 'full')),
+                         shared_residual_orthogonal=bool(config.get('shared_residual_orthogonal', False)))
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     model.eval()

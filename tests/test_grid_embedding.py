@@ -379,3 +379,35 @@ def test_constant_basis_collapses_under_layernorm_and_ramp_does_not(vocab, bank)
     # Ramp path: direction changes monotonically, so distance grows with the gap.
     d = [(ramp[100] - ramp[100 + g]).norm().item() for g in (1, 10, 100, 300)]
     assert d == sorted(d)
+
+
+def test_orthogonal_residual_cannot_carry_magnitude(tmp_path, vocab, bank):
+    torch = pytest.importorskip("torch")
+    from models.transformer import SharedCellEncoder, create_model, load_model_from_checkpoint
+
+    enc = SharedCellEncoder(16, basis="ramp", residual=True, residual_orthogonal=True)
+    with torch.no_grad():
+        enc.residual.normal_()
+    r = enc.effective_residual()
+    # Every effective residual row is orthogonal to both generated directions.
+    assert torch.allclose(r @ enc.proj.weight, torch.zeros(625, 2), atol=1e-4)
+    assert not torch.allclose(r, enc.residual)
+    # Without the flag the residual is used as is.
+    plain = SharedCellEncoder(16, basis="ramp", residual=True)
+    assert plain.effective_residual() is plain.residual
+
+    model = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
+                         verbose=False, shared_basis="ramp", shared_residual=True, shared_residual_orthogonal=True)
+    with torch.no_grad():
+        model.symbol_embed.encoder.residual.normal_()
+    model.eval()
+    ids = torch.tensor([[vocab.message_start, 17, vocab.encode_label("LESS_THAN"), 599, vocab.answer_token]])
+    with torch.no_grad():
+        before = model(ids)
+    torch.save({"model_state_dict": model.state_dict(),
+                "config": {"model_size": "tiny", "embedding_type": "grid_shared", "tie_weights": True,
+                           "shared_basis": "ramp", "shared_residual": True, "shared_residual_orthogonal": True}},
+               tmp_path / "o.pt")
+    loaded, _ = load_model_from_checkpoint(tmp_path / "o.pt", vocab.vocab_size, "cpu", verbose=False)
+    with torch.no_grad():
+        assert torch.allclose(before, loaded(ids))
