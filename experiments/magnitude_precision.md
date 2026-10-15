@@ -185,8 +185,21 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
    loss of 0.70-0.71, the entropy of a coin, by epoch 80 and stay there: after the step they settle on
    predicting each operator's prior and the gradient of that fixed point does not point toward the ramp.
    Their best residual-free checkpoints score 51.8% and 52.5% on seen pairs and 49.7-49.5% on the
-   held-out band. Which seeds recover is not about the budget, then, but about where the comparator stands at
-   the moment the residual vanishes; the same seed recovered in both the 80- and the 120-epoch run.
+   held-out band. Per seed along the run (accuracy on seen pairs / on the held-out band):
+
+   | epoch | residual scale | seed 1: test / held-out | seed 2: test / held-out | seed 3: test / held-out |
+   |---|---|---|---|---|
+   | 24 | 1 | 92.5 / 76.2 | 99.5 / 88.2 | 96.0 / 80.5 |
+   | 40 | 0.0316 | 94.0 / 81.2 | 98.9 / 97.5 | 97.8 / 91.7 |
+   | 56 | 0.001 | 97.4 / 93.1 | 98.7 / 98.1 | 98.1 / 96.8 |
+   | 64 | 0 | 52.6 / 49.4 | 99.2 / 98.7 | 48.0 / 51.3 |
+   | 72 | 0 | 47.3 / 50.6 | 99.2 / 97.9 | 47.3 / 50.6 |
+   | 80 | 0 | 48.1 / 50.4 | 99.8 / 99.9 | 47.8 / 51.2 |
+   | 96 | 0 | 47.3 / 50.6 | 99.7 / 97.1 | 48.7 / 50.0 |
+   | 120 | 0 | 51.8 / 49.5 | 99.5 / 97.8 | 52.3 / 49.6 |
+
+   Which seeds recover is not about the budget, then, but about where the comparator stands at the moment
+   the residual vanishes; the same seed recovered in both the 80- and the 120-epoch run.
 
 
 
