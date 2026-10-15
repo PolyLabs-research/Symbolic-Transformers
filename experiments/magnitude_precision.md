@@ -233,10 +233,13 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
    it geometrically to 1e-6 by epoch 108, a decade per ten epochs, and holds. Validation loss stays at
    0.05-0.14 down to a scale of 6e-4 and then rises gradually rather than jumping: to 0.12-0.19 at 1e-4,
    to 0.14-0.48 at 1.6e-5 (seed 3 touches 0.68, chance, at 1e-4), and back down to 0.09-0.16 by the time
-   the scale reaches 1e-6, where the residual's share of a numeral embedding is below float32 resolution.
-   The transition is where it has to be: at 1e-5 a residual row of norm 5 adds 5e-5 to an embedding of
-   norm 5, and the comparator's readout, which can re-tune to any readable signal, finally has nothing
-   to read. Because readability is lost over twenty epochs rather than in one step, the comparator
+   the scale reaches 1e-6. The crossing sits where the residual's share of a numeral embedding is about
+   1e-5 to 1e-4 (a residual row of norm 5 scaled by 1e-5 adds 5e-5 to an embedding of norm 5), two to three
+   decades above float32's relative resolution, so "below float32 readability" is not the right description;
+   what sets the floor (the number format, the optimiser's epsilon, the LayerNorm epsilon of 1e-5, or the
+   batch gradient noise) is open and is the first question in `plan_distinctive_result.md`. What is
+   established is that the comparator's readout, which re-tunes to any signal it can read, runs out of
+   signal there. Because readability is lost over twenty epochs rather than in one step, the comparator
    rebuilds its route gradually and lands on the ramp instead of on the operator prior. The final models
    are residual-free in effect: evaluating them with the scale set to exactly zero changes no number
    (seed 1: 99.0% / 98.2% / 72.3% on test / held-out / far at 1e-6 and at 0; seed 2: 99.8% / 98.6% /
@@ -322,9 +325,9 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
   scale it can read. There are two ways to a ramp-only comparator. The step to zero works in a third of seeds, and a learning-rate re-warm-up at
   the step makes that worse (0 of 3), because the fast route from the collapse is to the operator prior.
   Continuing the anneal below the hold floor works in every seed: between 1e-4 and 1e-5 the residual
-  drops below what float32 can carry, readability is lost over twenty epochs instead of in one step, and
-  the comparator rebuilds on the ramp; the resulting models give the same numbers with the residual at
-  1e-6 and at exactly zero.
+  drops below what the comparator can read (what sets that floor is open; it is well above float32's
+  resolution), readability is lost over twenty epochs instead of in one step, and the comparator rebuilds
+  on the ramp; the resulting models give the same numbers with the residual at 1e-6 and at exactly zero.
 - Recommended configurations: `--residual-anneal 0.3 0.7 --residual-anneal-floor 0.01
   --residual-anneal-hold` for the best overall numbers (a small residual stays), and
   `--residual-anneal-stages 0.2:1,0.4667:0.01,0.5667:0.01,0.9:1e-6` over 120 epochs for a
