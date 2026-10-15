@@ -97,11 +97,13 @@ ARMS = {
                                              "--shared-residual", "--residual-orthogonal", "--residual-anneal", "0.3", "0.7",
                                              "--residual-anneal-floor", "0.001", "--residual-anneal-rewarm", "100"],
     # Below the hold floor (--epochs 120): 1 until epoch 24, geometric to 0.01 at 56,
-    # held to 68, geometric to 1e-6 at 108, held to 120. Looks for the scale at which
-    # the residual stops being readable, so the comparator is pushed off it gradually.
+    # held to 68, geometric to 1e-6 at 108, held to the end. Looks for the scale at
+    # which the residual stops being readable, so the comparator is pushed off it
+    # gradually. The last breakpoint starts the final hold, so best_model.pt is
+    # chosen across the hold (epochs 108-120).
     "grid_ramp_res_orth_anneal_deep": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                        "--shared-residual", "--residual-orthogonal",
-                                       "--residual-anneal-stages", "0.2:1,0.4667:0.01,0.5667:0.01,0.9:0.000001,1:0.000001"],
+                                       "--residual-anneal-stages", "0.2:1,0.4667:0.01,0.5667:0.01,0.9:0.000001"],
     # Anneal and hold: geometric to 0.01 by 70% of training, then held there, so
     # the comparator keeps a small residual it has tuned itself to read.
     "grid_ramp_res_orth_anneal_hold": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",

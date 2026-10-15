@@ -207,6 +207,16 @@ def test_staged_schedule_and_parser():
     # The trainer-facing helpers route to the staged form and know where it ends.
     cfg = TrainingConfig(num_epochs=120, residual_anneal_stages=stages)
     assert residual_schedule_end(cfg) == 120 and residual_schedule_scale(cfg, 56) == pytest.approx(0.01, rel=1e-3)
+    # The deep arm ends its breakpoints at the start of the hold: the scale holds at 1e-6 from epoch 108
+    # to the end and best_model.pt is chosen across that hold.
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from grid_experiment import ARMS
+    arm = ARMS["grid_ramp_res_orth_anneal_deep"]
+    deep = parse_anneal_stages(arm[arm.index("--residual-anneal-stages") + 1])
+    cfg_deep = TrainingConfig(num_epochs=120, residual_anneal_stages=deep)
+    assert residual_schedule_end(cfg_deep) == 108
+    assert residual_schedule_scale(cfg_deep, 108) == pytest.approx(1e-6, rel=1e-3)
+    assert residual_schedule_scale(cfg_deep, 120) == pytest.approx(1e-6)
     cfg2 = TrainingConfig(num_epochs=80, residual_anneal=(0.3, 0.7), residual_anneal_floor=0.01, residual_anneal_hold=True)
     assert residual_schedule_end(cfg2) == 56 and residual_schedule_scale(cfg2, 80) == 0.01
     assert residual_schedule_end(TrainingConfig()) is None
