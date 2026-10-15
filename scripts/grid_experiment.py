@@ -78,6 +78,12 @@ ARMS = {
     # for the last 30%. best_model.pt comes from the residual-free epochs.
     "grid_ramp_res_orth_anneal": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                   "--shared-residual", "--residual-orthogonal", "--residual-anneal", "0.3", "0.7"],
+    # Geometric anneal: same window, but the scale falls log-linearly from 1 to
+    # 1e-3, so the comparator spends many epochs with a small residual instead of
+    # one (a linear anneal only bites once the scale is below 1 / logit margin).
+    "grid_ramp_res_orth_anneal_geo": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                                      "--shared-residual", "--residual-orthogonal", "--residual-anneal", "0.3", "0.7",
+                                      "--residual-anneal-floor", "0.001"],
     # Per-cell variant: each cell's residual row is dropped independently.
     "grid_ramp_res_orth_cdrop": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                  "--shared-residual", "--residual-orthogonal", "--residual-dropout", "0.5",

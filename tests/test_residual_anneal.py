@@ -88,6 +88,13 @@ def test_residual_scale_schedule():
     assert residual_scale_at(40, 80, 0.5, 0.5) == 0.0
     # Never leaves [0, 1].
     assert all(0.0 <= residual_scale_at(e, 10, 0.0, 1.0) <= 1.0 for e in range(1, 11))
+    # Geometric: log-linear from 1 to the floor, then 0.
+    assert residual_scale_at(24, 80, 0.3, 0.7, floor=1e-3) == 1.0
+    assert residual_scale_at(40, 80, 0.3, 0.7, floor=1e-3) == pytest.approx(10 ** -1.5)
+    assert residual_scale_at(55, 80, 0.3, 0.7, floor=1e-3) == pytest.approx(10 ** (-3 * 31 / 32))
+    assert residual_scale_at(56, 80, 0.3, 0.7, floor=1e-3) == 0.0
+    geo = [residual_scale_at(e, 80, 0.3, 0.7, floor=1e-3) for e in range(25, 56)]
+    assert all(a > b for a, b in zip(geo, geo[1:])) and geo[-1] > 1e-3
 
 
 def test_trainer_anneals_and_picks_a_residual_free_best(tmp_path, vocab):
