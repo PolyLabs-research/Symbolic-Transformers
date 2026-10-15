@@ -26,6 +26,8 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
 | `grid_ramp_res_orth_anneal_hold` | lr ×1, orthogonal | geometric 1 → 0.01 over the window, then held at 0.01 (`--residual-anneal-hold`) |
 | `grid_ramp_res_orth_anneal_geo_rewarm` | lr ×1, orthogonal | geometric 1 → 0.001 then 0, with the learning-rate schedule restarted at the step (`--residual-anneal-rewarm 100`) |
 | `grid_ramp_res_orth_anneal_deep` | lr ×1, orthogonal | 120 epochs: 1 until 24, geometric to 0.01 at 56, held to 68, geometric to 1e-6 at 108, held to the end (`--residual-anneal-stages`); best epoch from the final hold |
+| `grid_ramp` | – | baseline: the ramp alone from scratch, no residual ever, 120 epochs |
+| `sinusoid_smooth` | – | baseline: fixed sinusoid features of k (periods 32 and up) through the same linear layer, no panels, 120 epochs |
 
 ## Reading
 
@@ -269,6 +271,22 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
    The crossing shows as a dip between scales 1e-4 and 1e-5 and a recovery that is complete by 1e-6,
    with the unseen bands coming back to the hold-phase level and seen precision slightly above it.
 
+14. **The scaffold is necessary: the ramp alone cannot be learned from scratch, and a smooth
+   fixed-feature code does not interpolate.** Two baselines on the same data and budget (120 epochs,
+   three seeds). `grid_ramp`, the generated embedding with no residual ever, never leaves chance:
+   validation loss 0.69-0.70 at every epoch in every seed (best 0.693-0.694, the entropy of a coin; test accuracy 51.8-52.6%, held-out and far bands at 48-51%), while a linear readout of k from its numeral embeddings is perfect on every band, so the magnitude is there and the comparator never learns to read it. The same code the deep-annealed
+   comparator reads at unit resolution is unlearnable without the scaffold, because at initialisation
+   the ramp's one-step rotation of the embedding direction is too small a signal to climb out of the
+   plateau, whereas the residual gives a large per-cell signal to learn the task on, and fading it hands
+   the trained comparator over to the ramp a step at a time. `sinusoid_smooth`, fixed sinusoid features
+   of k with periods of 32 and up through the same linear layer, is the opposite failure: it fits seen
+   pairs perfectly (100% on every seen gap in every seed, validation loss 0.002-0.012) because the features identify each value, and that is all the
+   comparator learns: 70.7 ± 2.6% on the held-out band with both-unseen pairs at 46% and inverted beyond gap 20 (7-33%),
+   and 59.5 ± 3.6% on the far band (both-unseen 64%), the pathology of `grid_linear` in point 2 with a
+   different code. Against these the deep anneal's 99.6% / 97.8% / 77.7% is not a
+   curiosity of the schedule but the only route found to a comparator that reads magnitude from a
+   shared code.
+
 
 
 10. **Capacity is not the limit here.** The small model (d = 256, 4 layers, 3.5M parameters) stayed at
@@ -284,6 +302,8 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
 | anneal to 0.01 and hold, 80 epochs | 90 / 99 | 95% (75 / 94 / 100) | 74% |
 | anneal to zero, geometric, the seeds that recover (2 of 6) | 94-95 / 99-100 | 98-99% (79-91 / 100 / 100) | 60-79% |
 | anneal below the floor to 1e-6, 120 epochs, 3 of 3 seeds (residual-free in effect) | 92 / 99 | 95% (70 / 95 / 100) | 64% |
+| baseline: the ramp alone from scratch, 120 epochs | chance | chance | chance |
+| baseline: smooth sinusoid features of k, 120 epochs | 100 / 100 | 46% (54 / 54 / 48) | 64% |
 
 - Seen pairs: 90-92% at gap 1 and 99% at gaps 2-5 are now routine (hold and deep-anneal arms, three
   seeds each); 95% / 100% from the recovered residual-free models.
@@ -295,9 +315,11 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
 - Both operands unseen, far band: 64-79% with the hold, recovered and deep-annealed models, 93% with the
   80-epoch dropout arm, which is the one place the dropout arm still leads. Extrapolation and
   interpolation are not yet maximised by the same model.
-- The residual is never a route of its own: zeroing it in any model trained with it at full strength
-  gives chance, and the comparator follows it down to any scale it can read. There are two ways to a
-  ramp-only comparator. The step to zero works in a third of seeds, and a learning-rate re-warm-up at
+- The scaffold is necessary. The ramp alone cannot be learned from scratch in 120 epochs (chance in every
+  seed), and a smooth fixed-feature code learns seen pairs perfectly and inverts on unseen ones, so no
+  baseline reaches the faded model's held-out band. The residual is never a route of its own: zeroing it
+  in any model trained with it at full strength gives chance, and the comparator follows it down to any
+  scale it can read. There are two ways to a ramp-only comparator. The step to zero works in a third of seeds, and a learning-rate re-warm-up at
   the step makes that worse (0 of 3), because the fast route from the collapse is to the operator prior.
   Continuing the anneal below the hold floor works in every seed: between 1e-4 and 1e-5 the residual
   drops below what float32 can carry, readability is lost over twenty epochs instead of in one step, and
@@ -338,6 +360,8 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_anneal_geo | 3 | 68.6 ± 22.0 | 66.6 ± 23.3 | 60.7 ± 13.2 |
 | grid_ramp_res_orth_anneal_hold | 3 | 99.4 ± 0.2 | 97.5 ± 2.0 | 86.6 ± 3.6 |
 | grid_ramp_res_orth_anneal | 3 | 52.6 ± 0.1 | 49.6 ± 0.0 | 51.0 ± 0.4 |
+| grid_ramp | 3 | 52.4 ± 0.4 | 49.8 ± 0.5 | 50.4 ± 1.4 |
+| sinusoid_smooth | 3 | 100.0 ± 0.0 | 70.7 ± 2.6 | 59.5 ± 3.6 |
 
 ## test_holdout: accuracy by number of unseen operands
 
@@ -361,6 +385,8 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_anneal_geo | 67.2 ± 23.2 | 66.1 ± 23.5 |
 | grid_ramp_res_orth_anneal_hold | 99.9 ± 0.1 | 95.0 ± 4.0 |
 | grid_ramp_res_orth_anneal | 49.7 ± 0.1 | 49.5 ± 0.0 |
+| grid_ramp | 49.8 ± 0.5 | 49.8 ± 0.5 |
+| sinusoid_smooth | 93.6 ± 5.6 | 46.2 ± 9.5 |
 
 ## test_far: accuracy by number of unseen operands
 
@@ -384,6 +410,8 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_anneal_geo | 67.0 ± 23.0 | 54.5 ± 3.6 |
 | grid_ramp_res_orth_anneal_hold | 99.9 ± 0.1 | 73.6 ± 7.2 |
 | grid_ramp_res_orth_anneal | 50.1 ± 0.6 | 51.8 ± 0.2 |
+| grid_ramp | 50.1 ± 0.9 | 50.6 ± 1.8 |
+| sinusoid_smooth | 54.5 ± 5.4 | 64.4 ± 9.5 |
 
 ## test_holdout: both operands unseen, accuracy by |a - b|
 
@@ -409,6 +437,8 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_anneal_geo | 100.0 ± 0.0 | 61.6 ± 20.6 | 65.2 ± 24.6 | 65.8 ± 24.2 | 63.1 ± 26.1 | n/a |
 | grid_ramp_res_orth_anneal_hold | 72.8 ± 19.3 | 75.1 ± 17.7 | 93.5 ± 7.9 | 99.6 ± 0.5 | 100.0 ± 0.0 | n/a |
 | grid_ramp_res_orth_anneal | 100.0 ± 0.0 | 47.0 ± 0.0 | 47.8 ± 0.0 | 48.7 ± 0.0 | 44.7 ± 0.0 | n/a |
+| grid_ramp | 66.7 ± 47.1 | 49.0 ± 2.8 | 49.3 ± 2.0 | 49.6 ± 1.2 | 48.2 ± 5.0 | n/a |
+| sinusoid_smooth | 99.1 ± 1.3 | 54.3 ± 0.9 | 54.4 ± 9.4 | 47.7 ± 12.1 | 16.0 ± 11.7 | n/a |
 
 ## test_far: both operands unseen, accuracy by |a - b|
 
@@ -434,6 +464,8 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_anneal_geo | 87.1 ± 18.2 | 54.2 ± 0.9 | 52.6 ± 4.9 | 53.2 ± 3.9 | 54.1 ± 6.3 | 54.2 ± 17.7 |
 | grid_ramp_res_orth_anneal_hold | 49.3 ± 5.0 | 53.1 ± 5.4 | 64.0 ± 1.7 | 79.5 ± 12.1 | 88.4 ± 14.9 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_anneal | 99.1 ± 1.3 | 54.8 ± 0.0 | 49.1 ± 0.0 | 50.2 ± 0.4 | 49.6 ± 0.0 | 41.7 ± 0.0 |
+| grid_ramp | 66.7 ± 47.1 | 51.6 ± 4.6 | 49.7 ± 0.8 | 50.1 ± 0.4 | 49.9 ± 0.4 | 47.2 ± 7.9 |
+| sinusoid_smooth | 95.1 ± 1.7 | 70.3 ± 14.3 | 73.2 ± 15.7 | 69.0 ± 15.9 | 34.5 ± 17.1 | 18.1 ± 16.8 |
 
 ## test: accuracy by |a - b|
 
@@ -457,6 +489,8 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_anneal_geo | 98.8 ± 1.7 | 71.3 ± 15.8 | 70.0 ± 20.7 | 69.0 ± 21.9 | 68.5 ± 22.3 | 67.3 ± 23.2 |
 | grid_ramp_res_orth_anneal_hold | 82.5 ± 7.6 | 90.5 ± 7.5 | 99.1 ± 1.0 | 99.9 ± 0.1 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_anneal | 100.0 ± 0.0 | 58.7 ± 0.0 | 55.5 ± 0.1 | 52.4 ± 0.1 | 52.9 ± 0.2 | 50.2 ± 0.2 |
+| grid_ramp | 91.8 ± 11.6 | 58.1 ± 0.9 | 54.5 ± 1.3 | 52.2 ± 0.2 | 52.7 ± 0.5 | 50.3 ± 0.3 |
+| sinusoid_smooth | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 
 ## test_holdout: accuracy by |a - b|
 
@@ -480,6 +514,8 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_anneal_geo | 100.0 ± 0.0 | 61.4 ± 20.8 | 64.8 ± 24.9 | 66.0 ± 24.1 | 64.6 ± 25.0 | 67.7 ± 22.9 |
 | grid_ramp_res_orth_anneal_hold | 72.8 ± 19.3 | 75.0 ± 17.7 | 93.6 ± 7.7 | 99.6 ± 0.5 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_anneal | 100.0 ± 0.0 | 46.7 ± 0.0 | 47.2 ± 0.0 | 49.0 ± 0.0 | 46.5 ± 0.0 | 50.3 ± 0.1 |
+| grid_ramp | 66.7 ± 47.1 | 48.9 ± 3.1 | 48.8 ± 2.3 | 49.4 ± 0.6 | 48.3 ± 2.6 | 50.4 ± 0.7 |
+| sinusoid_smooth | 99.1 ± 1.3 | 54.6 ± 0.9 | 56.6 ± 8.9 | 52.8 ± 10.9 | 50.9 ± 2.1 | 96.7 ± 4.0 |
 
 ## test_far: accuracy by |a - b|
 
@@ -503,6 +539,8 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_anneal_geo | 87.1 ± 18.2 | 54.1 ± 0.9 | 52.7 ± 5.0 | 53.8 ± 5.0 | 56.9 ± 11.7 | 67.1 ± 22.7 |
 | grid_ramp_res_orth_anneal_hold | 49.3 ± 5.0 | 53.5 ± 5.4 | 64.2 ± 1.7 | 80.5 ± 11.5 | 91.7 ± 10.7 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_anneal | 99.1 ± 1.3 | 54.8 ± 0.0 | 49.1 ± 0.0 | 50.0 ± 0.3 | 48.7 ± 0.0 | 50.4 ± 0.7 |
+| grid_ramp | 66.7 ± 47.1 | 51.6 ± 4.5 | 49.7 ± 0.8 | 50.1 ± 0.2 | 49.6 ± 1.3 | 50.2 ± 1.2 |
+| sinusoid_smooth | 95.1 ± 1.7 | 70.1 ± 14.2 | 73.4 ± 15.6 | 70.2 ± 15.1 | 33.7 ± 14.7 | 54.9 ± 5.6 |
 
 ## Is magnitude in the embedding?
 
@@ -529,6 +567,8 @@ training-pool rows correlated with k.
 | grid_ramp_res_orth_anneal_geo | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_anneal_hold | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_anneal | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
+| grid_ramp | 0.999 ± 0.001 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
+| sinusoid_smooth | 1.000 ± 0.000 | 0.595 ± 0.204 | -0.847 ± 0.148 | -0.275 ± 0.556 | -0.302 ± 0.131 | 0.352 ± 0.699 |
 
 ## Training
 
@@ -552,3 +592,5 @@ training-pool rows correlated with k.
 | grid_ramp_res_orth_anneal_geo | 3 | 563,999 | 0.743 ± 0.393 | 80, 78, 80 |
 | grid_ramp_res_orth_anneal_hold | 3 | 563,999 | 0.067 ± 0.009 | 75, 71, 72 |
 | grid_ramp_res_orth_anneal | 3 | 563,999 | 1.199 ± 0.035 | 80, 80, 80 |
+| grid_ramp | 3 | 483,999 | 0.693 ± 0.000 | 115, 94, 100 |
+| sinusoid_smooth | 3 | 491,935 | 0.006 ± 0.004 | 107, 118, 101 |
