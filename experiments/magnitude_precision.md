@@ -20,7 +20,10 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
 | `grid_ramp_res_orth_drop` | lr ×1, orthogonal | half the training batches embed with the ramp alone (`--residual-dropout 0.5`) |
 | `grid_ramp_res_orth_cdrop` | lr ×1, orthogonal | each cell's residual row dropped independently (`--residual-dropout-cell`) |
 | `grid_ramp_res_orth_drop_80ep` | lr ×1, orthogonal, dropout 0.5 | 80 epochs |
-| `grid_ramp_res_orth_anneal` | lr ×1, orthogonal | residual scaled 1 → 0 between 30% and 70% of training (`--residual-anneal 0.3 0.7`), 80 epochs; best epoch from the residual-free phase |
+| `grid_ramp_res_orth_anneal` | lr ×1, orthogonal | residual scaled 1 → 0 linearly between 30% and 70% of training (`--residual-anneal 0.3 0.7`), 80 epochs; best epoch from the residual-free phase |
+| `grid_ramp_res_orth_anneal_geo` | lr ×1, orthogonal | as above but geometric, 1 → 0.001 then 0 (`--residual-anneal-floor 0.001`) |
+| `grid_ramp_res_orth_anneal_geo_long` | lr ×1, orthogonal | the same anneal at epochs 24-56 of a 120-epoch run: 64 residual-free epochs |
+| `grid_ramp_res_orth_anneal_hold` | lr ×1, orthogonal | geometric 1 → 0.01 over the window, then held at 0.01 (`--residual-anneal-hold`) |
 
 ## Reading
 
@@ -84,20 +87,85 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
    are not residual-free either (norm about 1.0): the tied softmax trains them through the never-seen
    numerals' logits.
 
-8. **A linear anneal of the residual to zero does not hand the comparator the ramp route.**
-   `grid_ramp_res_orth_anneal` holds the residual at full scale for 24 epochs, scales it linearly to zero
-   by epoch 56 and trains 24 more epochs without it. Validation loss stays at 0.06-0.13 down to a scale of
-   0.125 (effective residual norm 0.6 per cell against 5.6 for the generated part) and 0.21-0.24 at 0.031,
-   then jumps to 1.8-1.9 at exactly zero in all three seeds, worse than chance, and recovers only to 1.17
-   by epoch 80: the residual-free model is at chance on every split (test 52.6 ± 0.1%). The weights do not
-   grow to compensate (first-block norms move by 5%, the residual parameter by 40%), so the comparator
-   reads a residual thirty times smaller than the one it learned on simply because its logit margins are
-   large: a linear schedule only bites in its last epoch or two, which is a step, and the step lands the
-   model in a worse place than random initialisation (the same arm from scratch reaches 0.15 by epoch 20).
-   A geometric schedule (`grid_ramp_res_orth_anneal_geo`, scale 1 → 1e-3 log-linearly over the same window)
-   is running to give the comparator a long stretch at marginal residual strength.
+8. **Annealing the residual to zero does not hand the comparator the ramp route; the comparator follows
+   the residual down instead.** `grid_ramp_res_orth_anneal` holds the residual at full scale for 24
+   epochs, scales it linearly to zero by epoch 56 and trains 24 more epochs without it. Validation loss
+   stays at 0.06-0.13 down to a scale of 0.125 and 0.21-0.24 at 0.031, then jumps to 1.8-1.9 at exactly
+   zero in all three seeds, worse than chance, and recovers only to 1.17 by epoch 80: the residual-free
+   model is at chance on every split (test 52.6 ± 0.1%), and the same arm trained from scratch is at 0.15
+   by epoch 20, so the collapsed comparator is a worse starting point than random initialisation.
+   Two scale sweeps on saved checkpoints show what happened. The epoch-24 model, trained at full scale,
+   is already at chance when evaluated at scale 0.3 (49% and 76% for two seeds; the residual's share of
+   the normalised numeral embedding is then 0.50). The epoch-52 model, trained at scale 0.125, reads that
+   scale at 99.5-99.8% (share 0.54, the same signal the earlier model could not read), scores 71-78% at
+   full scale and one seed still reads 0.03 at 96%; at zero both are at chance. No weights grew to do
+   this (the first block's gain on the residual subspace rises 1.4×, the residual parameter 40%, the
+   generated part shrinks 6%): the readout re-tunes to whatever residual is left, one small step per
+   epoch, because that is always a smaller change than building a route through the ramp. A linear
+   schedule therefore never applies pressure until its last epoch, which is a step, and the step lands
+   on a comparator tuned to a signal that is no longer there. The checkpoints along the way tell the more useful story (three seeds, test = seen pairs,
+   held-out and far = all pairs with at least one unseen operand):
 
-9. **Capacity is not the limit here.** The small model (d = 256, 4 layers, 3.5M parameters) stayed at
+   | epoch | residual scale | test | test gap 1 | test gaps 2-5 | held-out | held-out both unseen | far | far both unseen |
+   |---|---|---|---|---|---|---|---|---|
+   | 24 | 1 | 98.4 ± 0.8 | 82.3 ± 4.5 | 93.0 ± 4.8 | 89.8 ± 1.2 | 79.7 ± 2.2 | 76.5 ± 5.4 | 55.4 ± 9.3 |
+   | 32 | 0.75 | 99.0 ± 0.5 | 83.2 ± 7.5 | 97.9 ± 1.1 | 84.7 ± 3.5 | 69.6 ± 7.0 | 78.9 ± 6.5 | 59.6 ± 11.3 |
+   | 40 | 0.5 | 98.6 ± 0.6 | 79.8 ± 9.7 | 98.5 ± 1.2 | 87.3 ± 5.0 | 74.5 ± 9.8 | 82.3 ± 5.2 | 66.0 ± 9.4 |
+   | 44 | 0.375 | 98.5 ± 0.8 | 78.9 ± 13.2 | 96.2 ± 3.8 | 90.9 ± 1.9 | 81.9 ± 3.5 | 80.9 ± 1.2 | 62.9 ± 2.0 |
+   | 48 | 0.25 | 98.6 ± 0.7 | 80.4 ± 13.7 | 96.4 ± 4.7 | 94.4 ± 3.0 | 88.9 ± 5.8 | 86.0 ± 5.6 | 72.6 ± 11.0 |
+   | 52 | 0.125 | 98.4 ± 1.8 | 80.1 ± 21.7 | 93.0 ± 9.5 | 98.2 ± 0.1 | 96.3 ± 0.2 | 87.7 ± 6.3 | 75.9 ± 12.4 |
+   | 56 | 0 | 52.6 ± 0.0 | 58.7 ± 0.0 | 55.4 ± 0.0 | 49.4 ± 0.0 | 49.5 ± 0.0 | 51.3 ± 0.0 | 51.9 ± 0.0 |
+   | 80 | 0 | 52.6 ± 0.1 | 58.7 ± 0.0 | 55.5 ± 0.1 | 49.6 ± 0.0 | 49.5 ± 0.0 | 51.0 ± 0.4 | 51.8 ± 0.2 |
+
+   Held-out accuracy rises monotonically as the residual shrinks, from 90% at full scale to 98.2 ± 0.1% at
+   scale 0.125 with both-unseen pairs at 96.3 ± 0.2% (gaps 6-20 and over 20 both at 100%), while seen
+   accuracy holds at 98.4% (gaps 2-5 at 93%, gap 1 at 80%): the best held-out result of the study, one
+   epoch before the step to zero. The far band improves too (76 → 88%, both-unseen 55 → 76%). Taking the
+   residual from full strength down to an eighth is what the dropout arm did by accident with a third,
+   done deliberately and further: the comparator keeps the precision it learned at full strength and
+   gradually stops relying on per-cell texture for the coarse decisions. 
+
+9. **A geometric anneal is tracked all the way down too, but one seed then found the ramp route.**
+   `grid_ramp_res_orth_anneal_geo` takes the scale from 1 to 0.001 log-linearly over the same window
+   (epochs 24-56), so the comparator spends thirty epochs at a residual it can barely see. It reads it
+   anyway: validation loss creeps from 0.06-0.13 at full scale to 0.14-0.18 at 0.001 and the checkpoints
+   along the way keep the pattern of the linear run, with the unseen bands improving as the residual
+   shrinks (held-out 90 → 97-98% between scale 1 and 0.006, both-unseen pairs 80 → 95%, far band 76 →
+   89%) while seen precision holds (gap 1 at 77-87%, gaps 2-5 at 95-98%):
+
+   | epoch | residual scale | test | test gap 1 | test gaps 2-5 | held-out | held-out both unseen | far | far both unseen |
+   |---|---|---|---|---|---|---|---|---|
+   | 24 | 1 | 98.4 ± 0.8 | 82.3 ± 4.5 | 93.0 ± 4.8 | 89.8 ± 1.2 | 79.7 ± 2.2 | 76.5 ± 5.4 | 55.4 ± 9.3 |
+   | 32 | 0.178 | 98.8 ± 0.3 | 78.0 ± 6.1 | 98.2 ± 1.5 | 95.9 ± 2.6 | 91.9 ± 5.2 | 82.1 ± 6.6 | 65.2 ± 12.7 |
+   | 36 | 0.075 | 97.8 ± 1.0 | 66.7 ± 11.3 | 92.1 ± 5.5 | 97.3 ± 2.4 | 94.6 ± 4.7 | 84.9 ± 8.0 | 70.4 ± 15.6 |
+   | 40 | 0.0316 | 98.5 ± 0.9 | 77.1 ± 9.8 | 96.2 ± 3.7 | 96.8 ± 2.0 | 93.5 ± 4.0 | 85.8 ± 5.3 | 72.2 ± 10.3 |
+   | 48 | 0.00562 | 98.8 ± 0.8 | 87.2 ± 12.5 | 97.8 ± 3.2 | 97.7 ± 2.1 | 95.5 ± 4.1 | 89.0 ± 4.9 | 78.6 ± 9.6 |
+   | 52 | 0.00237 | 98.3 ± 1.4 | 74.6 ± 12.2 | 94.5 ± 7.6 | 97.4 ± 1.6 | 94.6 ± 3.3 | 85.0 ± 6.0 | 70.9 ± 11.5 |
+   | 56 | 0 | 56.8 ± 6.6 | 59.6 ± 0.7 | 57.0 ± 2.3 | 52.8 ± 5.0 | 49.7 ± 0.3 | 53.7 ± 4.3 | 51.9 ± 0.0 |
+   | 64 | 0 | 61.4 ± 10.7 | 64.2 ± 7.8 | 62.7 ± 10.0 | 58.2 ± 11.2 | 57.1 ± 10.8 | 55.1 ± 5.8 | 52.0 ± 0.1 |
+   | 72 | 0 | 68.5 ± 22.1 | 70.6 ± 16.9 | 70.0 ± 20.7 | 66.2 ± 23.6 | 66.0 ± 23.4 | 60.2 ± 12.1 | 53.8 ± 2.6 |
+   | 80 | 0 | 68.5 ± 21.8 | 67.6 ± 10.7 | 70.0 ± 20.7 | 66.3 ± 22.9 | 65.4 ± 22.5 | 60.3 ± 12.6 | 54.5 ± 3.6 |
+
+   At zero the loss jumps to 1.4 in every seed again. What differs is the residual-free phase. Seed 2
+   recovers (validation loss 0.81 at epoch 64, 0.20 at epoch 72) and its best residual-free checkpoint,
+   evaluated with the residual parameter zeroed outright, scores 99.7% on seen pairs (94% at gap 1, 99%
+   at gaps 2-5) and 99.7% on the held-out band with both-unseen pairs at 99.3%, including 91% at gap 1
+   and 100% from gap 2 up: a model whose every numeral embedding is generated from two shared directions
+   resolves neighbouring unseen values. That retracts the claim in the earlier version of this note that
+   a shared code cannot separate neighbours; the comparator can read the ramp at unit resolution once it
+   has to. Its far band is 79% (both-unseen 60%): the ramp-plane curve is quadratic in k and the far
+   values sit on a part of it the comparator never saw. Seeds 1 and 3 did not recover in 24 epochs
+   (validation loss 1.03 and 1.01 at epoch 80, still falling), and the phase is handicapped: the cosine
+   schedule has the learning rate at 6e-5 falling to its 3e-5 floor from epoch 56 on, a fifth to a tenth
+   of the rate the model learned the task at. Two follow-ups are running: the same anneal pinned to
+   epochs 24-56 of a 120-epoch run (`grid_ramp_res_orth_anneal_geo_long`), which gives the residual-free
+   phase 64 epochs starting at 1.9e-4, and an anneal that stops at 0.01 and holds
+   (`grid_ramp_res_orth_anneal_hold`), which keeps the small residual the comparator has tuned itself
+   to read. %%HOLD%%
+
+
+
+10. **Capacity is not the limit here.** The small model (d = 256, 4 layers, 3.5M parameters) stayed at
    chance for 15-40 epochs at learning rates 1e-4, 3e-4 and 1e-3 (warmup 300) on this data, so the tiny
    model remains the testbed.
 
@@ -140,6 +208,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_cdrop | 3 | 55.0 ± 3.3 | 51.4 ± 2.8 | 48.0 ± 4.8 |
 | grid_ramp_res_orth_drop | 3 | 98.6 ± 0.3 | 91.9 ± 2.2 | 88.5 ± 3.6 |
 | grid_ramp_res_orth_drop_80ep | 3 | 99.4 ± 0.3 | 75.9 ± 8.0 | 96.3 ± 1.9 |
+| grid_ramp_res_orth_anneal_geo | 3 | 68.6 ± 22.0 | 66.6 ± 23.3 | 60.7 ± 13.2 |
 | grid_ramp_res_orth_anneal | 3 | 52.6 ± 0.1 | 49.6 ± 0.0 | 51.0 ± 0.4 |
 
 ## test_holdout: accuracy by number of unseen operands
@@ -158,6 +227,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_cdrop | 53.3 ± 5.5 | 49.3 ± 0.2 |
 | grid_ramp_res_orth_drop | 99.5 ± 0.2 | 83.8 ± 4.3 |
 | grid_ramp_res_orth_drop_80ep | 97.9 ± 1.0 | 52.3 ± 15.6 |
+| grid_ramp_res_orth_anneal_geo | 67.2 ± 23.2 | 66.1 ± 23.5 |
 | grid_ramp_res_orth_anneal | 49.7 ± 0.1 | 49.5 ± 0.0 |
 
 ## test_far: accuracy by number of unseen operands
@@ -176,6 +246,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_cdrop | 46.1 ± 6.6 | 49.8 ± 3.1 |
 | grid_ramp_res_orth_drop | 99.8 ± 0.1 | 77.6 ± 7.0 |
 | grid_ramp_res_orth_drop_80ep | 100.0 ± 0.0 | 92.8 ± 3.8 |
+| grid_ramp_res_orth_anneal_geo | 67.0 ± 23.0 | 54.5 ± 3.6 |
 | grid_ramp_res_orth_anneal | 50.1 ± 0.6 | 51.8 ± 0.2 |
 
 ## test_holdout: both operands unseen, accuracy by |a - b|
@@ -196,6 +267,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_cdrop | 85.0 ± 21.2 | 46.4 ± 0.9 | 48.7 ± 1.3 | 48.8 ± 0.1 | 45.6 ± 1.3 | n/a |
 | grid_ramp_res_orth_drop | 92.0 ± 11.3 | 54.3 ± 10.3 | 65.7 ± 9.4 | 94.0 ± 2.9 | 100.0 ± 0.0 | n/a |
 | grid_ramp_res_orth_drop_80ep | 87.8 ± 16.3 | 49.7 ± 2.4 | 51.1 ± 6.7 | 52.9 ± 17.4 | 47.0 ± 38.6 | n/a |
+| grid_ramp_res_orth_anneal_geo | 100.0 ± 0.0 | 61.6 ± 20.6 | 65.2 ± 24.6 | 65.8 ± 24.2 | 63.1 ± 26.1 | n/a |
 | grid_ramp_res_orth_anneal | 100.0 ± 0.0 | 47.0 ± 0.0 | 47.8 ± 0.0 | 48.7 ± 0.0 | 44.7 ± 0.0 | n/a |
 
 ## test_far: both operands unseen, accuracy by |a - b|
@@ -216,6 +288,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_cdrop | 71.1 ± 40.9 | 51.0 ± 5.5 | 49.5 ± 0.6 | 49.9 ± 0.7 | 45.9 ± 5.2 | 34.7 ± 9.8 |
 | grid_ramp_res_orth_drop | 87.1 ± 9.9 | 59.1 ± 6.1 | 60.5 ± 11.4 | 82.4 ± 9.1 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_drop_80ep | 70.2 ± 23.1 | 78.1 ± 15.5 | 86.0 ± 10.5 | 99.5 ± 0.7 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_ramp_res_orth_anneal_geo | 87.1 ± 18.2 | 54.2 ± 0.9 | 52.6 ± 4.9 | 53.2 ± 3.9 | 54.1 ± 6.3 | 54.2 ± 17.7 |
 | grid_ramp_res_orth_anneal | 99.1 ± 1.3 | 54.8 ± 0.0 | 49.1 ± 0.0 | 50.2 ± 0.4 | 49.6 ± 0.0 | 41.7 ± 0.0 |
 
 ## test: accuracy by |a - b|
@@ -234,6 +307,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_cdrop | 90.6 ± 13.2 | 55.7 ± 4.3 | 55.0 ± 0.6 | 52.4 ± 0.1 | 54.5 ± 2.9 | 55.0 ± 6.4 |
 | grid_ramp_res_orth_drop | 74.3 ± 5.0 | 81.0 ± 3.8 | 95.3 ± 1.7 | 99.7 ± 0.3 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_drop_80ep | 80.1 ± 18.2 | 91.7 ± 2.0 | 99.4 ± 0.4 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_ramp_res_orth_anneal_geo | 98.8 ± 1.7 | 71.3 ± 15.8 | 70.0 ± 20.7 | 69.0 ± 21.9 | 68.5 ± 22.3 | 67.3 ± 23.2 |
 | grid_ramp_res_orth_anneal | 100.0 ± 0.0 | 58.7 ± 0.0 | 55.5 ± 0.1 | 52.4 ± 0.1 | 52.9 ± 0.2 | 50.2 ± 0.2 |
 
 ## test_holdout: accuracy by |a - b|
@@ -252,6 +326,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_cdrop | 85.0 ± 21.2 | 46.3 ± 0.6 | 48.3 ± 1.6 | 48.9 ± 0.1 | 47.2 ± 1.0 | 55.0 ± 7.2 |
 | grid_ramp_res_orth_drop | 92.0 ± 11.3 | 54.2 ± 10.5 | 65.8 ± 9.4 | 94.5 ± 2.7 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_drop_80ep | 87.8 ± 16.3 | 49.3 ± 2.3 | 51.6 ± 6.6 | 56.0 ± 16.2 | 73.4 ± 19.4 | 99.9 ± 0.1 |
+| grid_ramp_res_orth_anneal_geo | 100.0 ± 0.0 | 61.4 ± 20.8 | 64.8 ± 24.9 | 66.0 ± 24.1 | 64.6 ± 25.0 | 67.7 ± 22.9 |
 | grid_ramp_res_orth_anneal | 100.0 ± 0.0 | 46.7 ± 0.0 | 47.2 ± 0.0 | 49.0 ± 0.0 | 46.5 ± 0.0 | 50.3 ± 0.1 |
 
 ## test_far: accuracy by |a - b|
@@ -270,6 +345,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_cdrop | 71.1 ± 40.9 | 51.2 ± 5.1 | 49.6 ± 0.8 | 49.9 ± 0.5 | 44.9 ± 5.3 | 46.1 ± 7.0 |
 | grid_ramp_res_orth_drop | 87.1 ± 9.9 | 59.0 ± 6.0 | 60.4 ± 11.3 | 83.1 ± 8.8 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_drop_80ep | 70.2 ± 23.1 | 78.1 ± 15.5 | 86.1 ± 10.4 | 99.6 ± 0.6 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_ramp_res_orth_anneal_geo | 87.1 ± 18.2 | 54.1 ± 0.9 | 52.7 ± 5.0 | 53.8 ± 5.0 | 56.9 ± 11.7 | 67.1 ± 22.7 |
 | grid_ramp_res_orth_anneal | 99.1 ± 1.3 | 54.8 ± 0.0 | 49.1 ± 0.0 | 50.0 ± 0.3 | 48.7 ± 0.0 | 50.4 ± 0.7 |
 
 ## Is magnitude in the embedding?
@@ -291,6 +367,7 @@ training-pool rows correlated with k.
 | grid_ramp_res_orth_cdrop | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.951 ± 0.021 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_drop | 1.000 ± 0.000 | 0.999 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_drop_80ep | 1.000 ± 0.000 | 0.999 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
+| grid_ramp_res_orth_anneal_geo | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_anneal | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 
 ## Training
@@ -309,4 +386,5 @@ training-pool rows correlated with k.
 | grid_ramp_res_orth_cdrop | 3 | 563,999 | 0.675 ± 0.026 | 38, 15, 8 |
 | grid_ramp_res_orth_drop | 3 | 563,999 | 0.103 ± 0.016 | 40, 40, 40 |
 | grid_ramp_res_orth_drop_80ep | 3 | 563,999 | 0.035 ± 0.003 | 79, 75, 75 |
+| grid_ramp_res_orth_anneal_geo | 3 | 563,999 | 0.743 ± 0.393 | 80, 78, 80 |
 | grid_ramp_res_orth_anneal | 3 | 563,999 | 1.199 ± 0.035 | 80, 80, 80 |

@@ -84,6 +84,12 @@ ARMS = {
     "grid_ramp_res_orth_anneal_geo": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                       "--shared-residual", "--residual-orthogonal", "--residual-anneal", "0.3", "0.7",
                                       "--residual-anneal-floor", "0.001"],
+    # Same geometric anneal pinned to epochs 24-56 of a 120-epoch run (--epochs 120),
+    # so the residual-free phase is 64 epochs at a learning rate still well above the
+    # cosine floor instead of 24 epochs at the floor.
+    "grid_ramp_res_orth_anneal_geo_long": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                                           "--shared-residual", "--residual-orthogonal", "--residual-anneal", "0.2", "0.4667",
+                                           "--residual-anneal-floor", "0.001"],
     # Anneal and hold: geometric to 0.01 by 70% of training, then held there, so
     # the comparator keeps a small residual it has tuned itself to read.
     "grid_ramp_res_orth_anneal_hold": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
