@@ -125,6 +125,23 @@ ARMS = {
     # that cannot memorise individual values. Separates nesting from smoothness.
     "sinusoid_smooth": ["--embedding", "sinusoid", "--tie-weights", "--sinusoid-min-period", "32"],
 }
+
+# Withdrawal-routes study (experiments/plan_distinctive_result.md, M1): arms that need no trainer
+# code. Driver flags precede arm flags in train_arm, so an arm's --learning-rate / --num-epochs wins.
+# Ramp-only controls: can the ramp be learned alone with a hotter or longer schedule?
+ARMS["grid_ramp_lr1e3"] = ARMS["grid_ramp"] + ["--learning-rate", "1e-3"]
+ARMS["grid_ramp_lr3e3"] = ARMS["grid_ramp"] + ["--learning-rate", "3e-3"]
+ARMS["grid_ramp_360ep"] = ARMS["grid_ramp"] + ["--num-epochs", "360"]
+# Shrinkage: heavy weight decay on the residual as an implicit, unscheduled fade.
+ARMS["grid_ramp_res_orth_wd3"] = ARMS["grid_ramp_res_orth"] + ["--residual-wd", "3"]
+ARMS["grid_ramp_res_orth_wd10"] = ARMS["grid_ramp_res_orth"] + ["--residual-wd", "10"]
+# Fade-rate dose-response: the same descent from 0.01 to 1e-6 over 4, 8 and 20 epochs instead of 40.
+_deep = ARMS["grid_ramp_res_orth_anneal_deep"][:-1]
+ARMS["grid_ramp_res_orth_anneal_deep_fade4"] = _deep + ["0.2:1,0.4667:0.01,0.5667:0.01,0.6:0.000001"]
+ARMS["grid_ramp_res_orth_anneal_deep_fade8"] = _deep + ["0.2:1,0.4667:0.01,0.5667:0.01,0.6333:0.000001"]
+ARMS["grid_ramp_res_orth_anneal_deep_fade20"] = _deep + ["0.2:1,0.4667:0.01,0.5667:0.01,0.7333:0.000001"]
+# A constant-angular-speed fixed code (one sin/cos pair, period 1250) trained from scratch.
+ARMS["sinusoid_dice"] = ["--embedding", "sinusoid", "--tie-weights", "--sinusoid-min-period", "1250"]
 DEFAULT_ARMS = ["learned", "grid_linear", "grid_conv"]
 SPLITS = ("test", "test_holdout", "test_far")
 CATEGORIES = ("overall", "structure", "after_numeral", "numeral", "copy", "fresh")
