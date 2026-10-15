@@ -223,3 +223,48 @@ def test_staged_schedule_and_parser():
     for bad in ("0.5:1", "0.2:1,0.1:0.5", "0.2:2,0.5:0", "0.2:1,1.5:0"):
         with pytest.raises(ValueError):
             parse_anneal_stages(bad)
+
+
+def test_evaluator_residual_scale_override_matches_zeroed_residual(tmp_path, vocab):
+    torch = pytest.importorskip("torch")
+    from data.magnitude_generator import MagnitudeGenerator
+    from evaluate_magnitude import evaluate_split, saved_residual_scale, set_residual_scale
+    from models.transformer import create_model
+    from training.train import FOLDataset
+    from utils.grid_bank import GridBank
+    import json
+
+    torch.manual_seed(0)
+    bank = GridBank.load(ROOT / "grids" / "grid_bank.npz")
+    model = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
+                         verbose=False, shared_basis="ramp", shared_residual=True, shared_residual_orthogonal=True)
+    with torch.no_grad():
+        model.symbol_embed.encoder.residual.normal_()
+    model.eval()
+    gen = MagnitudeGenerator(vocab)
+    samples = [gen.make_sample(a, b, op, set(range(500))) for a, b in [(3, 40), (50, 7), (12, 200), (300, 5), (420, 421)]
+               for op in ("LESS_THAN", "GREATER_THAN")]
+    path = tmp_path / "s.json"
+    json.dump({"num_samples": len(samples), "max_seq_len": 5, "samples": samples}, open(path, "w"))
+    ds = FOLDataset(str(path), pad_id=vocab.pad_token or 0)
+    device = torch.device("cpu")
+    with torch.no_grad():
+        assert saved_residual_scale(model) == 1.0
+        full, rows_full = evaluate_split(model, ds, vocab, device, return_rows=True)
+        set_residual_scale(model, 0.0)
+        at_zero, rows_zero = evaluate_split(model, ds, vocab, device, return_rows=True)
+        set_residual_scale(model, 1.0)
+        with torch.no_grad():
+            model.symbol_embed.encoder.residual.zero_()
+        zeroed, rows_zeroed = evaluate_split(model, ds, vocab, device, return_rows=True)
+    # The override at 0 is the same model as one whose residual parameter is zero, row for row.
+    assert [r["p_true"] for r in rows_zero] == pytest.approx([r["p_true"] for r in rows_zeroed], abs=1e-6)
+    # ... and differs from the full-residual model (the random residual changes the embeddings).
+    assert any(abs(x["p_true"] - y["p_true"]) > 1e-4 for x, y in zip(rows_full, rows_zero))
+    assert all(set(r) >= {"a", "b", "op", "p_true", "correct"} for r in rows_full)
+    # Residual-free models have no scale to override.
+    plain = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
+                         verbose=False, shared_basis="ramp", shared_residual=False)
+    assert saved_residual_scale(plain) is None
+    with pytest.raises(ValueError):
+        set_residual_scale(plain, 0.5)

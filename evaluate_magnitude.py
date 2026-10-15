@@ -79,7 +79,8 @@ def signed_difference(sample: Dict) -> int:
 
 @torch.no_grad()
 def evaluate_split(model, dataset: FOLDataset, vocab: Vocabulary, device: torch.device,
-                   batch_size: int = 512, max_samples: Optional[int] = None) -> Dict:
+                   batch_size: int = 512, max_samples: Optional[int] = None, return_rows: bool = False):
+    """Accuracy breakdowns for one split; with ``return_rows`` also the per-sample rows."""
     true_id, false_id = vocab.encode_label("TRUE"), vocab.encode_label("FALSE")
     n = len(dataset) if max_samples is None else min(len(dataset), max_samples)
     rows = []
@@ -96,6 +97,7 @@ def evaluate_split(model, dataset: FOLDataset, vocab: Vocabulary, device: torch.
             s = dataset.samples[i]
             target = int(s["target"])
             rows.append({
+                "a": int(s["a"]), "b": int(s["b"]), "op": s.get("op"),
                 "correct": int(pred_full[j] == target),
                 "correct_tf": int((tf[j] >= 0.5) == (target == true_id)),
                 "gap": abs(s["a"] - s["b"]),
@@ -124,7 +126,23 @@ def evaluate_split(model, dataset: FOLDataset, vocab: Vocabulary, device: torch.
             if any(lo <= r["signed"] <= hi for r in rows) else float("nan"),
             "n": sum(1 for r in rows if lo <= r["signed"] <= hi)} for lo, hi in SIGNED_BINS},
     }
-    return out
+    return (out, rows) if return_rows else out
+
+
+def set_residual_scale(model, scale: float) -> None:
+    """Override the grid_shared residual scale of a loaded model (the buffer is applied after the
+    orthogonal projection on every forward pass, so this is live for all later evaluation)."""
+    enc = getattr(getattr(model, "symbol_embed", None), "encoder", None)
+    if enc is None or getattr(enc, "residual", None) is None:
+        raise ValueError("--residual-scale needs a grid_shared model with a residual")
+    enc.set_residual_scale(scale)
+
+
+def saved_residual_scale(model) -> Optional[float]:
+    enc = getattr(getattr(model, "symbol_embed", None), "encoder", None)
+    if enc is None or getattr(enc, "residual", None) is None:
+        return None
+    return float(enc.residual_scale)
 
 
 def magnitude_axis_probe(table: np.ndarray, pools: Dict[str, List[int]], ridge: float = 1e-2) -> Dict:
@@ -183,12 +201,17 @@ def main() -> int:
     ap.add_argument("--batch-size", type=int, default=512)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--residual-scale", type=float, default=None,
+                    help="grid_shared models: evaluate with the residual scaled by this instead of the saved scale (0 = ramp only)")
+    ap.add_argument("--dump-rows", default=None, help="write every evaluated pair (a, b, op, p_true, correct, ...) as JSON lines")
     args = ap.parse_args()
 
     device = torch.device(args.device)
     vocab = Vocabulary(args.vocab)
     model, ckpt = load_model_from_checkpoint(args.checkpoint, vocab.vocab_size, device)
     cfg = ckpt.get("config", {})
+    if args.residual_scale is not None:
+        set_residual_scale(model, args.residual_scale)
     pad_id = vocab.pad_token if vocab.pad_token is not None else 0
 
     meta_path = Path(args.metadata) if args.metadata else Path(args.splits[0]).parent / "metadata.json"
@@ -200,6 +223,8 @@ def main() -> int:
         "tie_weights": bool(cfg.get("tie_weights", False)),
         "epoch": ckpt.get("epoch"), "best_val_loss": ckpt.get("best_val_loss"),
         "params": model.count_parameters(),
+        "residual_scale": saved_residual_scale(model),
+        "residual_scale_overridden": args.residual_scale is not None,
         "splits": {},
         "geometry": geometry_probe(model, vocab),
     }
@@ -207,12 +232,21 @@ def main() -> int:
         table = model.embedding_table().detach().cpu().numpy()
     results["magnitude_axis"] = magnitude_axis_probe(table, pools)
 
+    dump = open(args.dump_rows, "w") if args.dump_rows else None
     for path in args.splits:
         ds = FOLDataset(path, pad_id=pad_id)
-        results["splits"][Path(path).stem] = evaluate_split(model, ds, vocab, device, args.batch_size, args.max_samples)
+        out, rows = evaluate_split(model, ds, vocab, device, args.batch_size, args.max_samples, return_rows=True)
+        results["splits"][Path(path).stem] = out
+        if dump:
+            for r in rows:
+                dump.write(json.dumps({"split": Path(path).stem, **r}) + "\n")
+    if dump:
+        dump.close()
 
     tag = f"{results['embedding_type']}{' (tied)' if results['tie_weights'] else ''}"
-    print(f"\n{tag}  epoch {results['epoch']}  val {results['best_val_loss']}")
+    scale_note = (f"  residual scale {results['residual_scale']:g}" + (" (override)" if results["residual_scale_overridden"] else "")
+                  if results["residual_scale"] is not None else "")
+    print(f"\n{tag}  epoch {results['epoch']}  val {results['best_val_loss']}{scale_note}")
     gaps = [bin_label(lo, hi) for lo, hi in GAP_BINS]
     print("| split | acc | acc_tf | " + " | ".join(f"gap {g}" for g in gaps) + " | 1 unseen | 2 unseen |")
     print("|" + "---|" * (len(gaps) + 5))
