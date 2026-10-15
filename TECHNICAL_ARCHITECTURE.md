@@ -219,6 +219,17 @@ The direction rotates uniformly with k, so the walk through any gap and the cont
 segments of the same curve; the residuals give trained cells distinctive increments. Without the residual
 the path is too flat to learn from; without the ramp the path cannot leave the trained range.
 
+The residual has three knobs, all used in the precision study (`experiments/magnitude_precision.md`):
+
+- `--residual-orthogonal`: `r_i` is projected off span{a, c} every forward pass, so it can give trained
+  cells texture but cannot carry magnitude; magnitude then comes only from the ramp, which unseen cells
+  share.
+- `--residual-lr-mult M --residual-wd W`: the residual gets its own AdamW group (learning rate ×M, weight
+  decay W). Its strength decides how much the comparator can lean on per-cell texture.
+- `--residual-dropout p [--residual-dropout-cell]`: with probability p a training batch is embedded with
+  the ramp alone (or each cell's residual row is dropped independently), so the comparator must keep a
+  route through the shared part. Evaluation always uses the full weights.
+
 For numerals `g_k` is the thermometer code (first k cells set), so `W g_k` is the cumulative sum of
 the first k columns of `W`: adjacent indices get adjacent embeddings and an index absent from training
 still lands between its neighbours. The LayerNorm gain is initialised to 0.02 so grid rows start at the
