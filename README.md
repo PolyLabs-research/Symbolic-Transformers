@@ -277,7 +277,11 @@ keeping the residual off the magnitude plane and dropping it in half the trainin
 (`grid_ramp_res_orth_drop`) is the best of both so far: 95% at gaps 2-5 and 81% at gap 1 on seen pairs, 94%
 at gaps 6-20 and 100% beyond on pairs of two unseen values; trained twice as long it reaches 92% / 99% on
 seen pairs and resolves never-seen values past the trained range down to gap 1 (78%), at the cost of the
-held-out band inside it (`experiments/magnitude_precision.md`).
+held-out band inside it. Annealing the residual instead (`--residual-anneal`) shows the comparator follows
+it down to any nonzero scale and collapses at exactly zero; stopping at a hundredth and holding gives
+90% / 99% on seen pairs and 95% on held-out pairs of two unseen values, and in the seeds that recover from
+the step to zero a residual-free model reaches 95% / 100% and 98-99%, resolving neighbouring unseen values
+from the two shared directions alone (`experiments/magnitude_precision.md`).
 
 Manual equivalents for the FOL experiment:
 
