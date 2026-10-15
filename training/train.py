@@ -74,6 +74,8 @@ class TrainingConfig:
     val_data_path: str = "datasets/fol_next_symbol/val.json"
     checkpoint_dir: str = "checkpoints"
     save_every: int = 5
+    # Periodic checkpoints (checkpoint_epoch_N.pt) to keep; 0 keeps all. best_model.pt is never pruned.
+    keep_checkpoints: int = 2
     log_every: int = 100
     device: str = "cuda"
     mixed_precision: bool = False
@@ -301,6 +303,18 @@ class Trainer:
         
         return total_loss / num_batches
     
+    def prune_checkpoints(self):
+        """Keep only the newest ``keep_checkpoints`` periodic checkpoints (resume uses the newest)."""
+        keep = self.config.keep_checkpoints
+        if keep <= 0:
+            return
+        def epoch_of(path: Path) -> int:
+            match = re.search(r"checkpoint_epoch_(\d+)\.pt$", path.name)
+            return int(match.group(1)) if match else -1
+        periodic = sorted(self.checkpoint_dir.glob("checkpoint_epoch_*.pt"), key=epoch_of)
+        for old in periodic[:-keep]:
+            old.unlink(missing_ok=True)
+
     def save_checkpoint(self, is_best: bool = False):
         checkpoint = {
             'epoch': self.epoch,
@@ -316,6 +330,7 @@ class Trainer:
         checkpoint_path = self.checkpoint_dir / f"checkpoint_epoch_{self.epoch}.pt"
         torch.save(checkpoint, checkpoint_path)
         print(f"  ✓ Saved checkpoint: {checkpoint_path}")
+        self.prune_checkpoints()
         
         if is_best:
             best_path = self.checkpoint_dir / "best_model.pt"
@@ -397,6 +412,8 @@ def main():
                         help="grid_shared: add a zero-initialised per-cell residual weight")
     parser.add_argument("--residual-orthogonal", action="store_true",
                         help="grid_shared residual: project it orthogonal to the generated directions (cannot carry magnitude)")
+    parser.add_argument("--keep-checkpoints", type=int, default=2,
+                        help="periodic checkpoints to keep per run (0 = keep all; best_model.pt is always kept)")
     parser.add_argument("--residual-dropout", type=float, default=0.0,
                         help="grid_shared residual: probability of training a batch without the residual "
                              "(the model must keep a magnitude route through the shared part)")
@@ -442,6 +459,7 @@ def main():
     config.shared_basis = args.shared_basis
     config.shared_residual_orthogonal = args.residual_orthogonal
     config.shared_residual_dropout = args.residual_dropout
+    config.keep_checkpoints = args.keep_checkpoints
     config.shared_residual_dropout_cell = args.residual_dropout_cell
     config.residual_lr_mult = args.residual_lr_mult
     config.residual_weight_decay = args.residual_wd
