@@ -63,7 +63,7 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
    itself: per-cell norm 1.0-1.2 instead of 3.4 (generated part 3.2 instead of 5.6), a third of the shared
    part instead of 60%, and a comparator trained on a small residual reads untrained cells' generated
    weights correctly. The per-cell variant (`_cdrop`) never trained: validation loss 0.67 after 40 epochs
-   in every seed.
+   in all three seeds.
 
 7. **Capacity is not the limit here.** The small model (d = 256, 4 layers, 3.5M parameters) stayed at
    chance for 15-40 epochs at learning rates 1e-4, 3e-4 and 1e-3 (warmup 300) on this data, so the tiny
@@ -100,7 +100,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res | 3 | 97.5 ± 1.3 | 83.4 ± 3.5 | 72.1 ± 5.8 |
 | learned_untied | 3 | 94.1 ± 1.9 | 54.9 ± 0.5 | 49.2 ± 0.6 |
 | grid_ramp_res_orth_80ep | 3 | 99.7 ± 0.1 | 68.2 ± 2.1 | 76.0 ± 9.3 |
-| grid_ramp_res_orth_cdrop | 2 | 56.2 ± 3.5 | 52.3 ± 2.9 | 46.3 ± 5.1 |
+| grid_ramp_res_orth_cdrop | 3 | 55.0 ± 3.3 | 51.4 ± 2.8 | 48.0 ± 4.8 |
 | grid_ramp_res_orth_drop | 3 | 98.6 ± 0.3 | 91.9 ± 2.2 | 88.5 ± 3.6 |
 
 ## test_holdout: accuracy by number of unseen operands
@@ -116,7 +116,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res | 98.3 ± 0.7 | 67.4 ± 6.6 |
 | learned_untied | 60.1 ± 0.9 | 49.3 ± 2.0 |
 | grid_ramp_res_orth_80ep | 96.7 ± 0.2 | 37.7 ± 4.2 |
-| grid_ramp_res_orth_cdrop | 55.2 ± 5.8 | 49.2 ± 0.2 |
+| grid_ramp_res_orth_cdrop | 53.3 ± 5.5 | 49.3 ± 0.2 |
 | grid_ramp_res_orth_drop | 99.5 ± 0.2 | 83.8 ± 4.3 |
 
 ## test_far: accuracy by number of unseen operands
@@ -132,7 +132,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res | 95.9 ± 4.5 | 49.1 ± 7.1 |
 | learned_untied | 47.8 ± 1.0 | 50.7 ± 1.4 |
 | grid_ramp_res_orth_80ep | 98.0 ± 1.6 | 54.6 ± 16.8 |
-| grid_ramp_res_orth_cdrop | 43.8 ± 7.0 | 48.7 ± 3.3 |
+| grid_ramp_res_orth_cdrop | 46.1 ± 6.6 | 49.8 ± 3.1 |
 | grid_ramp_res_orth_drop | 99.8 ± 0.1 | 77.6 ± 7.0 |
 
 ## test_holdout: both operands unseen, accuracy by |a - b|
@@ -150,7 +150,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res | 93.9 ± 8.6 | 51.9 ± 5.5 | 54.7 ± 6.3 | 64.0 ± 10.8 | 96.3 ± 2.9 | n/a |
 | learned_untied | 54.9 ± 17.2 | 49.0 ± 2.8 | 48.4 ± 0.9 | 49.7 ± 2.4 | 48.8 ± 4.5 | n/a |
 | grid_ramp_res_orth_80ep | 100.0 ± 0.0 | 47.2 ± 0.3 | 45.5 ± 2.8 | 36.3 ± 5.0 | 11.9 ± 7.4 | n/a |
-| grid_ramp_res_orth_cdrop | 77.5 ± 22.5 | 46.0 ± 1.0 | 49.2 ± 1.3 | 48.8 ± 0.1 | 46.1 ± 1.4 | n/a |
+| grid_ramp_res_orth_cdrop | 85.0 ± 21.2 | 46.4 ± 0.9 | 48.7 ± 1.3 | 48.8 ± 0.1 | 45.6 ± 1.3 | n/a |
 | grid_ramp_res_orth_drop | 92.0 ± 11.3 | 54.3 ± 10.3 | 65.7 ± 9.4 | 94.0 ± 2.9 | 100.0 ± 0.0 | n/a |
 
 ## test_far: both operands unseen, accuracy by |a - b|
@@ -168,7 +168,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res | 70.7 ± 22.9 | 52.0 ± 2.7 | 48.6 ± 0.7 | 48.3 ± 5.0 | 46.8 ± 31.7 | 41.7 ± 29.5 |
 | learned_untied | 58.7 ± 17.1 | 47.1 ± 3.2 | 48.2 ± 0.5 | 50.2 ± 1.4 | 54.8 ± 5.1 | 61.1 ± 10.4 |
 | grid_ramp_res_orth_80ep | 98.2 ± 2.5 | 57.4 ± 3.6 | 50.6 ± 9.2 | 50.9 ± 17.2 | 58.6 ± 36.8 | 62.5 ± 44.5 |
-| grid_ramp_res_orth_cdrop | 56.7 ± 43.3 | 49.0 ± 5.8 | 49.8 ± 0.7 | 49.7 ± 0.8 | 44.1 ± 5.5 | 31.2 ± 10.4 |
+| grid_ramp_res_orth_cdrop | 71.1 ± 40.9 | 51.0 ± 5.5 | 49.5 ± 0.6 | 49.9 ± 0.7 | 45.9 ± 5.2 | 34.7 ± 9.8 |
 | grid_ramp_res_orth_drop | 87.1 ± 9.9 | 59.1 ± 6.1 | 60.5 ± 11.4 | 82.4 ± 9.1 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 
 ## test: accuracy by |a - b|
@@ -184,7 +184,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res | 62.6 ± 20.1 | 70.6 ± 9.7 | 90.3 ± 7.2 | 98.4 ± 1.2 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | learned_untied | 53.8 ± 8.8 | 58.1 ± 8.7 | 76.7 ± 13.2 | 90.7 ± 3.8 | 99.2 ± 1.1 | 99.6 ± 0.0 |
 | grid_ramp_res_orth_80ep | 97.7 ± 3.3 | 92.0 ± 6.1 | 99.5 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 |
-| grid_ramp_res_orth_cdrop | 86.0 ± 14.0 | 54.1 ± 4.6 | 54.8 ± 0.6 | 52.5 ± 0.2 | 55.5 ± 3.1 | 57.3 ± 6.8 |
+| grid_ramp_res_orth_cdrop | 90.6 ± 13.2 | 55.7 ± 4.3 | 55.0 ± 0.6 | 52.4 ± 0.1 | 54.5 ± 2.9 | 55.0 ± 6.4 |
 | grid_ramp_res_orth_drop | 74.3 ± 5.0 | 81.0 ± 3.8 | 95.3 ± 1.7 | 99.7 ± 0.3 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 
 ## test_holdout: accuracy by |a - b|
@@ -200,7 +200,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res | 93.9 ± 8.6 | 51.5 ± 5.5 | 54.8 ± 6.7 | 65.3 ± 10.8 | 98.1 ± 1.4 | 100.0 ± 0.0 |
 | learned_untied | 54.9 ± 17.2 | 48.7 ± 2.8 | 48.4 ± 0.8 | 50.1 ± 2.2 | 44.0 ± 2.1 | 66.2 ± 1.2 |
 | grid_ramp_res_orth_80ep | 100.0 ± 0.0 | 46.9 ± 0.3 | 46.1 ± 2.6 | 40.5 ± 4.7 | 55.2 ± 3.7 | 99.8 ± 0.0 |
-| grid_ramp_res_orth_cdrop | 77.5 ± 22.5 | 46.1 ± 0.7 | 48.9 ± 1.7 | 48.9 ± 0.1 | 47.5 ± 1.0 | 57.5 ± 7.6 |
+| grid_ramp_res_orth_cdrop | 85.0 ± 21.2 | 46.3 ± 0.6 | 48.3 ± 1.6 | 48.9 ± 0.1 | 47.2 ± 1.0 | 55.0 ± 7.2 |
 | grid_ramp_res_orth_drop | 92.0 ± 11.3 | 54.2 ± 10.5 | 65.8 ± 9.4 | 94.5 ± 2.7 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 
 ## test_far: accuracy by |a - b|
@@ -216,7 +216,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res | 70.7 ± 22.9 | 52.0 ± 2.3 | 48.7 ± 0.6 | 49.2 ± 5.5 | 55.3 ± 30.3 | 97.5 ± 2.8 |
 | learned_untied | 58.7 ± 17.1 | 46.5 ± 3.2 | 47.9 ± 0.5 | 47.8 ± 1.3 | 39.3 ± 3.6 | 53.1 ± 1.0 |
 | grid_ramp_res_orth_80ep | 98.2 ± 2.5 | 57.3 ± 3.6 | 50.7 ± 9.2 | 52.1 ± 16.9 | 66.2 ± 29.7 | 99.2 ± 1.0 |
-| grid_ramp_res_orth_cdrop | 56.7 ± 43.3 | 49.4 ± 5.4 | 49.9 ± 0.8 | 49.8 ± 0.5 | 43.1 ± 5.6 | 43.6 ± 7.5 |
+| grid_ramp_res_orth_cdrop | 71.1 ± 40.9 | 51.2 ± 5.1 | 49.6 ± 0.8 | 49.9 ± 0.5 | 44.9 ± 5.3 | 46.1 ± 7.0 |
 | grid_ramp_res_orth_drop | 87.1 ± 9.9 | 59.0 ± 6.0 | 60.4 ± 11.3 | 83.1 ± 8.8 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 
 ## Is magnitude in the embedding?
@@ -235,7 +235,7 @@ training-pool rows correlated with k.
 | grid_ramp_res | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.220 ± 0.848 | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.292 ± 0.914 |
 | learned_untied | 0.993 ± 0.001 | 0.115 ± 0.064 | 0.024 ± 0.087 | 0.327 ± 0.936 | 0.131 ± 0.061 | -0.034 ± 0.116 |
 | grid_ramp_res_orth_80ep | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.903 ± 0.117 | 1.000 ± 0.000 | -0.952 ± 0.054 | -0.181 ± 0.611 |
-| grid_ramp_res_orth_cdrop | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.936 ± 0.002 | 1.000 ± 0.000 | 1.000 ± 0.000 |
+| grid_ramp_res_orth_cdrop | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.951 ± 0.021 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_drop | 1.000 ± 0.000 | 0.999 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 
 ## Training
@@ -251,5 +251,5 @@ training-pool rows correlated with k.
 | grid_ramp_res | 3 | 563,999 | 0.125 ± 0.044 | 40, 40, 36 |
 | learned_untied | 3 | 569,247 | 0.144 ± 0.040 | 36, 35, 40 |
 | grid_ramp_res_orth_80ep | 3 | 563,999 | 0.037 ± 0.006 | 77, 68, 56 |
-| grid_ramp_res_orth_cdrop | 2 | 563,999 | 0.666 ± 0.027 | 38, 15 |
+| grid_ramp_res_orth_cdrop | 3 | 563,999 | 0.675 ± 0.026 | 38, 15, 8 |
 | grid_ramp_res_orth_drop | 3 | 563,999 | 0.103 ± 0.016 | 40, 40, 40 |
