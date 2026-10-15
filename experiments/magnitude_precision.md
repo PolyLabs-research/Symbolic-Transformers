@@ -19,6 +19,7 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
 | `grid_ramp_res_orth_80ep` | lr ×1, orthogonal | 80 epochs |
 | `grid_ramp_res_orth_drop` | lr ×1, orthogonal | half the training batches embed with the ramp alone (`--residual-dropout 0.5`) |
 | `grid_ramp_res_orth_cdrop` | lr ×1, orthogonal | each cell's residual row dropped independently (`--residual-dropout-cell`) |
+| `grid_ramp_res_orth_drop_80ep` | lr ×1, orthogonal, dropout 0.5 | 80 epochs |
 
 ## Reading
 
@@ -63,24 +64,46 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
    itself: per-cell norm 1.0-1.2 instead of 3.4 (generated part 3.2 instead of 5.6), a third of the shared
    part instead of 60%, and a comparator trained on a small residual reads untrained cells' generated
    weights correctly. The per-cell variant (`_cdrop`) never trained: validation loss 0.67 after 40 epochs
-   in all three seeds.
+   in every seed.
 
-7. **Capacity is not the limit here.** The small model (d = 256, 4 layers, 3.5M parameters) stayed at
+7. **Training the dropout arm longer trades the held-out band for the far band.** At 80 epochs
+   (`grid_ramp_res_orth_drop_80ep`, validation loss 0.035 ± 0.003, best epochs 75-79) seen precision reaches
+   the level of the 80-epoch run without dropout (91.7 ± 2.0% at gap 1, 99.4 ± 0.4% at gaps 2-5), and the
+   far band becomes the best unseen result of the study: 96.3 ± 1.9% overall, both-unseen pairs 92.8 ± 3.8%,
+   with 78.1 ± 15.5% at gap 1, 86.0 ± 10.5% at gaps 2-5 and 99.5% at gaps 6-20 (seed 1 is at 100% from gap 1
+   up). The held-out band goes the other way: 75.9 ± 8.0% overall, both-unseen pairs 52.3 ± 15.6%, and two
+   of three seeds invert over gap 20 (32% and 9%; the third keeps 100%). The mechanism is the one from
+   point 4 in a milder form. The ramp-only batches are still not learned (training loss 0.40 against
+   validation 0.045, so they sit at chance), the residual grows from 1.03 to 1.23 per cell, and it is
+   largest on the cells just above the gap (1.8-2.5 for cells 450-498) and on the gap cells themselves
+   (1.3-1.6), which receive gradient only as interior cells of larger numerals. Zeroing the gap cells'
+   residual in the trained checkpoints removes the inversion (both-unseen accuracy over gap 20 goes
+   32 → 92% and 9 → 93%) but does not bring back the 40-epoch precision at smaller gaps and costs seen
+   accuracy, so the comparator is reading more than the gap cells' texture. Cells past the trained range
+   are not residual-free either (norm about 1.0): the tied softmax trains them through the never-seen
+   numerals' logits.
+
+8. **Capacity is not the limit here.** The small model (d = 256, 4 layers, 3.5M parameters) stayed at
    chance for 15-40 epochs at learning rates 1e-4, 3e-4 and 1e-3 (warmup 300) on this data, so the tiny
    model remains the testbed.
 
 ## Where precision stands
 
-- Seen pairs: 81% at gap 1 and 95% at gaps 2-5 with the dropout arm; up to 92% / 99.5% if unseen values
-  are sacrificed (80 epochs).
-- Both operands unseen: 94% at gaps 6-20 and 100% beyond on the held-out band, 82% / 100% on the far band.
-  Gaps 2-5 sit at 60-66% and gap 1 at 54-59%: the ramp rotates the embedding direction by 1/625 of its
-  range per step, and nothing in a shared code can make neighbouring unseen values more separable than
-  that without reintroducing per-cell texture.
-- Every dropout seed was still improving at epoch 40 (validation loss 0.103 ± 0.016), so the first cheap
-  step is longer training of that arm. The structural next step is to make the ramp-only route real: a
-  residual that is strong early and annealed to zero, or a residual-free fine-tuning stage, so that the
-  comparator learns to read the shared code rather than merely tolerate a smaller residual.
+- Seen pairs: 81% at gap 1 and 95% at gaps 2-5 with the dropout arm at 40 epochs; 92% / 99.4% at 80
+  epochs.
+- Both operands unseen, held-out band (interpolation): 94% at gaps 6-20 and 100% beyond at 40 epochs; gaps
+  2-5 sit at 66% and gap 1 at 54%. At 80 epochs this band erodes to chance-or-inverted in two seeds of
+  three.
+- Both operands unseen, far band (extrapolation): 82% at gaps 6-20 and 100% beyond at 40 epochs; at 80
+  epochs 99.5% at gaps 6-20, 86% at gaps 2-5 and 78% at gap 1, so neighbouring never-seen values can be
+  resolved after all, in that band.
+- So 40 and 80 epochs are two points on a curve, not a best and a worst: the one keeps interpolation, the
+  other buys seen precision and extrapolation. Model selection currently sees only in-range validation
+  pairs, so "best epoch" tracks seen loss; a validation set with its own unseen band would let early
+  stopping find the compromise instead of a fixed epoch count. The structural next step is still to make
+  the ramp-only route real: a residual that is strong early and annealed to zero, or a residual-free
+  fine-tuning stage, so that the comparator learns to read the shared code rather than merely tolerate a
+  smaller residual.
 
 ## Results (all arms, mean ± std over seeds)
 
@@ -102,6 +125,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_80ep | 3 | 99.7 ± 0.1 | 68.2 ± 2.1 | 76.0 ± 9.3 |
 | grid_ramp_res_orth_cdrop | 3 | 55.0 ± 3.3 | 51.4 ± 2.8 | 48.0 ± 4.8 |
 | grid_ramp_res_orth_drop | 3 | 98.6 ± 0.3 | 91.9 ± 2.2 | 88.5 ± 3.6 |
+| grid_ramp_res_orth_drop_80ep | 3 | 99.4 ± 0.3 | 75.9 ± 8.0 | 96.3 ± 1.9 |
 
 ## test_holdout: accuracy by number of unseen operands
 
@@ -118,6 +142,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_80ep | 96.7 ± 0.2 | 37.7 ± 4.2 |
 | grid_ramp_res_orth_cdrop | 53.3 ± 5.5 | 49.3 ± 0.2 |
 | grid_ramp_res_orth_drop | 99.5 ± 0.2 | 83.8 ± 4.3 |
+| grid_ramp_res_orth_drop_80ep | 97.9 ± 1.0 | 52.3 ± 15.6 |
 
 ## test_far: accuracy by number of unseen operands
 
@@ -134,6 +159,7 @@ full vocabulary; mean ± std over seeds where more than one seed ran.
 | grid_ramp_res_orth_80ep | 98.0 ± 1.6 | 54.6 ± 16.8 |
 | grid_ramp_res_orth_cdrop | 46.1 ± 6.6 | 49.8 ± 3.1 |
 | grid_ramp_res_orth_drop | 99.8 ± 0.1 | 77.6 ± 7.0 |
+| grid_ramp_res_orth_drop_80ep | 100.0 ± 0.0 | 92.8 ± 3.8 |
 
 ## test_holdout: both operands unseen, accuracy by |a - b|
 
@@ -152,6 +178,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_80ep | 100.0 ± 0.0 | 47.2 ± 0.3 | 45.5 ± 2.8 | 36.3 ± 5.0 | 11.9 ± 7.4 | n/a |
 | grid_ramp_res_orth_cdrop | 85.0 ± 21.2 | 46.4 ± 0.9 | 48.7 ± 1.3 | 48.8 ± 0.1 | 45.6 ± 1.3 | n/a |
 | grid_ramp_res_orth_drop | 92.0 ± 11.3 | 54.3 ± 10.3 | 65.7 ± 9.4 | 94.0 ± 2.9 | 100.0 ± 0.0 | n/a |
+| grid_ramp_res_orth_drop_80ep | 87.8 ± 16.3 | 49.7 ± 2.4 | 51.1 ± 6.7 | 52.9 ± 17.4 | 47.0 ± 38.6 | n/a |
 
 ## test_far: both operands unseen, accuracy by |a - b|
 
@@ -170,6 +197,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_80ep | 98.2 ± 2.5 | 57.4 ± 3.6 | 50.6 ± 9.2 | 50.9 ± 17.2 | 58.6 ± 36.8 | 62.5 ± 44.5 |
 | grid_ramp_res_orth_cdrop | 71.1 ± 40.9 | 51.0 ± 5.5 | 49.5 ± 0.6 | 49.9 ± 0.7 | 45.9 ± 5.2 | 34.7 ± 9.8 |
 | grid_ramp_res_orth_drop | 87.1 ± 9.9 | 59.1 ± 6.1 | 60.5 ± 11.4 | 82.4 ± 9.1 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_ramp_res_orth_drop_80ep | 70.2 ± 23.1 | 78.1 ± 15.5 | 86.0 ± 10.5 | 99.5 ± 0.7 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 
 ## test: accuracy by |a - b|
 
@@ -186,6 +214,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_80ep | 97.7 ± 3.3 | 92.0 ± 6.1 | 99.5 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 | grid_ramp_res_orth_cdrop | 90.6 ± 13.2 | 55.7 ± 4.3 | 55.0 ± 0.6 | 52.4 ± 0.1 | 54.5 ± 2.9 | 55.0 ± 6.4 |
 | grid_ramp_res_orth_drop | 74.3 ± 5.0 | 81.0 ± 3.8 | 95.3 ± 1.7 | 99.7 ± 0.3 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_ramp_res_orth_drop_80ep | 80.1 ± 18.2 | 91.7 ± 2.0 | 99.4 ± 0.4 | 100.0 ± 0.0 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 
 ## test_holdout: accuracy by |a - b|
 
@@ -202,6 +231,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_80ep | 100.0 ± 0.0 | 46.9 ± 0.3 | 46.1 ± 2.6 | 40.5 ± 4.7 | 55.2 ± 3.7 | 99.8 ± 0.0 |
 | grid_ramp_res_orth_cdrop | 85.0 ± 21.2 | 46.3 ± 0.6 | 48.3 ± 1.6 | 48.9 ± 0.1 | 47.2 ± 1.0 | 55.0 ± 7.2 |
 | grid_ramp_res_orth_drop | 92.0 ± 11.3 | 54.2 ± 10.5 | 65.8 ± 9.4 | 94.5 ± 2.7 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_ramp_res_orth_drop_80ep | 87.8 ± 16.3 | 49.3 ± 2.3 | 51.6 ± 6.6 | 56.0 ± 16.2 | 73.4 ± 19.4 | 99.9 ± 0.1 |
 
 ## test_far: accuracy by |a - b|
 
@@ -218,6 +248,7 @@ The clean test: no seen operand to anchor on.
 | grid_ramp_res_orth_80ep | 98.2 ± 2.5 | 57.3 ± 3.6 | 50.7 ± 9.2 | 52.1 ± 16.9 | 66.2 ± 29.7 | 99.2 ± 1.0 |
 | grid_ramp_res_orth_cdrop | 71.1 ± 40.9 | 51.2 ± 5.1 | 49.6 ± 0.8 | 49.9 ± 0.5 | 44.9 ± 5.3 | 46.1 ± 7.0 |
 | grid_ramp_res_orth_drop | 87.1 ± 9.9 | 59.0 ± 6.0 | 60.4 ± 11.3 | 83.1 ± 8.8 | 100.0 ± 0.0 | 100.0 ± 0.0 |
+| grid_ramp_res_orth_drop_80ep | 70.2 ± 23.1 | 78.1 ± 15.5 | 86.1 ± 10.4 | 99.6 ± 0.6 | 100.0 ± 0.0 | 100.0 ± 0.0 |
 
 ## Is magnitude in the embedding?
 
@@ -237,6 +268,7 @@ training-pool rows correlated with k.
 | grid_ramp_res_orth_80ep | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.903 ± 0.117 | 1.000 ± 0.000 | -0.952 ± 0.054 | -0.181 ± 0.611 |
 | grid_ramp_res_orth_cdrop | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 0.951 ± 0.021 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | grid_ramp_res_orth_drop | 1.000 ± 0.000 | 0.999 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
+| grid_ramp_res_orth_drop_80ep | 1.000 ± 0.000 | 0.999 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 
 ## Training
 
@@ -253,3 +285,4 @@ training-pool rows correlated with k.
 | grid_ramp_res_orth_80ep | 3 | 563,999 | 0.037 ± 0.006 | 77, 68, 56 |
 | grid_ramp_res_orth_cdrop | 3 | 563,999 | 0.675 ± 0.026 | 38, 15, 8 |
 | grid_ramp_res_orth_drop | 3 | 563,999 | 0.103 ± 0.016 | 40, 40, 40 |
+| grid_ramp_res_orth_drop_80ep | 3 | 563,999 | 0.035 ± 0.003 | 79, 75, 75 |

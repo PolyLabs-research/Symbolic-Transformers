@@ -275,7 +275,9 @@ LayerNorm, which is scale-invariant. Training on close pairs then raises seen pr
 strong enough to resolve neighbours makes the comparator read per-cell texture and invert on unseen values;
 keeping the residual off the magnitude plane and dropping it in half the training batches
 (`grid_ramp_res_orth_drop`) is the best of both so far: 95% at gaps 2-5 and 81% at gap 1 on seen pairs, 94%
-at gaps 6-20 and 100% beyond on pairs of two unseen values (`experiments/magnitude_precision.md`).
+at gaps 6-20 and 100% beyond on pairs of two unseen values; trained twice as long it reaches 92% / 99% on
+seen pairs and resolves never-seen values past the trained range down to gap 1 (78%), at the cost of the
+held-out band inside it (`experiments/magnitude_precision.md`).
 
 Manual equivalents for the FOL experiment:
 
