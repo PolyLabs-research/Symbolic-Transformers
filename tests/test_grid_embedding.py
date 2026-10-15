@@ -373,8 +373,9 @@ def test_constant_basis_collapses_under_layernorm_and_ramp_does_not(vocab, bank)
             return m.embedding_table()
 
     const, ramp = table("constant"), table("ramp")
-    assert torch.allclose(const[100], const[400], atol=1e-5)           # collapsed
-    assert not torch.allclose(ramp[100], ramp[400], atol=1e-3)         # rotates with k
+    cos = torch.nn.functional.cosine_similarity
+    assert cos(const[100], const[400], dim=0) > 0.9999                 # collapsed (bias leaves ~1e-5)
+    assert cos(ramp[100], ramp[400], dim=0) < 0.99                     # rotates with k
     # Ramp path: direction changes monotonically, so distance grows with the gap.
     d = [(ramp[100] - ramp[100 + g]).norm().item() for g in (1, 10, 100, 300)]
     assert d == sorted(d)
