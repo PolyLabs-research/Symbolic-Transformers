@@ -237,6 +237,8 @@ The residual has four knobs, all used in the precision study (`experiments/magni
   and `--residual-anneal-hold` keeps it at F afterwards instead of dropping it to zero.
   `--residual-anneal-rewarm N` restarts the learning-rate schedule when the window ends (N warm-up steps
   back to the base rate, then cosine decay), so the residual-free phase does not run on the cosine tail.
+  `--residual-anneal-stages T:S,T:S,...` is the general form: breakpoints as (fraction of training, scale),
+  geometric between them and a step where a side is zero, which expresses holds and multi-stage descents.
 
 For numerals `g_k` is the thermometer code (first k cells set), so `W g_k` is the cumulative sum of
 the first k columns of `W`: adjacent indices get adjacent embeddings and an index absent from training

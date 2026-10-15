@@ -186,3 +186,30 @@ def test_rewarm_restarts_the_schedule_at_the_anneal_end():
     assert 0.4 < rewarm(mid) < 0.6
     # Without a restart step the schedule is the plain one.
     assert make_lr_lambda(total, 100, None, 100)(restart) == plain(restart)
+
+
+def test_staged_schedule_and_parser():
+    from training.train import parse_anneal_stages, staged_residual_scale_at, TrainingConfig, residual_schedule_scale, residual_schedule_end
+
+    stages = parse_anneal_stages("0.2:1,0.4667:0.01,0.5667:0.01,0.9:0.000001,1:0.000001")
+    assert stages[0] == (0.2, 1.0) and stages[-1] == (1.0, 1e-6)
+    f = lambda e: staged_residual_scale_at(e, 120, stages)
+    assert f(1) == 1.0 and f(24) == 1.0
+    assert f(40) == pytest.approx(10 ** -1.0, rel=1e-3)            # halfway (in log) between 1 and 0.01
+    assert f(56) == pytest.approx(0.01, rel=1e-3) and f(60) == pytest.approx(0.01) and f(68) == pytest.approx(0.01)
+    assert f(88) == pytest.approx(10 ** -4.0, rel=1e-3)            # halfway between 1e-2 and 1e-6
+    assert f(108) == pytest.approx(1e-6, rel=1e-3) and f(120) == pytest.approx(1e-6)
+    vals = [f(e) for e in range(1, 121)]
+    assert all(a >= b for a, b in zip(vals, vals[1:]))
+    # A zero endpoint is a step at its breakpoint.
+    step = parse_anneal_stages("0.5:0.01,0.75:0")
+    assert staged_residual_scale_at(59, 80, step) == 0.01 and staged_residual_scale_at(60, 80, step) == 0.0
+    # The trainer-facing helpers route to the staged form and know where it ends.
+    cfg = TrainingConfig(num_epochs=120, residual_anneal_stages=stages)
+    assert residual_schedule_end(cfg) == 120 and residual_schedule_scale(cfg, 56) == pytest.approx(0.01, rel=1e-3)
+    cfg2 = TrainingConfig(num_epochs=80, residual_anneal=(0.3, 0.7), residual_anneal_floor=0.01, residual_anneal_hold=True)
+    assert residual_schedule_end(cfg2) == 56 and residual_schedule_scale(cfg2, 80) == 0.01
+    assert residual_schedule_end(TrainingConfig()) is None
+    for bad in ("0.5:1", "0.2:1,0.1:0.5", "0.2:2,0.5:0", "0.2:1,1.5:0"):
+        with pytest.raises(ValueError):
+            parse_anneal_stages(bad)

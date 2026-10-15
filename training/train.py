@@ -109,12 +109,77 @@ class TrainingConfig:
     # 10% over the remaining steps. Gives the comparator a fresh rate to find
     # a route without the residual instead of the tail of the cosine.
     residual_anneal_rewarm: Optional[int] = None
+    # General form: (fraction of num_epochs, scale) breakpoints. The scale is the
+    # first value before the first breakpoint, the last value after the last one,
+    # and geometric in between (a step where either side is zero). Mutually
+    # exclusive with residual_anneal.
+    residual_anneal_stages: Optional[List[Tuple[float, float]]] = None
     seed: int = 42
 
 
 def anneal_end_epoch(num_epochs: int, end: float) -> int:
     """First 1-based epoch at which the anneal has reached its final value."""
     return int(math.ceil(end * num_epochs - 1e-9))
+
+
+def parse_anneal_stages(text: str) -> List[Tuple[float, float]]:
+    """'0.2:1,0.47:0.01,0.9:1e-6' -> [(0.2, 1.0), (0.47, 0.01), (0.9, 1e-6)], validated."""
+    stages = []
+    for item in text.split(","):
+        t, s = item.split(":")
+        stages.append((float(t), float(s)))
+    if len(stages) < 2:
+        raise ValueError("--residual-anneal-stages needs at least two breakpoints")
+    for (t, s) in stages:
+        if not (0.0 <= t <= 1.0) or not (0.0 <= s <= 1.0):
+            raise ValueError("--residual-anneal-stages: fractions and scales must lie in [0, 1]")
+    if any(b[0] < a[0] for a, b in zip(stages, stages[1:])):
+        raise ValueError("--residual-anneal-stages: fractions must be non-decreasing")
+    return stages
+
+
+def staged_residual_scale_at(epoch: int, num_epochs: int, stages: List[Tuple[float, float]]) -> float:
+    """Residual multiplier for 1-based ``epoch`` under breakpoint ``stages``."""
+    pts = [(t * num_epochs, s) for t, s in stages]
+    if epoch <= pts[0][0]:
+        return float(pts[0][1])
+    for (e0, s0), (e1, s1) in zip(pts, pts[1:]):
+        if epoch <= e1:
+            if e1 <= e0:
+                return float(s1)
+            if s0 <= 0.0 or s1 <= 0.0:
+                return float(s0) if epoch < e1 else float(s1)   # a step at the later breakpoint
+            return float(s0 * (s1 / s0) ** ((epoch - e0) / (e1 - e0)))
+    return float(pts[-1][1])
+
+
+def residual_schedule_end(config) -> Optional[int]:
+    """First epoch at which the residual schedule holds its final value, or None without one."""
+    if config.residual_anneal_stages:
+        return anneal_end_epoch(config.num_epochs, config.residual_anneal_stages[-1][0])
+    if config.residual_anneal is not None:
+        return anneal_end_epoch(config.num_epochs, config.residual_anneal[1])
+    return None
+
+
+def residual_schedule_scale(config, epoch: int) -> float:
+    if config.residual_anneal_stages:
+        return staged_residual_scale_at(epoch, config.num_epochs, config.residual_anneal_stages)
+    if config.residual_anneal is not None:
+        return residual_scale_at(epoch, config.num_epochs, config.residual_anneal[0], config.residual_anneal[1],
+                                 config.residual_anneal_floor, config.residual_anneal_hold)
+    return 1.0
+
+
+def describe_residual_schedule(config) -> str:
+    n = config.num_epochs
+    if config.residual_anneal_stages:
+        return "Residual anneal (stages): " + " -> ".join(f"{s:g} at epoch {t * n:.0f}" for t, s in config.residual_anneal_stages)
+    a = config.residual_anneal
+    shape = f"geometric to {config.residual_anneal_floor:g}" if config.residual_anneal_floor else "linear"
+    final = (f"held at {config.residual_anneal_floor:g}" if config.residual_anneal_hold and config.residual_anneal_floor
+             else "0")
+    return f"Residual anneal ({shape}): scale 1 until epoch {a[0] * n:.0f}, {final} from epoch {a[1] * n:.0f}"
 
 
 def make_lr_lambda(total_steps: int, warmup: int, restart_step: Optional[int] = None,
@@ -271,8 +336,8 @@ class Trainer:
         # restarted at the end of the residual anneal when --residual-anneal-rewarm is set.
         total_steps = max(1, len(train_loader) * config.num_epochs)
         restart_step = None
-        if config.residual_anneal is not None and config.residual_anneal_rewarm is not None:
-            restart_step = (anneal_end_epoch(config.num_epochs, config.residual_anneal[1]) - 1) * len(train_loader)
+        if residual_schedule_end(config) is not None and config.residual_anneal_rewarm is not None:
+            restart_step = (residual_schedule_end(config) - 1) * len(train_loader)
         self.restart_step = restart_step
         self.lr_lambda = make_lr_lambda(total_steps, config.warmup_steps, restart_step, config.residual_anneal_rewarm)
         self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, self.lr_lambda)
@@ -420,31 +485,25 @@ class Trainer:
         print(f"Device: {self.device}")
         print("="*60 + "\n")
         
-        anneal = self.config.residual_anneal
+        anneal_end = residual_schedule_end(self.config)
         encoder = getattr(getattr(self.model, 'symbol_embed', None), 'encoder', None)
-        if anneal is not None and getattr(encoder, 'residual', None) is None:
+        if anneal_end is not None and getattr(encoder, 'residual', None) is None:
             raise ValueError("--residual-anneal needs a grid_shared model with --shared-residual")
-        if anneal is not None:
-            shape = (f"geometric to {self.config.residual_anneal_floor:g}" if self.config.residual_anneal_floor
-                     else "linear")
-            final = (f"held at {self.config.residual_anneal_floor:g}" if self.config.residual_anneal_hold
-                     and self.config.residual_anneal_floor else "0")
-            print(f"Residual anneal ({shape}): scale 1 until epoch {anneal[0] * self.config.num_epochs:.0f}, "
-                  f"{final} from epoch {anneal[1] * self.config.num_epochs:.0f}; best_model.pt from the epochs after that only")
+        if anneal_end is not None:
+            print(f"{describe_residual_schedule(self.config)}; best_model.pt from epoch {anneal_end} on only")
             if self.restart_step is not None:
-                print(f"Learning-rate re-warm-up at step {self.restart_step} (epoch "
-                      f"{anneal_end_epoch(self.config.num_epochs, anneal[1])}): {self.config.residual_anneal_rewarm} warm-up steps, then cosine")
+                print(f"Learning-rate re-warm-up at step {self.restart_step} (epoch {anneal_end}): "
+                      f"{self.config.residual_anneal_rewarm} warm-up steps, then cosine")
 
         for epoch in range(start_epoch, self.config.num_epochs):
             self.epoch = epoch + 1
             start_time = time.time()
             print(f"Epoch {self.epoch}/{self.config.num_epochs}")
             scale = 1.0
-            if anneal is not None:
-                scale = residual_scale_at(self.epoch, self.config.num_epochs, anneal[0], anneal[1],
-                                          self.config.residual_anneal_floor, self.config.residual_anneal_hold)
+            if anneal_end is not None:
+                scale = residual_schedule_scale(self.config, self.epoch)
                 encoder.set_residual_scale(scale)
-                print(f"  Residual scale: {scale:.3f}")
+                print(f"  Residual scale: {scale:.3g}")
             
             train_loss = self.train_epoch()
             val_loss = self.validate()
@@ -454,7 +513,7 @@ class Trainer:
             self.history['learning_rate'].append(self.scheduler.get_last_lr()[0])
             self.history.setdefault('residual_scale', []).append(scale)
             
-            anneal_done = anneal is None or self.epoch >= anneal[1] * self.config.num_epochs
+            anneal_done = anneal_end is None or self.epoch >= anneal_end
             is_best = val_loss < self.best_val_loss and anneal_done
             if is_best:
                 self.best_val_loss = val_loss
@@ -511,6 +570,9 @@ def main():
                         help="with --residual-anneal: anneal geometrically from 1 to F (0 < F < 1) instead of linearly to 0")
     parser.add_argument("--residual-anneal-hold", action="store_true",
                         help="with --residual-anneal-floor: keep the scale at F after END instead of dropping it to 0")
+    parser.add_argument("--residual-anneal-stages", type=str, default=None, metavar="T:S,T:S,...",
+                        help="grid_shared residual: breakpoints 'fraction:scale,...' (geometric between them, a step "
+                             "where a side is 0); replaces --residual-anneal/--floor/--hold")
     parser.add_argument("--residual-anneal-rewarm", type=int, default=None, metavar="N",
                         help="with --residual-anneal: restart the learning-rate schedule when the anneal ends "
                              "(N warm-up steps back to the base rate, then cosine decay to 10%%)")
@@ -573,9 +635,16 @@ def main():
         if args.residual_anneal_floor is None:
             parser.error("--residual-anneal-hold needs --residual-anneal-floor")
         config.residual_anneal_hold = True
+    if args.residual_anneal_stages is not None:
+        if args.residual_anneal is not None or args.residual_anneal_floor is not None or args.residual_anneal_hold:
+            parser.error("--residual-anneal-stages replaces --residual-anneal, --residual-anneal-floor and --residual-anneal-hold")
+        try:
+            config.residual_anneal_stages = parse_anneal_stages(args.residual_anneal_stages)
+        except ValueError as exc:
+            parser.error(str(exc))
     if args.residual_anneal_rewarm is not None:
-        if args.residual_anneal is None:
-            parser.error("--residual-anneal-rewarm needs --residual-anneal")
+        if args.residual_anneal is None and args.residual_anneal_stages is None:
+            parser.error("--residual-anneal-rewarm needs --residual-anneal or --residual-anneal-stages")
         if args.residual_anneal_rewarm < 1:
             parser.error("--residual-anneal-rewarm N needs N >= 1")
         config.residual_anneal_rewarm = args.residual_anneal_rewarm
@@ -598,7 +667,8 @@ def main():
         for key in ('shared_min_period', 'shared_axis_freq', 'shared_residual', 'shared_basis',
                     'shared_residual_orthogonal', 'shared_residual_dropout',
                     'shared_residual_dropout_cell', 'sinusoid_min_period', 'residual_anneal',
-                    'residual_anneal_floor', 'residual_anneal_hold', 'residual_anneal_rewarm'):
+                    'residual_anneal_floor', 'residual_anneal_hold', 'residual_anneal_rewarm',
+                    'residual_anneal_stages'):
             if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
