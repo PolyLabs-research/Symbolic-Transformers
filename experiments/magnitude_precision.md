@@ -246,7 +246,26 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
    numbers: the schedule's last breakpoint sits at epoch 120, so `best_model.pt` is the final epoch
    rather than the best of the hold; the checkpoint curve below shows what the hold phase held.
 
-   (Checkpoint curve along the descent: see the next revision of this note.)
+   The checkpoints along the descent (three seeds; test = seen pairs, held-out and far = all pairs with
+   at least one unseen operand):
+
+   | epoch | residual scale | test | test gap 1 | test gaps 2-5 | held-out | held-out both unseen | far | far both unseen |
+   |---|---|---|---|---|---|---|---|---|
+   | 56 | 0.01 | 98.1 ± 1.5 | 77.4 ± 9.7 | 94.7 ± 6.8 | 93.0 ± 6.8 | 86.1 ± 13.3 | 79.1 ± 5.4 | 65.2 ± 2.6 |
+   | 68 | 0.01 | 98.4 ± 1.2 | 84.1 ± 14.8 | 94.8 ± 7.4 | 95.0 ± 4.0 | 89.8 ± 8.0 | 78.6 ± 10.6 | 65.2 ± 10.8 |
+   | 76 | 0.0016 | 99.2 ± 0.6 | 91.4 ± 6.1 | 98.1 ± 2.5 | 95.7 ± 3.1 | 91.1 ± 6.3 | 83.7 ± 6.7 | 69.7 ± 11.5 |
+   | 84 | 0.00025 | 97.9 ± 0.8 | 70.3 ± 4.6 | 92.3 ± 1.8 | 90.7 ± 2.5 | 81.5 ± 4.9 | 84.9 ± 6.4 | 71.5 ± 13.0 |
+   | 88 | 0.0001 | 83.4 ± 21.4 | 77.4 ± 11.0 | 82.3 ± 19.7 | 81.5 ± 21.9 | 79.0 ± 21.2 | 71.1 ± 14.8 | 63.5 ± 10.1 |
+   | 92 | 4e-05 | 98.7 ± 0.4 | 76.1 ± 6.7 | 96.6 ± 1.7 | 94.6 ± 1.3 | 89.2 ± 2.7 | 79.7 ± 2.1 | 65.2 ± 4.8 |
+   | 96 | 1.6e-05 | 98.6 ± 0.6 | 83.5 ± 9.6 | 95.8 ± 2.0 | 94.0 ± 2.2 | 88.1 ± 4.3 | 71.5 ± 10.3 | 56.9 ± 5.5 |
+   | 100 | 6.3e-06 | 97.2 ± 1.9 | 74.3 ± 0.7 | 93.5 ± 5.3 | 91.8 ± 4.1 | 86.6 ± 4.6 | 72.8 ± 5.3 | 58.5 ± 3.8 |
+   | 104 | 2.5e-06 | 98.6 ± 1.3 | 87.2 ± 8.1 | 95.6 ± 6.0 | 95.4 ± 2.9 | 90.9 ± 5.6 | 73.4 ± 11.1 | 60.7 ± 4.6 |
+   | 108 | 1e-06 | 99.3 ± 0.7 | 89.0 ± 8.2 | 98.6 ± 1.8 | 96.8 ± 1.4 | 93.5 ± 2.9 | 75.6 ± 5.4 | 60.0 ± 3.1 |
+   | 112 | 1e-06 | 99.1 ± 0.5 | 84.1 ± 4.8 | 98.6 ± 1.8 | 96.7 ± 1.7 | 93.3 ± 3.5 | 75.0 ± 7.5 | 60.2 ± 4.2 |
+   | 120 | 1e-06 | 99.2 ± 0.6 | 87.8 ± 9.1 | 99.0 ± 1.1 | 96.7 ± 1.8 | 93.4 ± 3.6 | 75.5 ± 4.4 | 58.5 ± 7.6 |
+
+   The crossing shows as a dip between scales 1e-4 and 1e-5 and a recovery that is complete by 1e-6,
+   with the unseen bands coming back to the hold-phase level and seen precision slightly above it.
 
 
 
