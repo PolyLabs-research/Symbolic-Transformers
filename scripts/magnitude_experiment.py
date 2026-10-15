@@ -174,6 +174,8 @@ def main() -> int:
     ap.add_argument("--threads", type=int, default=None)
     ap.add_argument("--num-workers", type=int, default=0,
                     help="DataLoader workers per training process (0: five-token samples need none)")
+    ap.add_argument("--train-extra", default=None,
+                    help='extra flags for training/train.py as one string, e.g. "--save-every 4 --keep-checkpoints 0"')
     ap.add_argument("--eval-only", action="store_true")
     ap.add_argument("--collate-only", action="store_true")
     args = ap.parse_args()

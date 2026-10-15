@@ -21,6 +21,7 @@ between them); pass --sequential to run them one after another.
 import argparse
 import json
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -72,6 +73,11 @@ ARMS = {
     # comparator cannot abandon the shared magnitude route for per-cell texture.
     "grid_ramp_res_orth_drop": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                 "--shared-residual", "--residual-orthogonal", "--residual-dropout", "0.5"],
+    # Residual anneal: full residual scaffolds the first 30% of training, then it
+    # is scaled linearly to zero by 70%, leaving the comparator the ramp alone
+    # for the last 30%. best_model.pt comes from the residual-free epochs.
+    "grid_ramp_res_orth_anneal": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                                  "--shared-residual", "--residual-orthogonal", "--residual-anneal", "0.3", "0.7"],
     # Per-cell variant: each cell's residual row is dropped independently.
     "grid_ramp_res_orth_cdrop": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                  "--shared-residual", "--residual-orthogonal", "--residual-dropout", "0.5",
@@ -126,6 +132,8 @@ def train_arm(args, arm: str, seed: int, data_dir: Path, run_dir: Path, threads:
            "--checkpoint-dir", str(run_dir), "--device", args.device] + ARMS[arm]
     if getattr(args, "num_workers", None) is not None:
         cmd += ["--num-workers", str(args.num_workers)]
+    if getattr(args, "train_extra", None):
+        cmd += shlex.split(args.train_extra)
     env = dict(os.environ, OMP_NUM_THREADS=str(threads), MKL_NUM_THREADS=str(threads))
     print(f"→ training {arm} seed {seed} ({threads} threads) → {run_dir}")
     return run(cmd, run_dir / "train.log", env=env, wait=wait)

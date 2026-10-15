@@ -206,7 +206,7 @@ nothing about. The grid arms replace the table for every grid-backed token:
 | `grid_conv` | small 2D conv encoder over the 25×25 panel | learned fallback row | sees shape, not just count |
 | `grid_shared` | panel bits × cell weights *generated* from smooth position features through one shared matrix | learned fallback row | no parameter belongs to a single cell: unseen cells inherit from neighbours |
 | `grid_shared` + `--shared-basis ramp --shared-residual` (arm `grid_ramp_res`) | cell weight = a + (i/625)·c + per-cell residual | learned fallback row | **interpolates and extrapolates**: see `experiments/magnitude_*.md` |
-| ... + `--residual-orthogonal`, `--residual-lr-mult`/`--residual-wd`, `--residual-dropout` (arms `grid_ramp_res_*`) | residual kept off the magnitude plane, given its own optimiser group, or dropped in training | learned fallback row | precision study: `experiments/magnitude_precision.md` |
+| ... + `--residual-orthogonal`, `--residual-lr-mult`/`--residual-wd`, `--residual-dropout`, `--residual-anneal` (arms `grid_ramp_res_*`) | residual kept off the magnitude plane, given its own optimiser group, dropped in training, or scaled to zero over training | learned fallback row | precision study: `experiments/magnitude_precision.md` |
 | `sinusoid` | numerals: fixed sin/cos features of *k* (periods 2-1250) through `Linear(64 → d_model)`; glyphs: learned row | learned fallback row | control: an ordinal code with no nesting |
 | `sinusoid_smooth` | same with periods 32-1250 only | learned fallback row | control: a smooth ordinal code with no nesting |
 

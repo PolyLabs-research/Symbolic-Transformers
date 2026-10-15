@@ -219,7 +219,7 @@ The direction rotates uniformly with k, so the walk through any gap and the cont
 segments of the same curve; the residuals give trained cells distinctive increments. Without the residual
 the path is too flat to learn from; without the ramp the path cannot leave the trained range.
 
-The residual has three knobs, all used in the precision study (`experiments/magnitude_precision.md`):
+The residual has four knobs, all used in the precision study (`experiments/magnitude_precision.md`):
 
 - `--residual-orthogonal`: `r_i` is projected off span{a, c} every forward pass, so it can give trained
   cells texture but cannot carry magnitude; magnitude then comes only from the ramp, which unseen cells
@@ -229,6 +229,10 @@ The residual has three knobs, all used in the precision study (`experiments/magn
 - `--residual-dropout p [--residual-dropout-cell]`: with probability p a training batch is embedded with
   the ramp alone (or each cell's residual row is dropped independently), so the comparator must keep a
   route through the shared part. Evaluation always uses the full weights.
+- `--residual-anneal START END`: the residual is multiplied by a scale that is 1 until START × epochs,
+  falls linearly to 0 at END × epochs and stays 0, in training and evaluation alike (the scale is saved
+  with the model). The residual scaffolds early learning and is then withdrawn, so the comparator has to
+  end on the ramp alone; `best_model.pt` is chosen among the residual-free epochs only.
 
 For numerals `g_k` is the thermometer code (first k cells set), so `W g_k` is the cumulative sum of
 the first k columns of `W`: adjacent indices get adjacent embeddings and an index absent from training

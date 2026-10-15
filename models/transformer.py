@@ -142,16 +142,40 @@ class SharedCellEncoder(nn.Module):
         # and weight-decayed, so cells never filled in training keep only the
         # smooth part while trained cells can sharpen their increment.
         self.residual = nn.Parameter(torch.zeros(GRID_CELLS, d_model)) if residual else None
+        # Global multiplier on the residual (training and evaluation alike), set
+        # by the trainer's --residual-anneal schedule: 1 while the residual
+        # scaffolds learning, falling to 0 so that the comparator is left with
+        # the generated weights alone. Saved with the model so a checkpoint
+        # evaluates at the scale it was trained at.
+        if residual:
+            self.register_buffer("residual_scale", torch.ones(()))
+
+    def set_residual_scale(self, scale: float) -> None:
+        if self.residual is None:
+            raise ValueError("this encoder has no residual to scale")
+        if not 0.0 <= scale <= 1.0:
+            raise ValueError("residual scale must be in [0, 1]")
+        self.residual_scale.fill_(float(scale))
+
+    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
+        # Checkpoints written before the scale existed: full residual.
+        key = prefix + "residual_scale"
+        if self.residual is not None and key not in state_dict:
+            state_dict[key] = torch.ones(())
+        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
     def effective_residual(self) -> Optional[torch.Tensor]:
         if self.residual is None:
             return None
-        if not self.residual_orthogonal:
-            return self.residual
-        # Orthonormal basis of the generated directions (d_model, F), no gradient
-        # through the projection itself.
-        q, _ = torch.linalg.qr(self.proj.weight.detach())
-        return self.residual - (self.residual @ q) @ q.t()
+        r = self.residual
+        if self.residual_orthogonal:
+            # Orthonormal basis of the generated directions (d_model, F), no gradient
+            # through the projection itself.
+            q, _ = torch.linalg.qr(self.proj.weight.detach())
+            r = r - (r @ q) @ q.t()
+        if float(self.residual_scale) != 1.0:
+            r = r * self.residual_scale
+        return r
 
     def cell_weights(self) -> torch.Tensor:
         """The (625, d_model) per-cell weight matrix: generated part plus residual."""

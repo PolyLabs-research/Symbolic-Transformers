@@ -13,7 +13,7 @@ import math
 import random
 import time
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 from dataclasses import dataclass, asdict
 import sys
 import argparse
@@ -94,7 +94,23 @@ class TrainingConfig:
     # Separate optimiser group for the grid_shared per-cell residual.
     residual_lr_mult: float = 1.0
     residual_weight_decay: Optional[float] = None
+    # (start, end) as fractions of num_epochs: the residual is scaled by 1 up to
+    # start, linearly down to 0 at end, and 0 after. best_model.pt is then chosen
+    # among residual-free epochs only.
+    residual_anneal: Optional[Tuple[float, float]] = None
     seed: int = 42
+
+
+def residual_scale_at(epoch: int, num_epochs: int, start: float, end: float) -> float:
+    """Residual multiplier for 1-based ``epoch`` under a (start, end) anneal.
+
+    1 while epoch <= start * num_epochs, 0 from epoch >= end * num_epochs,
+    linear in between. start == end is a step.
+    """
+    e0, e1 = start * num_epochs, end * num_epochs
+    if e1 <= e0:
+        return 1.0 if epoch < e1 else 0.0
+    return float(min(1.0, max(0.0, (e1 - epoch) / (e1 - e0))))
 
 
 def _sample_context(sample: Dict) -> List[int]:
@@ -360,10 +376,23 @@ class Trainer:
         print(f"Device: {self.device}")
         print("="*60 + "\n")
         
+        anneal = self.config.residual_anneal
+        encoder = getattr(getattr(self.model, 'symbol_embed', None), 'encoder', None)
+        if anneal is not None and getattr(encoder, 'residual', None) is None:
+            raise ValueError("--residual-anneal needs a grid_shared model with --shared-residual")
+        if anneal is not None:
+            print(f"Residual anneal: scale 1 until epoch {anneal[0] * self.config.num_epochs:.0f}, "
+                  f"0 from epoch {anneal[1] * self.config.num_epochs:.0f}; best_model.pt from residual-free epochs only")
+
         for epoch in range(start_epoch, self.config.num_epochs):
             self.epoch = epoch + 1
             start_time = time.time()
             print(f"Epoch {self.epoch}/{self.config.num_epochs}")
+            scale = 1.0
+            if anneal is not None:
+                scale = residual_scale_at(self.epoch, self.config.num_epochs, anneal[0], anneal[1])
+                encoder.set_residual_scale(scale)
+                print(f"  Residual scale: {scale:.3f}")
             
             train_loss = self.train_epoch()
             val_loss = self.validate()
@@ -371,8 +400,9 @@ class Trainer:
             self.history['train_loss'].append(train_loss)
             self.history['val_loss'].append(val_loss)
             self.history['learning_rate'].append(self.scheduler.get_last_lr()[0])
+            self.history.setdefault('residual_scale', []).append(scale)
             
-            is_best = val_loss < self.best_val_loss
+            is_best = val_loss < self.best_val_loss and (anneal is None or scale == 0.0)
             if is_best:
                 self.best_val_loss = val_loss
             
@@ -412,6 +442,8 @@ def main():
                         help="grid_shared: add a zero-initialised per-cell residual weight")
     parser.add_argument("--residual-orthogonal", action="store_true",
                         help="grid_shared residual: project it orthogonal to the generated directions (cannot carry magnitude)")
+    parser.add_argument("--save-every", type=int, default=5,
+                        help="write a periodic checkpoint every N epochs (best_model.pt is written on every improvement)")
     parser.add_argument("--keep-checkpoints", type=int, default=2,
                         help="periodic checkpoints to keep per run (0 = keep all; best_model.pt is always kept)")
     parser.add_argument("--residual-dropout", type=float, default=0.0,
@@ -419,6 +451,9 @@ def main():
                              "(the model must keep a magnitude route through the shared part)")
     parser.add_argument("--residual-dropout-cell", action="store_true",
                         help="grid_shared residual: drop each cell's residual row independently instead")
+    parser.add_argument("--residual-anneal", type=float, nargs=2, default=None, metavar=("START", "END"),
+                        help="grid_shared residual: scale it by 1 until START x epochs, linearly to 0 at END x epochs, "
+                             "0 after (fractions in [0, 1]); best_model.pt is then chosen among residual-free epochs")
     parser.add_argument("--residual-lr-mult", type=float, default=1.0,
                         help="grid_shared residual: learning-rate multiplier for its own optimiser group")
     parser.add_argument("--residual-wd", type=float, default=None,
@@ -463,6 +498,12 @@ def main():
     config.shared_residual_dropout_cell = args.residual_dropout_cell
     config.residual_lr_mult = args.residual_lr_mult
     config.residual_weight_decay = args.residual_wd
+    if args.residual_anneal is not None:
+        start, end = args.residual_anneal
+        if not (0.0 <= start <= end <= 1.0):
+            parser.error("--residual-anneal START END needs 0 <= START <= END <= 1")
+        config.residual_anneal = (start, end)
+    config.save_every = args.save_every
     set_seed(config.seed)
     vocab = Vocabulary(args.vocab)
     config.vocab_size = vocab.vocab_size
@@ -480,7 +521,7 @@ def main():
         if ckpt_config.get('grid_bank'): config.grid_bank = ckpt_config['grid_bank']
         for key in ('shared_min_period', 'shared_axis_freq', 'shared_residual', 'shared_basis',
                     'shared_residual_orthogonal', 'shared_residual_dropout',
-                    'shared_residual_dropout_cell', 'sinusoid_min_period'):
+                    'shared_residual_dropout_cell', 'sinusoid_min_period', 'residual_anneal'):
             if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
