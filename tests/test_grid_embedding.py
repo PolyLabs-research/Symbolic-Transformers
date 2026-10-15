@@ -411,3 +411,28 @@ def test_orthogonal_residual_cannot_carry_magnitude(tmp_path, vocab, bank):
     loaded, _ = load_model_from_checkpoint(tmp_path / "o.pt", vocab.vocab_size, "cpu", verbose=False)
     with torch.no_grad():
         assert torch.allclose(before, loaded(ids))
+
+
+def test_residual_dropout_applies_only_in_training():
+    import torch
+    from models.transformer import SharedCellEncoder
+    torch.manual_seed(0)
+    bits = torch.zeros(3, 625)
+    bits[0, :10] = 1; bits[1, :200] = 1; bits[2, :624] = 1
+    for cell in (False, True):
+        enc = SharedCellEncoder(16, basis="ramp", residual=True, residual_orthogonal=True,
+                                residual_dropout=0.999, residual_dropout_cell=cell)
+        with torch.no_grad():
+            enc.residual.normal_(std=0.1)
+        ramp_only = bits @ (enc.phi @ enc.proj.weight.t()) + enc.proj.bias
+        full = bits @ enc.cell_weights() + enc.proj.bias
+        assert not torch.allclose(ramp_only, full)
+        enc.eval()
+        assert torch.allclose(enc(bits), full)          # evaluation: residual intact
+        enc.train()
+        assert torch.allclose(enc(bits), ramp_only, atol=1e-5)  # p ~ 1: residual gone
+    enc = SharedCellEncoder(16, basis="ramp", residual=True, residual_dropout=0.0)
+    enc.train()
+    assert torch.allclose(enc(bits), bits @ enc.cell_weights() + enc.proj.bias)
+    with pytest.raises(ValueError):
+        SharedCellEncoder(16, basis="ramp", residual=True, residual_dropout=1.0)

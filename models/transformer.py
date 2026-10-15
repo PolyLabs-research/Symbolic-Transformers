@@ -113,8 +113,19 @@ class SharedCellEncoder(nn.Module):
 
     def __init__(self, d_model: int, min_period: float = 32.0, n_index_freq: int = 8,
                  n_axis_freq: int = 4, residual: bool = False, basis: str = "full",
-                 residual_orthogonal: bool = False):
+                 residual_orthogonal: bool = False, residual_dropout: float = 0.0,
+                 residual_dropout_cell: bool = False):
         super().__init__()
+        # residual_dropout: during training, with probability p the forward pass
+        # uses the generated weights alone (whole-residual mode), so the model
+        # must keep a working magnitude route through the shared part and can
+        # use the per-cell texture only as a refinement. With
+        # residual_dropout_cell each cell's residual row is dropped
+        # independently instead (texture becomes unreliable rather than absent).
+        if not 0.0 <= residual_dropout < 1.0:
+            raise ValueError("residual_dropout must be in [0, 1)")
+        self.residual_dropout = residual_dropout
+        self.residual_dropout_cell = residual_dropout_cell
         # With residual_orthogonal the per-cell residual is projected onto the
         # complement of the span of the generated directions (for the ramp
         # basis: the magnitude plane), so it can give trained cells distinctive
@@ -148,8 +159,22 @@ class SharedCellEncoder(nn.Module):
         r = self.effective_residual()
         return W + r if r is not None else W
 
+    def training_residual(self) -> Optional[torch.Tensor]:
+        """The residual as used by this forward pass: dropped (None), masked, or intact."""
+        r = self.effective_residual()
+        if r is None or not self.training or self.residual_dropout <= 0.0:
+            return r
+        if self.residual_dropout_cell:
+            keep = (torch.rand(r.shape[0], 1, device=r.device) >= self.residual_dropout).to(r.dtype)
+            return r * keep
+        return None if torch.rand(()).item() < self.residual_dropout else r
+
     def forward(self, bits: torch.Tensor) -> torch.Tensor:
-        return bits @ self.cell_weights() + self.proj.bias
+        W = self.phi @ self.proj.weight.t()
+        r = self.training_residual()
+        if r is not None:
+            W = W + r
+        return bits @ W + self.proj.bias
 
 
 class GridEmbedding(nn.Module):
@@ -163,7 +188,8 @@ class GridEmbedding(nn.Module):
 
     def __init__(self, grid_bank: GridBank, d_model: int, kind: str = "grid_linear", init_std: float = 0.02,
                  shared_min_period: float = 32.0, shared_axis_freq: int = 4, shared_residual: bool = False,
-                 shared_basis: str = "full", shared_residual_orthogonal: bool = False):
+                 shared_basis: str = "full", shared_residual_orthogonal: bool = False,
+                 shared_residual_dropout: float = 0.0, shared_residual_dropout_cell: bool = False):
         super().__init__()
         if kind not in ("grid_linear", "grid_conv", "grid_shared", "sinusoid"):
             raise ValueError(f"Unknown grid embedding kind: {kind}")
@@ -179,7 +205,9 @@ class GridEmbedding(nn.Module):
         elif kind == "grid_shared":
             self.encoder = SharedCellEncoder(d_model, min_period=shared_min_period,
                                              n_axis_freq=shared_axis_freq, residual=shared_residual,
-                                             basis=shared_basis, residual_orthogonal=shared_residual_orthogonal)
+                                             basis=shared_basis, residual_orthogonal=shared_residual_orthogonal,
+                                             residual_dropout=shared_residual_dropout,
+                                             residual_dropout_cell=shared_residual_dropout_cell)
         else:
             self.encoder = nn.Linear(grid_bank.n_features, d_model)
         # LayerNorm keeps every panel embedding at the same scale regardless of
@@ -245,6 +273,8 @@ class SymbolicTransformer(nn.Module):
         shared_residual: bool = False,
         shared_basis: str = "full",
         shared_residual_orthogonal: bool = False,
+        shared_residual_dropout: float = 0.0,
+        shared_residual_dropout_cell: bool = False,
     ):
         """
         Args:
@@ -288,7 +318,9 @@ class SymbolicTransformer(nn.Module):
                                               shared_axis_freq=shared_axis_freq,
                                               shared_residual=shared_residual,
                                               shared_basis=shared_basis,
-                                              shared_residual_orthogonal=shared_residual_orthogonal)
+                                              shared_residual_orthogonal=shared_residual_orthogonal,
+                                              shared_residual_dropout=shared_residual_dropout,
+                                              shared_residual_dropout_cell=shared_residual_dropout_cell)
         
         # 2. Positional encoding
         self.pos_encoder = PositionalEncoding(d_model, max_seq_len, dropout)
@@ -481,6 +513,8 @@ def create_model(
     shared_residual: bool = False,
     shared_basis: str = "full",
     shared_residual_orthogonal: bool = False,
+    shared_residual_dropout: float = 0.0,
+    shared_residual_dropout_cell: bool = False,
 ) -> SymbolicTransformer:
     """
     Factory function for creating models of different sizes.
@@ -495,6 +529,9 @@ def create_model(
         sinusoid_min_period: shortest period of the sinusoid features (sinusoid arm)
         shared_min_period / shared_axis_freq / shared_residual: grid_shared basis
             (shortest index period, number of row/col frequencies, per-cell residual)
+        shared_basis / shared_residual_orthogonal / shared_residual_dropout(_cell):
+            basis of the generated cell weights, residual projected off the
+            generated directions, residual dropped during training (whole or per cell)
         
     Returns:
         SymbolicTransformer model
@@ -524,6 +561,8 @@ def create_model(
         shared_residual=shared_residual,
         shared_basis=shared_basis,
         shared_residual_orthogonal=shared_residual_orthogonal,
+        shared_residual_dropout=shared_residual_dropout,
+        shared_residual_dropout_cell=shared_residual_dropout_cell,
         **config
     )
     
@@ -565,7 +604,9 @@ def load_model_from_checkpoint(
                          shared_axis_freq=int(config.get('shared_axis_freq', 4)),
                          shared_residual=bool(config.get('shared_residual', False)),
                          shared_basis=str(config.get('shared_basis', 'full')),
-                         shared_residual_orthogonal=bool(config.get('shared_residual_orthogonal', False)))
+                         shared_residual_orthogonal=bool(config.get('shared_residual_orthogonal', False)),
+                         shared_residual_dropout=float(config.get('shared_residual_dropout', 0.0)),
+                         shared_residual_dropout_cell=bool(config.get('shared_residual_dropout_cell', False)))
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     model.eval()

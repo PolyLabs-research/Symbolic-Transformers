@@ -68,6 +68,14 @@ ARMS = {
     "grid_ramp_res_mid_orth": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                                "--shared-residual", "--residual-orthogonal",
                                "--residual-lr-mult", "3", "--residual-wd", "0.03"],
+    # Residual dropout: half the training batches see the ramp alone, so the
+    # comparator cannot abandon the shared magnitude route for per-cell texture.
+    "grid_ramp_res_orth_drop": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                                "--shared-residual", "--residual-orthogonal", "--residual-dropout", "0.5"],
+    # Per-cell variant: each cell's residual row is dropped independently.
+    "grid_ramp_res_orth_cdrop": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                                 "--shared-residual", "--residual-orthogonal", "--residual-dropout", "0.5",
+                                 "--residual-dropout-cell"],
     # Middle residual strength between grid_ramp_res (x1, 0.01) and _fast (x10, 0.1).
     "grid_ramp_res_mid": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                           "--shared-residual", "--residual-lr-mult", "3", "--residual-wd", "0.03"],
