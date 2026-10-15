@@ -37,6 +37,7 @@ def generate_data(args, data_dir: Path):
     cmd = ["data/magnitude_generator.py", "--out", str(data_dir), "--n-train", str(args.n_train),
            "--n-val", str(args.n_val), "--n-test", str(args.n_test), "--value-range", args.value_range,
            "--holdout", args.holdout, "--far-range", args.far_range, "--p-equal", str(args.p_equal),
+           "--small-gap-frac", str(args.small_gap_frac), "--small-gap-max", str(args.small_gap_max),
            "--seed", str(args.data_seed), "--ops", *args.ops]
     print(f"→ generating data in {data_dir}")
     run(cmd, data_dir / "generate.log")
@@ -158,6 +159,9 @@ def main() -> int:
     ap.add_argument("--far-range", default="500-624")
     ap.add_argument("--ops", nargs="+", default=["LESS_THAN", "GREATER_THAN"])
     ap.add_argument("--p-equal", type=float, default=0.02)
+    ap.add_argument("--small-gap-frac", type=float, default=0.0,
+                    help="fraction of pairs drawn with |a-b| <= --small-gap-max (oversample close values)")
+    ap.add_argument("--small-gap-max", type=int, default=10)
     ap.add_argument("--data-seed", type=int, default=42)
     ap.add_argument("--regenerate", action="store_true")
     ap.add_argument("--model-size", default="tiny")

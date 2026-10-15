@@ -62,9 +62,17 @@ def parse_band(text: Optional[str]) -> Optional[Tuple[int, int]]:
 
 
 class MagnitudeGenerator:
-    def __init__(self, vocab: Vocabulary, ops: Sequence[str] = DEFAULT_OPS, p_equal: float = 0.02):
+    def __init__(self, vocab: Vocabulary, ops: Sequence[str] = DEFAULT_OPS, p_equal: float = 0.02,
+                 small_gap_frac: float = 0.0, small_gap_max: int = 10):
+        """
+        small_gap_frac: fraction of pairs drawn with |a - b| in 1..small_gap_max. Uniform
+            random pairs over 0..499 put only ~2% of training at gaps of 5 or less, so the
+            comparator is barely trained on close values; this oversamples them.
+        """
         self.vocab = vocab
         self.ops = list(ops)
+        self.small_gap_frac = small_gap_frac
+        self.small_gap_max = small_gap_max
         for op in self.ops:
             if op not in OPS:
                 raise ValueError(f"unknown op {op}; choose from {list(OPS)}")
@@ -91,6 +99,7 @@ class MagnitudeGenerator:
         """Draw n distinct (a, b, op) triples; a from pool_a, b from pool_b, order randomised."""
         seen: Set[Tuple[int, int, str]] = set()
         out: List[Dict] = []
+        pool_b_set = set(pool_b)
         attempts = 0
         max_attempts = n * 50
         while len(out) < n:
@@ -98,7 +107,14 @@ class MagnitudeGenerator:
             if attempts > max_attempts:
                 raise RuntimeError(f"could not draw {n} distinct pairs (got {len(out)}); pools too small?")
             a = random.choice(pool_a)
-            b = a if random.random() < self.p_equal else random.choice(pool_b)
+            if random.random() < self.p_equal:
+                b = a
+            elif random.random() < self.small_gap_frac:
+                b = a + random.choice([-1, 1]) * random.randint(1, self.small_gap_max)
+                if b not in pool_b_set:
+                    continue
+            else:
+                b = random.choice(pool_b)
             if random.random() < 0.5:
                 a, b = b, a
             op = random.choice(self.ops)
@@ -124,7 +140,8 @@ def generate_magnitude_data(vocab_path: str, output_dir: str, n_train: int = 200
                             n_test: int = 4000, value_range: Tuple[int, int] = (0, 499),
                             holdout: Optional[Tuple[int, int]] = (200, 299),
                             far_range: Optional[Tuple[int, int]] = (500, 624),
-                            ops: Sequence[str] = DEFAULT_OPS, p_equal: float = 0.02, seed: int = 42) -> Dict:
+                            ops: Sequence[str] = DEFAULT_OPS, p_equal: float = 0.02, seed: int = 42,
+                            small_gap_frac: float = 0.0, small_gap_max: int = 10) -> Dict:
     random.seed(seed)
     vocab = Vocabulary(vocab_path)
     out = Path(output_dir)
@@ -148,11 +165,12 @@ def generate_magnitude_data(vocab_path: str, output_dir: str, n_train: int = 200
         raise ValueError("training value pool is empty")
     train_pool = set(train_vals)
 
-    gen = MagnitudeGenerator(vocab, ops=ops, p_equal=p_equal)
+    gen = MagnitudeGenerator(vocab, ops=ops, p_equal=p_equal, small_gap_frac=small_gap_frac, small_gap_max=small_gap_max)
     print("=" * 60)
     print("MAGNITUDE COMPARISON DATASET")
     print("=" * 60)
-    print(f"ops={list(ops)}  train values={value_range} minus {holdout}  far={far_range}")
+    print(f"ops={list(ops)}  train values={value_range} minus {holdout}  far={far_range}  "
+          f"small-gap pairs: {small_gap_frac:.0%} with |a-b| <= {small_gap_max}")
 
     train = gen.sample_pairs(n_train, train_vals, train_vals, train_pool, exclude=set())
     train_keys = {(s["a"], s["b"], s["op"]) for s in train}
@@ -181,6 +199,8 @@ def generate_magnitude_data(vocab_path: str, output_dir: str, n_train: int = 200
         "vocab_size": vocab.vocab_size,
         "ops": list(ops),
         "p_equal": p_equal,
+        "small_gap_frac": small_gap_frac,
+        "small_gap_max": small_gap_max,
         "seed": seed,
         "value_pools": {
             "train": [value_range[0], value_range[1]],
@@ -209,6 +229,9 @@ if __name__ == "__main__":
     ap.add_argument("--far-range", default="500-624", metavar="LO-HI", help="never-seen value band ('none' to disable)")
     ap.add_argument("--ops", nargs="+", default=list(DEFAULT_OPS), choices=list(OPS))
     ap.add_argument("--p-equal", type=float, default=0.02, help="fraction of pairs with a == b")
+    ap.add_argument("--small-gap-frac", type=float, default=0.0,
+                    help="fraction of pairs drawn with |a-b| in 1..small-gap-max (oversample close values)")
+    ap.add_argument("--small-gap-max", type=int, default=10)
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
     generate_magnitude_data(
@@ -217,4 +240,5 @@ if __name__ == "__main__":
         holdout=None if args.holdout.lower() == "none" else parse_band(args.holdout),
         far_range=None if args.far_range.lower() == "none" else parse_band(args.far_range),
         ops=args.ops, p_equal=args.p_equal, seed=args.seed,
+        small_gap_frac=args.small_gap_frac, small_gap_max=args.small_gap_max,
     )

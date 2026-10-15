@@ -86,6 +86,9 @@ class TrainingConfig:
     shared_axis_freq: int = 4
     shared_residual: bool = False
     shared_basis: str = "full"
+    # Separate optimiser group for the grid_shared per-cell residual.
+    residual_lr_mult: float = 1.0
+    residual_weight_decay: Optional[float] = None
     seed: int = 42
 
 
@@ -173,9 +176,24 @@ class Trainer:
         
         self.model = self.model.to(self.device)
         
-        # Setup optimizer
+        # Setup optimizer. The grid_shared per-cell residual (if any) gets its own
+        # group so it can learn faster and decay harder than the rest: trained
+        # cells sharpen their increment, untrained cells shrink back to the
+        # smooth part.
+        residual = getattr(getattr(getattr(model, 'symbol_embed', None), 'encoder', None), 'residual', None)
+        if residual is not None and (config.residual_lr_mult != 1.0 or config.residual_weight_decay is not None):
+            others = [p for p in model.parameters() if p is not residual]
+            groups = [
+                {'params': others},
+                {'params': [residual], 'lr': config.learning_rate * config.residual_lr_mult,
+                 'weight_decay': config.weight_decay if config.residual_weight_decay is None
+                 else config.residual_weight_decay},
+            ]
+            print(f"✓ Residual group: lr x{config.residual_lr_mult}, weight_decay {groups[1]['weight_decay']}")
+        else:
+            groups = [{'params': list(model.parameters())}]
         self.optimizer = optim.AdamW(
-            model.parameters(),
+            groups,
             lr=config.learning_rate,
             weight_decay=config.weight_decay,
             betas=(0.9, 0.98),
@@ -374,6 +392,10 @@ def main():
                         help="grid_shared: number of row/col frequencies (0 = index features only)")
     parser.add_argument("--shared-residual", action="store_true",
                         help="grid_shared: add a zero-initialised per-cell residual weight")
+    parser.add_argument("--residual-lr-mult", type=float, default=1.0,
+                        help="grid_shared residual: learning-rate multiplier for its own optimiser group")
+    parser.add_argument("--residual-wd", type=float, default=None,
+                        help="grid_shared residual: weight decay for its own group (default: global)")
     parser.add_argument("--shared-basis", default="full", choices=["full", "constant", "ramp"],
                         help="grid_shared: 'constant' gives every cell the same generated weight (count × one direction)")
     parser.add_argument("--device", default=None, help="cuda or cpu (default: cuda if available)")
@@ -408,6 +430,8 @@ def main():
     config.shared_axis_freq = args.shared_axis_freq
     config.shared_residual = args.shared_residual
     config.shared_basis = args.shared_basis
+    config.residual_lr_mult = args.residual_lr_mult
+    config.residual_weight_decay = args.residual_wd
     set_seed(config.seed)
     vocab = Vocabulary(args.vocab)
     config.vocab_size = vocab.vocab_size

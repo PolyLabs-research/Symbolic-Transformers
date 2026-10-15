@@ -53,6 +53,11 @@ ARMS = {
     "grid_ramp": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp"],
     "grid_ramp_res": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
                       "--shared-residual"],
+    # Ramp + residual with the residual in its own optimiser group: 10x learning
+    # rate and 10x weight decay, so trained cells sharpen fast and untrained
+    # cells decay back to the smooth ramp.
+    "grid_ramp_res_fast": ["--embedding", "grid_shared", "--tie-weights", "--shared-basis", "ramp",
+                           "--shared-residual", "--residual-lr-mult", "10", "--residual-wd", "0.1"],
     # Control: the original untied model. Unseen rows keep their random init
     # instead of being pushed away from hidden states by the tied softmax.
     "learned_untied": ["--embedding", "learned"],

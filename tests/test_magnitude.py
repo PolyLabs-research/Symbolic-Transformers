@@ -109,3 +109,45 @@ def test_probe_on_untrained_grid_linear_interpolates(vocab):
     pools = {"train": [v for v in range(0, 500) if not 200 <= v <= 299], "holdout": list(range(200, 300))}
     probe = magnitude_axis_probe(table, pools)
     assert probe["readout"]["holdout"]["spearman"] > 0.8
+
+
+def test_small_gap_oversampling(vocab):
+    import random
+    from data.magnitude_generator import MagnitudeGenerator
+
+    random.seed(0)
+    pool = list(range(0, 500))
+    plain = MagnitudeGenerator(vocab, small_gap_frac=0.0).sample_pairs(3000, pool, pool, set(pool), set())
+    rich = MagnitudeGenerator(vocab, small_gap_frac=0.4, small_gap_max=10).sample_pairs(3000, pool, pool, set(pool), set())
+    frac = lambda s: sum(1 for x in s if 1 <= abs(x["a"] - x["b"]) <= 10) / len(s)  # noqa: E731
+    assert frac(plain) < 0.08
+    assert 0.35 < frac(rich) < 0.5
+    # Labels still follow the operator, and operands stay inside the pool.
+    from data.magnitude_generator import OPS
+    for s in rich:
+        assert s["label"] == ("TRUE" if OPS[s["op"]](s["a"], s["b"]) else "FALSE")
+        assert 0 <= s["a"] <= 499 and 0 <= s["b"] <= 499
+
+
+def test_residual_optimiser_group(vocab):
+    torch = pytest.importorskip("torch")
+    from torch.utils.data import DataLoader
+    from models.transformer import create_model
+    from training.train import Trainer, TrainingConfig
+    from utils.grid_bank import GridBank
+
+    bank = GridBank.load(ROOT / "grids" / "grid_bank.npz")
+    model = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
+                         verbose=False, shared_basis="ramp", shared_residual=True)
+    cfg = TrainingConfig(model_size="tiny", vocab_size=vocab.vocab_size, device="cpu", warmup_steps=1,
+                         learning_rate=1e-3, residual_lr_mult=10.0, residual_weight_decay=0.5)
+    loader = DataLoader([{"input_ids": torch.zeros(4, dtype=torch.long), "target": torch.tensor(0),
+                          "length": torch.tensor(4)}], batch_size=1)
+    trainer = Trainer(model, loader, loader, cfg, vocab)
+    groups = trainer.optimizer.param_groups
+    assert len(groups) == 2
+    assert groups[1]["params"][0] is model.symbol_embed.encoder.residual
+    assert groups[1]["lr"] == pytest.approx(1e-2) and groups[1]["weight_decay"] == 0.5
+    assert groups[0]["weight_decay"] == cfg.weight_decay
+    n_params = sum(p.numel() for p in model.parameters())
+    assert sum(p.numel() for g in groups for p in g["params"]) == n_params
