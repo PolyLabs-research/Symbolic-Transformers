@@ -203,7 +203,21 @@ special:      e_t = F[t]                     learned fallback rows for tokens wi
 `grid_linear` only trains column `W_i` from panels that fill cell `i`, so cells beyond the largest trained
 value keep their random init and the embedding of a larger value points in a random direction.
 `grid_shared` generates every cell's weight from the same `A`, so cells never filled in training get weights
-consistent with their neighbours (extrapolation) and adjacent cells get similar increments (precision).
+consistent with their neighbours.
+
+Measured on the magnitude task (`experiments/magnitude_*.md`): with the default smooth basis `grid_shared`
+extrapolates order past the trained range but inverts comparisons inside a held-out gap. A basis of one
+shared direction (`--shared-basis constant`) collapses: LayerNorm is scale-invariant, so `k·u` normalises to
+the same vector for every k. The basis that works is `ramp` = [1, i/625] with the per-cell residual
+(`--shared-residual`):
+
+```
+grid_ramp_res:  e_t = LN( k·a + (k²/1250)·c + b + Σ_{filled i} r_i )     a, c: d_model; r_i: 625 × d_model, zero-init
+```
+
+The direction rotates uniformly with k, so the walk through any gap and the continuation past the range are
+segments of the same curve; the residuals give trained cells distinctive increments. Without the residual
+the path is too flat to learn from; without the ramp the path cannot leave the trained range.
 
 For numerals `g_k` is the thermometer code (first k cells set), so `W g_k` is the cumulative sum of
 the first k columns of `W`: adjacent indices get adjacent embeddings and an index absent from training

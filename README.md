@@ -205,6 +205,7 @@ nothing about. The grid arms replace the table for every grid-backed token:
 | `grid_linear` | one shared `Linear(625 → d_model)` over the panel bits | learned fallback row | embeddings move along a path as *k* grows |
 | `grid_conv` | small 2D conv encoder over the 25×25 panel | learned fallback row | sees shape, not just count |
 | `grid_shared` | panel bits × cell weights *generated* from smooth position features through one shared matrix | learned fallback row | no parameter belongs to a single cell: unseen cells inherit from neighbours |
+| `grid_shared` + `--shared-basis ramp --shared-residual` (arm `grid_ramp_res`) | cell weight = a + (i/625)·c + per-cell residual | learned fallback row | **interpolates and extrapolates**: see `experiments/magnitude_*.md` |
 | `sinusoid` | numerals: fixed sin/cos features of *k* (periods 2-1250) through `Linear(64 → d_model)`; glyphs: learned row | learned fallback row | control: an ordinal code with no nesting |
 | `sinusoid_smooth` | same with periods 32-1250 only | learned fallback row | control: a smooth ordinal code with no nesting |
 
@@ -261,6 +262,15 @@ python scripts/magnitude_experiment.py --out-dir runs/magnitude --seeds 1 2 3 --
 operands were unseen, plus two probes of the embedding table itself: whether a linear readout of *k*
 fitted on training values transfers to held-out and far values, and how well the first principal
 component tracks *k*. Results: `experiments/magnitude_*.md`.
+
+What they show, in one paragraph: learned tables carry no magnitude for values they never saw; fixed
+per-value features do. The thermometer panel through independent cell weights (`grid_linear`) interpolates
+a held-out band wherever it sits, which a sinusoid of *k* only manages when the band is bracketed on both
+sides, but it cannot extrapolate because cells past the largest trained value never receive gradient.
+Cell weights generated from a shared function of position extrapolate order but invert inside a gap.
+A ramp basis plus a per-cell residual (`grid_ramp_res`) does both: 94-96% on the held-out band and 76-86% on
+the never-trained band, at some cost in close-pair precision. A single shared direction collapses under
+LayerNorm, which is scale-invariant.
 
 Manual equivalents for the FOL experiment:
 
