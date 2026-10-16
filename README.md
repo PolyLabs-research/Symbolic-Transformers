@@ -100,12 +100,15 @@ details in `experiments/fol_retrain.md`.
 |-------|-----------|-----------|-------|-------|-----------------------------------|
 | **Best achievable** (the generator's own probabilities) | — | 1.445 | 58.4% | 77.8% | 66.5% |
 | **Tiny** (`checkpoints/best_model.pt`, 20 epochs) | 569K | 1.494 | 58.3% | 77.7% | 66.1% |
-| Small / Base | 3.5M / 19.6M | not measured yet | | | |
+| Base (same settings, best of 20 epochs) | 19.6M | 1.512 | 58.2% | 77.1% | 65.9% |
+| Small | 3.5M | not measured | | | |
 
 The ceiling is low because the task is mostly random by design. 23% of targets are indices drawn
 uniformly from 100 values (best possible 1%), and connectives, arity and formula types are random choices
-too. The tiny model is within 0.1 points of the ceiling, so a larger model can gain little. The one gap
-left is that it leaks probability to out-of-scope variables (below).
+too. The tiny model is within 0.1 points of the ceiling, so no model can gain much. Base, with 34× the
+parameters, gained nothing at the same settings: equal top-1, a slightly higher loss, and worse tracking of
+variables in scope, as it began to fit the training formulas. The one gap left in tiny is that it leaks
+probability to out-of-scope variables (below).
 
 > The checkpoint shipped before October 2026 was trained on data with indices 0–4 and a loss that ignored
 > `NUM_000`. On its own test set it scored 62.0% top-1 (ceiling 62.6%), not the ~44% this README used to

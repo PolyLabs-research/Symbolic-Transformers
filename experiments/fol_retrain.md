@@ -181,9 +181,42 @@ on large indices. None of the six remaining failures is the model's error:
 | two cases with an unparenthesised `AND` | that syntax never occurs in the data; the model's answers fit the grammar |
 | top-5 overlap between index variants | compares tail tokens at about 0%; top-1 (`MESSAGE_END`, 100%) matches |
 
-## What this means for model size
+## Model size: Base is no better
 
-The tiny model is within 0.1 points of the best achievable top-1 and within 0.05 nats of the lowest
-achievable loss. No model of any size can do better than that on this test set. The only room left is
-leaked probability on bound variables. A Base run (19.6M parameters, same settings) is the way to measure
-whether size helps there.
+Base (d = 512, 6 layers, 8 heads, 19.6M parameters: 34× tiny) was trained with exactly the tiny settings on
+the RTX 2000 Ada laptop GPU, at about 10 minutes per epoch. Its validation loss by epoch:
+
+1.772, 1.740, 1.748, 1.742, 1.729, 1.732, 1.706, 1.694, 1.642, 1.606, 1.574, 1.548, 1.533, 1.526, 1.518,
+**1.510** (epoch 16, kept), 1.513, 1.513, 1.512, 1.512.
+
+Its plateau lasts longer than tiny's (epochs 2-7 against 2-5) and it ends higher. By epoch 20 its training
+loss (1.487) is below its validation loss (1.512): it has started to fit the 10,000 training formulas
+rather than the generator. Tiny ends the other way round (training 1.503, validation 1.489, with dropout
+active in training).
+
+Test set, both models from the GPU runs:
+
+| | tiny (569K) | base (19.6M) | best achievable |
+|---|---|---|---|
+| loss | 1.495 | 1.512 | 1.445 |
+| top-1 / top-5 | 58.1 / 77.7 | 58.2 / 77.1 | 58.4 / 77.8 |
+| unseen contexts: loss / top-1 | 1.182 / 65.8 | 1.207 / 65.9 | 1.111 / 66.5 |
+| forced / formula start / connective / arity, top-1 | 99.9 / 38.8 / 25.5 / 50.8 | 99.9 / 39.0 / 26.7 / 53.3 | 100 / 39.0 / 25 / 50 |
+| bound variables: top-1 / top-5 / loss | 77.2 / 96.4 / 0.825 | 74.2 / 86.3 / 1.212 | 83.0 / 100 / 0.244 |
+| index draws (free variables), loss | 4.665 | 4.633 | 4.605 |
+| sampled formulas: well-formed / variable references in scope | 92.6 / 86.3 | 93.4 / 81.1 | 100 / 100 |
+
+Reading:
+
+- **Base matches tiny on everything already at the ceiling.** Its 53.3% on arity is test-set noise around a
+  fair coin: there are 1,179 arity targets, so one standard error is 1.5 points.
+- **Base is worse on the one thing with room to improve.** On bound variables its top-5 drops by 10 points
+  and its loss by 0.39. More of its sampled variable references point outside their scope (19% against
+  14%).
+- **Base's index draws are a little closer to uniform** (free-variable loss 4.633 against 4.665). Tiny
+  slightly overweights some index values. This is worth 0.003 nats overall.
+
+**At these settings, extra capacity buys nothing on this task and costs some generalisation.** Different
+settings (more dropout or weight decay, or more formulas, which the generator supplies for free) might
+change that. But the ceiling caps any model's possible gain over tiny at 0.1-0.3 points of top-1 (CPU and GPU
+runs) and 0.05 nats of loss. Small (3.5M) was not trained.
