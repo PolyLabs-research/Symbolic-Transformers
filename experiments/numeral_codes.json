@@ -1,5 +1,64 @@
 {
  "comparison: NUM_a OP NUM_b": {
+  "learned table": {
+   "files": [
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_routes/learned_untied_s1/eval.json",
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_routes/learned_untied_s2/eval.json",
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_routes/learned_untied_s3/eval.json"
+   ],
+   "per_seed": [
+    {
+     "seen": 0.97225,
+     "seen_gap1": 0.6880733944954128,
+     "seen_gap2_5": 0.9587628865979382,
+     "held": 0.55525,
+     "held_tf": 0.55525,
+     "held_all": 0.5007767995857069,
+     "held_all_gap1": 0.5231788079470199,
+     "held_all_gap2_5": 0.4442446043165468,
+     "held_all_gap6_20": 0.4880803011292346,
+     "far": 0.514,
+     "far_tf": 0.514,
+     "far_all": 0.5440669620876416,
+     "epoch": 57
+    },
+    {
+     "seen": 0.973,
+     "seen_gap1": 0.7155963302752294,
+     "seen_gap2_5": 0.9742268041237113,
+     "held": 0.55175,
+     "held_tf": 0.55175,
+     "held_all": 0.5059554634904194,
+     "held_all_gap1": 0.45695364238410596,
+     "held_all_gap2_5": 0.4892086330935252,
+     "held_all_gap6_20": 0.4993726474278545,
+     "far": 0.4895,
+     "far_tf": 0.4895,
+     "far_all": 0.5051698670605613,
+     "epoch": 58
+    },
+    {
+     "seen": 0.96675,
+     "seen_gap1": 0.7339449541284404,
+     "seen_gap2_5": 0.9690721649484536,
+     "held": 0.5495,
+     "held_tf": 0.5495,
+     "held_all": 0.47591921284308647,
+     "held_all_gap1": 0.44370860927152317,
+     "held_all_gap2_5": 0.4802158273381295,
+     "held_all_gap6_20": 0.47051442910915936,
+     "far": 0.50375,
+     "far_tf": 0.50375,
+     "far_all": 0.51698670605613,
+     "epoch": 56
+    }
+   ],
+   "escape_epoch": [
+    "7",
+    "5",
+    "4"
+   ]
+  },
   "smooth sinusoid features": {
    "files": [
     "/home/user/Symbolic-Transformers/runs/magnitude_precision_anneal_v2/sinusoid_smooth_s1/eval.json",
@@ -182,7 +241,8 @@
   "learned table": {
    "files": [
     "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/learned_untied_s1/eval.json",
-    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/learned_untied_s2/eval.json"
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/learned_untied_s2/eval.json",
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/learned_untied_s3/eval.json"
    ],
    "per_seed": [
     {
@@ -214,17 +274,34 @@
      "far_tf": 0.5205,
      "far_all": 0.4647168059424327,
      "epoch": 21
+    },
+    {
+     "seen": 0.81725,
+     "seen_gap1": 0.6062992125984252,
+     "seen_gap2_5": 0.4693446088794926,
+     "held": 0.591,
+     "held_tf": 0.591,
+     "held_all": 0.500484496124031,
+     "held_all_gap1": 0.5425531914893617,
+     "held_all_gap2_5": 0.4897360703812317,
+     "held_all_gap6_20": 0.5083612040133779,
+     "far": 0.55,
+     "far_tf": 0.55,
+     "far_all": 0.4935004642525534,
+     "epoch": 14
     }
    ],
    "escape_epoch": [
     "10",
+    "6",
     "6"
    ]
   },
   "smooth sinusoid features": {
    "files": [
     "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/sinusoid_smooth_s1/eval.json",
-    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/sinusoid_smooth_s2/eval.json"
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/sinusoid_smooth_s2/eval.json",
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/sinusoid_smooth_s3/eval.json"
    ],
    "per_seed": [
     {
@@ -256,11 +333,27 @@
      "far_tf": 0.44825,
      "far_all": 0.2214484679665738,
      "epoch": 116
+    },
+    {
+     "seen": 0.9235,
+     "seen_gap1": 0.5984251968503937,
+     "seen_gap2_5": 0.6913319238900634,
+     "held": 0.77925,
+     "held_tf": 0.77925,
+     "held_all": 0.7243217054263565,
+     "held_all_gap1": 0.48936170212765956,
+     "held_all_gap2_5": 0.5513196480938416,
+     "held_all_gap6_20": 0.6254180602006689,
+     "far": 0.40825,
+     "far_tf": 0.40825,
+     "far_all": 0.15134633240482823,
+     "epoch": 117
     }
    ],
    "escape_epoch": [
     "4",
-    "5"
+    "5",
+    "3"
    ]
   },
   "xVal-style (value x one direction)": {

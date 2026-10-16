@@ -50,7 +50,7 @@ Accuracy (%), mean ± population std over seeds. Control rows belong to the next
 
 | numeral code | seeds | seen | seen gap 1 / 2-5 | held-out, all operands unseen (gap 1 / 2-5 / 6-20) | far, all unseen | held-out band | far band | TRUE/FALSE only: held-out / far | escape epoch per seed |
 |---|---|---|---|---|---|---|---|---|---|
-| learned table | 0 | (not run yet) | | | | | | | |
+| learned table | 3 | 97.1 ± 0.3 | 71.3 / 96.7 | 49.4 ± 1.3 (47.5 / 47.1 / 48.6) | 52.2 ± 1.6 | 55.2 ± 0.2 | 50.2 ± 1.0 | 55.2 / 50.2 | 7, 5, 4 |
 | smooth sinusoid features | 3 | 100.0 ± 0.0 | 100.0 / 100.0 | 46.2 ± 9.5 (54.3 / 54.4 / 47.7) | 64.4 ± 9.5 | 70.7 ± 2.6 | 59.5 ± 3.6 | 70.7 / 59.5 | 2, 2, 3 |
 | xVal-style (value x one direction) | 3 | 99.4 ± 0.3 | 93.0 / 99.2 | 96.3 ± 2.8 (76.2 / 96.5 / 100.0) | 94.5 ± 2.0 | 98.2 ± 1.4 | 97.2 ± 1.1 | 98.2 / 97.2 | 2, 2, 2 |
 | ramp, numerals only (ours) | 3 | 99.3 ± 0.2 | 89.9 / 97.7 | 92.0 ± 0.9 (57.0 / 85.8 / 99.3) | 80.0 ± 1.6 | 96.0 ± 0.5 | 89.8 ± 0.8 | 96.0 / 89.8 | 6, 9, 7 |
@@ -59,28 +59,32 @@ Accuracy (%), mean ± population std over seeds. Control rows belong to the next
 
 | numeral code | seeds | seen | seen gap 1 / 2-5 | held-out, all operands unseen (gap 1 / 2-5 / 6-20) | far, all unseen | held-out band | far band | TRUE/FALSE only: held-out / far | escape epoch per seed |
 |---|---|---|---|---|---|---|---|---|---|
-| learned table | 2 | 82.1 ± 0.4 | 54.7 / 49.8 | 49.7 ± 1.0 (51.1 / 48.2 / 47.8) | 48.4 ± 1.9 | 57.3 ± 0.5 | 53.2 ± 1.2 | 57.3 / 53.2 | 10, 6 |
-| smooth sinusoid features | 2 | 93.3 ± 0.1 | 59.8 / 72.6 | 73.5 ± 3.5 (54.3 / 57.8 / 61.0) | 19.7 ± 2.5 | 79.8 ± 2.2 | 42.8 ± 2.1 | 79.8 / 42.8 | 4, 5 |
+| learned table | 3 | 82.0 ± 0.4 | 56.7 / 48.8 | 49.8 ± 0.8 (52.1 / 48.5 / 48.8) | 48.7 ± 1.6 | 57.9 ± 0.9 | 53.8 ± 1.3 | 57.9 / 53.8 | 10, 6, 6 |
+| smooth sinusoid features | 3 | 93.0 ± 0.5 | 59.8 / 71.5 | 73.1 ± 2.9 (52.5 / 56.9 / 61.5) | 18.2 ± 2.9 | 79.2 ± 2.0 | 42.1 ± 1.9 | 79.2 / 42.1 | 4, 5, 3 |
 | xVal-style (value x one direction) | 3 | 93.6 ± 0.7 | 61.4 / 74.3 | 76.9 ± 1.0 (47.5 / 58.9 / 68.1) | 54.5 ± 6.3 | 83.6 ± 0.9 | 69.6 ± 3.7 | 83.6 / 69.6 | 2, 2, 3 |
 | ramp, numerals only (ours) | 3 | 50.3 ± 0.0 | 55.9 / 52.9 | 50.9 ± 0.0 (51.1 / 48.1 / 50.2) | 51.9 ± 0.0 | 49.8 ± 0.0 | 51.0 ± 0.0 | 49.8 / 51.0 | never, never, never |
 | control: xVal-style, lr 1e-3 | 0 | (not run yet) | | | | | | | |
 | control: ramp, lr 1e-3 | 0 | (not run yet) | | | | | | | |
 | control: ramp, warm start from the comparison task | 0 | (not run yet) | | | | | | | |
 
-Interim reading (13 of 18 main runs; the learned table on the comparison task, one learned and one
-sinusoid seed on the sum task, and the nine controls are still running):
+Reading of the main runs (all 18 complete, plus the earlier comparison-task ramp and sinusoid runs):
 
 - **On the comparison task the xVal-style code beats ours on every unseen measure.** All-unseen held-out
   pairs 96.3 ± 2.8% against 92.0 ± 0.9% (gap 1: 76% against 57%), all-unseen far pairs 94.5 ± 2.0%
   against 80.0 ± 1.6%, with seen pairs equal (99.4 / 99.3) and every seed leaving chance by epoch 2
   against 6-9. Its far band is the best result of any model in this project, the 80-epoch residual-dropout
-  arm of the precision study included (93% far all-unseen, but 52% held-out all-unseen).
+  arm of the precision study included (93% far all-unseen, but 52% held-out all-unseen). The learned
+  table fits seen pairs (97.1%) and is at chance on every unseen subset; the smooth sinusoid features fit
+  seen pairs perfectly and are at or below chance on held-out all-unseen pairs (46.2 ± 9.5%).
 - **On the sum task the linear code interpolates and nothing extrapolates.** The xVal-style code reaches
   93.6% on seen sums and 76.9 ± 1.0% on held-out samples with all four operands unseen, but 54.5 ± 6.3% on
   far ones, whose sums (1000-1248) all lie above the training range (7-993). The sinusoid features
-  interpolate nearly as well (73.5%) and are inverted past the range (19.7%). The learned table fits seen
-  sums to 82% and is at chance on unseen ones. Our ramp never left chance in 120 epochs in any of three
-  seeds; the controls decide whether that is the code or the optimisation.
+  interpolate nearly as well (73.1 ± 2.9%) and are inverted past the range (18.2 ± 2.9%). The learned
+  table fits seen sums to 82% and is at chance on unseen ones. Our ramp never left chance in 120 epochs in
+  any of three seeds.
+- **Ranking, all-unseen columns, both tasks:** xVal-style first everywhere; our ramp second on the
+  comparison task and last on the sum task from scratch; sinusoid features interpolate sums but invert
+  past the range; the learned table never generalises.
 
 ## Controls for a stall on the sum task
 
@@ -93,4 +97,9 @@ or representation:
   code can represent sums this arm should learn them.
 - **Hotter schedule** (`grid_ramp_numonly_lr1e3`, and `xval_lr1e3` for parity): learning rate 1e-3.
 
-Not run yet.
+**Interim: the warm start answers the question; the hotter schedule has not helped so far.** Started from
+its comparison-task checkpoint, our ramp learns sums at once in all three seeds (validation loss 0.30-0.37
+at epoch 1, 0.21-0.22 by epoch 17, the same curve as the xVal-style code from scratch, which was at about
+0.21 by epoch 14). The code can represent sums; what fails from scratch is optimisation. At learning rate
+1e-3 the first ramp seed was still at chance (best validation loss 0.692) at epoch 15. Final numbers for
+all nine control runs follow when they finish.
