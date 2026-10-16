@@ -23,7 +23,7 @@ import torch.nn.functional as F
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from models.transformer import load_model_from_checkpoint  # noqa: E402
-from training.train import FOLDataset  # noqa: E402
+from training.train import FOLDataset, trim_padding  # noqa: E402
 from utils.vocabulary import Vocabulary  # noqa: E402
 
 
@@ -49,7 +49,7 @@ def compute_topk_accuracy(model, dataset: FOLDataset, device: torch.device,
         input_ids = torch.stack([it['input_ids'] for it in items]).to(device)
         lengths = torch.stack([it['length'] for it in items]).to(device)
         targets = torch.stack([it['target'] for it in items]).to(device)
-        logits = model(input_ids)
+        logits = model(trim_padding(input_ids, lengths))
         last = logits[torch.arange(input_ids.size(0), device=device), lengths - 1, :]
         topk = torch.topk(last, k=kmax, dim=-1).indices
         hits = topk == targets.unsqueeze(1)

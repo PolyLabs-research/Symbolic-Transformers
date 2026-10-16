@@ -42,7 +42,7 @@ A grammar can tell you what strings are *syntactically valid* with 100% accuracy
 
 ## 🎯 Overview
 
-**Symbolic Transformers** achieve competitive performance on logical reasoning tasks using only **566K parameters** and **671 discrete tokens** — 200× more parameter-efficient than traditional language models.
+**Symbolic Transformers** learn the structure of first-order logic with a **569K-parameter** model over **671 discrete tokens**. On next-symbol prediction for generated formulas the tiny model reaches the best achievable accuracy (58.3% top-1 against a ceiling of 58.4%) and refers back to the variables in scope. Tasks that need the *meaning* of a formula, such as truth or entailment, are not tested yet.
 
 ### Key Innovation
 
@@ -93,60 +93,68 @@ python evaluate_model.py                            # Evaluate
 
 ### Model Performance
 
-| Model | Parameters | Size | Val Loss | Top-1 Acc | Top-5 Acc |
-|-------|-----------|------|----------|-----------|-----------|
-| **Tiny** | 566K | 2.2 MB | 0.88 | ~44% | ~75% |
-| **Small** | 3.5M | 14 MB | 0.75* | ~52%* | ~82%* |
-| **Base** | 19.6M | 78 MB | 0.65* | ~58%* | ~86%* |
+Measured on the regenerated test set (1,000 formulas, none in training) with `python scripts/assess_fol.py`;
+details in `experiments/fol_retrain.md`.
 
-*Projected based on scaling experiments. Base model training in progress (epoch 1: val loss 0.96).
+| Model | Parameters | Test loss | Top-1 | Top-5 | Top-1 on contexts not in training |
+|-------|-----------|-----------|-------|-------|-----------------------------------|
+| **Best achievable** (the generator's own probabilities) | — | 1.445 | 58.4% | 77.8% | 66.5% |
+| **Tiny** (`checkpoints/best_model.pt`, 20 epochs) | 569K | 1.494 | 58.3% | 77.7% | 66.1% |
+| Base (same settings, best of 20 epochs) | 19.6M | 1.512 | 58.2% | 77.1% | 65.9% |
+| Small | 3.5M | not measured | | | |
 
-> **Note on the shipped checkpoint.** `checkpoints/best_model.pt` was trained before three fixes landed: the
-> dataset only used variable/predicate indices 0–4, half its test formulas (503 of 1,000) also appeared in
-> training, and the loss ignored every `NUM_000` target. The numbers above come from that run, and its test
-> accuracy is inflated by the overlap. The generator now draws every formula once across all splits, so
-> validation and test formulas are never training formulas. Retrain (Colab or `python training/train.py`)
-> on the regenerated data to get figures that reflect the current code.
+The ceiling is low because the task is mostly random by design. 23% of targets are indices drawn
+uniformly from 100 values (best possible 1%), and connectives, arity and formula types are random choices
+too. The tiny model is within 0.1 points of the ceiling, so no model can gain much. Base, with 34× the
+parameters, gained nothing at the same settings: equal top-1, a slightly higher loss, and worse tracking of
+variables in scope, as it began to fit the training formulas. The one gap left in tiny is that it leaks
+probability to out-of-scope variables (below).
+
+> The checkpoint shipped before October 2026 was trained on data with indices 0–4 and a loss that ignored
+> `NUM_000`. On its own test set it scored 62.0% top-1 (ceiling 62.6%), not the ~44% this README used to
+> quote. Its train/test formula overlap did not inflate that number. It is unusable on the current data
+> (test loss 8.6), and the retrained checkpoint above replaces it.
 
 ### Baselines & Context
 
-To understand what 44% accuracy means:
+| Method | Top-1 | Top-1, contexts not in training |
+|--------|-------|----------------------------------|
+| Most frequent token | 21.3% | 19.9% |
+| Bigram counts | 35.7% | 37.9% |
+| Longest matching training-set context (memorisation) | 47.7% | 50.7% |
+| **Symbolic Transformer (tiny)** | **58.3%** | **66.1%** |
+| Best achievable | 58.4% | 66.5% |
 
-| Method | Top-1 Accuracy | Notes |
-|--------|---------------|-------|
-| Random | 0.15% | 1/671 tokens |
-| Unigram frequency | ~8% | Always predict most common token |
-| Bigram model | ~18% | Conditional on previous token |
-| Grammar-constrained random | ~25-30% | Random among valid next tokens |
-| **Symbolic Transformer (tiny)** | **~44%** | Learns soft preferences beyond grammar |
+By the role of the target (top-1, model / best achievable):
 
-The model's value is in learning *which* valid continuations are likely, not just *what* is valid.
+- **Forced tokens:** 99.9 / 100 (41% of targets).
+- **Connectives:** 27.7 / 25, which is test-set noise above the ceiling.
+- **Unary vs binary arity:** 50.6 / 50.
+- **Formula type:** 39.2 / 39.0.
+- **Index draws:** about 1 / 1.
+- **References to bound variables:** 79.0 / 83.0, against 25.2 for training-set lookup.
+
+That last role is where the model has to work out which variables are in scope, rather than recall
+training formulas.
 
 ### What the Model Learns
 
-The model achieves **99.6% confidence** on hard syntax rules:
+Predictions of `checkpoints/best_model.pt` (contexts start with `MESSAGE_START`):
 
 ```
-Input: FORALL
-Prediction: VAR (99.6%)  ← Learned that ∀ must bind a variable
-
-Input: FORALL VAR
-Prediction: [numeral] (uniform ~2% each)  ← Appropriate uncertainty over indices
-
-Input: FORALL VAR 1
-Prediction: PRED (75%), FORALL (10%), EXISTS (5%)  ← Soft preferences among valid options
+FORALL                                      → VAR 100.0%            ← a quantifier must bind a variable
+FORALL VAR                                  → ~1% on each index     ← the bound index is uniform: nothing to learn
+FORALL VAR 7                                → PRED 31%, LPAREN 24%, FORALL 16%, EXISTS 13%, VAR 11%
+                                              (optimal: 31 / 22 / 14 / 14 / 13)
+FORALL VAR 7 PRED 3 LPAREN VAR              → 7 at 97.7%            ← refers back to the bound variable
+PRED 3 LPAREN VAR                           → ~1% on each index     ← no variable in scope: uniform
+FORALL VAR 7 EXISTS VAR 42 PRED 3 LPAREN VAR → 42 48%, 7 26%        ← optimal is 50 / 50
 ```
 
-### Key Finding: Data Quality > Model Size
-
-Our experiments revealed that **more data beats more epochs**:
-
-- Tiny model (566K params) + 14K samples → overfits after ~170 epochs
-- Best checkpoint: epoch 167 (val loss 0.879)
-- Continued training to epoch 700 made val loss *worse* (1.18)
-- 10× more data (144K samples) → base model hits val loss 0.96 in epoch 1
-
-**Lesson:** In the low-parameter regime, data efficiency matters more than architecture scaling.
+The last line shows the remaining weakness. The share of probability on in-scope variables falls as more
+are bound: 87% with one, 74% with two, 61% with three or more (optimal 100%). The same leak means 12% of
+variable references in sampled formulas point outside their scope, and 94% of sampled formulas are
+well-formed.
 
 ---
 
@@ -176,7 +184,7 @@ composition in ordinary training data.
 
 | Config | d_model | Layers | Heads | FF dim | Parameters |
 |--------|---------|--------|-------|--------|------------|
-| tiny   | 128     | 2      | 4     | 512    | 566K |
+| tiny   | 128     | 2      | 4     | 512    | 569K |
 | small  | 256     | 4      | 4     | 1024   | 3.5M |
 | base   | 512     | 6      | 8     | 2048   | 19.6M |
 
@@ -335,10 +343,17 @@ python evaluate_grid.py --checkpoint runs/mine/best_model.pt \
 
 ### Interpreting Loss
 
-- **Val Loss > 2.0**: Learning basic patterns
-- **Val Loss 1.0-2.0**: Learning syntax rules
-- **Val Loss < 1.0**: Good FOL structure understanding
-- **Val Loss < 0.85**: Excellent (approaching capacity)
+Loss has a hard floor, set by how random the data is, so read it against that floor, not as an absolute
+number. On `datasets/fol_next_symbol` (indices 0–99) no model can get below **1.445** test loss: 23% of
+targets are uniform draws over 100 indices, at ln 100 = 4.6 nats each.
+
+The tiny model's validation loss plateaus at 1.70–1.74 for epochs 2–5, then falls to 1.49–1.50 from epoch
+11, within 0.05 of the floor. The plateau is where a model that treats variable references as uniform draws
+would sit (1.49 + 5.6% of targets × (4.6 − 0.8) ≈ 1.71). So the drop is most likely the model learning to
+refer back to variables in scope; the intermediate checkpoints were not kept to confirm it.
+
+`python scripts/assess_fol.py --checkpoint mine=<path>` prints the floor and the model's loss for each
+kind of target. A dataset with a different index range has a different floor.
 
 ---
 
@@ -466,7 +481,7 @@ Symbolic-Transformers/
            with Compositional Token Design},
   year = {2025},
   url = {https://github.com/tripptytrip/Symbolic-Transformers},
-  note = {566K parameter model achieving 44\% next-token accuracy on FOL}
+  note = {569K-parameter model reaching 58.3\% next-symbol accuracy on random FOL formulas (ceiling 58.4\%)}
 }
 ```
 

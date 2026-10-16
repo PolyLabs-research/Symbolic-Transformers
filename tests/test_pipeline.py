@@ -216,10 +216,30 @@ def test_trainer_loss_counts_num_000_targets(vocab):
     assert torch.isfinite(loss) and loss.item() > 0
 
 
+def test_trimming_padding_leaves_last_token_logits_unchanged(vocab):
+    torch = pytest.importorskip("torch")
+    from models.transformer import create_model
+    from training.train import trim_padding
+
+    torch.manual_seed(0)
+    model = create_model(vocab.vocab_size, "tiny").eval()
+    lengths = torch.tensor([3, 7, 5])
+    ids = torch.full((3, 20), vocab.pad_token, dtype=torch.long)
+    for i, n in enumerate(lengths.tolist()):
+        ids[i, :n] = torch.randint(0, 625, (n,))
+    trimmed = trim_padding(ids, lengths)
+    assert trimmed.shape == (3, 7)
+    rows = torch.arange(3)
+    with torch.no_grad():
+        full = model(ids)[rows, lengths - 1]
+        short = model(trimmed)[rows, lengths - 1]
+    assert torch.allclose(full, short, atol=1e-5)
+
+
 def test_model_forward_and_benchmark_runner_end_to_end(vocab):
     torch = pytest.importorskip("torch")
     from models.transformer import create_model
-    from symbolic_benchmarks import BenchmarkRunner
+    from symbolic_benchmarks import BENCHMARKS, BenchmarkRunner
 
     model = create_model(vocab.vocab_size, "tiny")
     runner = BenchmarkRunner(model, vocab, device="cpu")
@@ -227,4 +247,5 @@ def test_model_forward_and_benchmark_runner_end_to_end(vocab):
     assert len(preds) == vocab.vocab_size
     assert abs(sum(preds.values()) - 100.0) < 1e-3
     report = runner.run_category("deterministic")
-    assert len(report["tests"]) == 5 and all("top5" in t for t in report["tests"])
+    assert len(report["tests"]) == len(BENCHMARKS["deterministic"]["tests"])
+    assert all("top5" in t and "passed" in t for t in report["tests"])
