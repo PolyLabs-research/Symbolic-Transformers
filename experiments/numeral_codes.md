@@ -64,8 +64,9 @@ Accuracy (%), mean ± population std over seeds. Control rows belong to the next
 | xVal-style (value x one direction) | 3 | 93.6 ± 0.7 | 61.4 / 74.3 | 76.9 ± 1.0 (47.5 / 58.9 / 68.1) | 54.5 ± 6.3 | 83.6 ± 0.9 | 69.6 ± 3.7 | 83.6 / 69.6 | 2, 2, 3 |
 | ramp, numerals only (ours) | 3 | 50.3 ± 0.0 | 55.9 / 52.9 | 50.9 ± 0.0 (51.1 / 48.1 / 50.2) | 51.9 ± 0.0 | 49.8 ± 0.0 | 51.0 ± 0.0 | 49.8 / 51.0 | never, never, never |
 | control: xVal-style, lr 1e-3 | 0 | (not run yet) | | | | | | | |
-| control: ramp, lr 1e-3 | 0 | (not run yet) | | | | | | | |
-| control: ramp, warm start from the comparison task | 0 | (not run yet) | | | | | | | |
+| control: ramp, lr 1e-3 | 1 | 50.3 | 55.9 / 52.9 | 50.9 (51.1 / 48.1 / 50.2) | 51.9 | 49.8 | 51.0 | 49.8 / 51.0 | never |
+| control: ramp, warm start from the comparison task | 3 | 93.8 ± 1.0 | 62.5 / 76.0 | 85.1 ± 4.8 (48.6 / 64.2 / 83.1) | 51.0 ± 6.3 | 87.9 ± 2.4 | 67.4 ± 3.6 | 87.9 / 67.4 | 1, 1, 1 |
+| control: xVal-style, warm start from the comparison task | 0 | (not run yet) | | | | | | | |
 
 Reading of the main runs (all 18 complete, plus the earlier comparison-task ramp and sinusoid runs):
 
@@ -97,9 +98,13 @@ or representation:
   code can represent sums this arm should learn them.
 - **Hotter schedule** (`grid_ramp_numonly_lr1e3`, and `xval_lr1e3` for parity): learning rate 1e-3.
 
-**Interim: the warm start answers the question; the hotter schedule has not helped so far.** Started from
-its comparison-task checkpoint, our ramp learns sums at once in all three seeds (validation loss 0.30-0.37
-at epoch 1, 0.21-0.22 by epoch 17, the same curve as the xVal-style code from scratch, which was at about
-0.21 by epoch 14). The code can represent sums; what fails from scratch is optimisation. At learning rate
-1e-3 the first ramp seed was still at chance (best validation loss 0.692) at epoch 15. Final numbers for
-all nine control runs follow when they finish.
+**Interim (warm start complete, hotter schedules and the xVal warm start running).**
+
+- **The ramp can represent sums; what fails from scratch is optimisation.** Started from its
+  comparison-task checkpoint, our ramp leaves chance in the first epoch of all three seeds and ends at
+  93.8 ± 1.0% on seen sums, 85.1 ± 4.8% on held-out samples with all four operands unseen and 51.0 ± 6.3%
+  on far ones. From scratch at learning rate 1e-3 the first seed still never left chance in 120 epochs.
+- **That 85% is not yet a win over the xVal-style code.** It beats xVal from scratch (76.9 ± 1.0%), but the
+  ramp was given a curriculum (a comparator already trained on magnitude) that xVal was not. The parity
+  control, xVal warm-started from its own comparison checkpoint (`xval_warm`), is running. Past the trained
+  range both are near chance with or without the warm start.

@@ -473,6 +473,90 @@
     "never",
     "never"
    ]
+  },
+  "control: ramp, lr 1e-3": {
+   "files": [
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/grid_ramp_numonly_lr1e3_s1/eval.json"
+   ],
+   "per_seed": [
+    {
+     "seen": 0.50325,
+     "seen_gap1": 0.5590551181102362,
+     "seen_gap2_5": 0.5285412262156448,
+     "held": 0.498,
+     "held_tf": 0.498,
+     "held_all": 0.5087209302325582,
+     "held_all_gap1": 0.5106382978723404,
+     "held_all_gap2_5": 0.4809384164222874,
+     "held_all_gap6_20": 0.5016722408026756,
+     "far": 0.51,
+     "far_tf": 0.51,
+     "far_all": 0.5194986072423399,
+     "epoch": 19
+    }
+   ],
+   "escape_epoch": [
+    "never"
+   ]
+  },
+  "control: ramp, warm start from the comparison task": {
+   "files": [
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/grid_ramp_numonly_warm_s1/eval.json",
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/grid_ramp_numonly_warm_s2/eval.json",
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/grid_ramp_numonly_warm_s3/eval.json"
+   ],
+   "per_seed": [
+    {
+     "seen": 0.9495,
+     "seen_gap1": 0.6850393700787402,
+     "seen_gap2_5": 0.8224101479915433,
+     "held": 0.89375,
+     "held_tf": 0.89375,
+     "held_all": 0.8822674418604651,
+     "held_all_gap1": 0.44680851063829785,
+     "held_all_gap2_5": 0.6832844574780058,
+     "held_all_gap6_20": 0.9063545150501672,
+     "far": 0.62425,
+     "far_tf": 0.62425,
+     "far_all": 0.42293407613741874,
+     "epoch": 112
+    },
+    {
+     "seen": 0.92575,
+     "seen_gap1": 0.5433070866141733,
+     "seen_gap2_5": 0.7019027484143763,
+     "held": 0.89675,
+     "held_tf": 0.89675,
+     "held_all": 0.8871124031007752,
+     "held_all_gap1": 0.5106382978723404,
+     "held_all_gap2_5": 0.6715542521994134,
+     "held_all_gap6_20": 0.931438127090301,
+     "far": 0.708,
+     "far_tf": 0.708,
+     "far_all": 0.5691736304549675,
+     "epoch": 104
+    },
+    {
+     "seen": 0.9395,
+     "seen_gap1": 0.6456692913385826,
+     "seen_gap2_5": 0.7547568710359408,
+     "held": 0.84525,
+     "held_tf": 0.84525,
+     "held_all": 0.7834302325581395,
+     "held_all_gap1": 0.5,
+     "held_all_gap2_5": 0.5718475073313783,
+     "held_all_gap6_20": 0.6538461538461539,
+     "far": 0.68825,
+     "far_tf": 0.68825,
+     "far_all": 0.5389972144846796,
+     "epoch": 116
+    }
+   ],
+   "escape_epoch": [
+    "1",
+    "1",
+    "1"
+   ]
   }
  }
 }
