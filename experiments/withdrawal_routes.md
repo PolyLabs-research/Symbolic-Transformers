@@ -198,7 +198,8 @@ ever. Three seeds, 120 epochs, same data and schedule as the deep anneal (accura
 | arm | seen | seen gap 1 / 2-5 | held-out band | held-out both unseen (gap 1 / 2-5 / 6-20) | far band | far both unseen |
 |---|---|---|---|---|---|---|
 | ramp alone, operators learned (3 seeds) | 99.3 ± 0.2 | 90 / 98 | 96.0 ± 0.5 | 92 (57 / 86 / 99) | 89.8 ± 0.8 | 80 |
-| anneal and hold, operators learned (seed 1) | 98.7 | 85 / 94 | 96.2 | 92 (55 / 90 / 100) | 78.2 | 58 |
+| anneal and hold, operators learned (seed 1; seeds 2-3 running) | 98.7 | 85 / 94 | 96.2 | 92 (55 / 90 / 100) | 78.2 | 58 |
+| residual at full scale on numerals only, 40 epochs (3 seeds) | 99.0 ± 0.4 | 88 / 98 | 88.4 ± 0.7 | 77 (48 / 57 / 84) | 76.1 ± 4.1 | 55 |
 | for reference: ramp alone, operators through the encoder (3 seeds) | 52.4 | chance | 49.8 | chance | 50.4 | chance |
 | for reference: deep anneal to 1e-6, operators through the encoder (3 seeds) | 99.6 | 92 / 99 | 97.8 | 95 (70 / 95 / 100) | 77.7 | 64 |
 | for reference: anneal and hold, operators through the encoder (3 seeds) | 99.4 | 90 / 99 | 97.5 | 95 (75 / 94 / 100) | 86.6 | 74 |
@@ -224,8 +225,13 @@ Reading:
   past the range, against 6-30 for the deep-annealed comparator at the same c. The faded comparator reads
   the ramp with more gain; the plain one reaches the same decisions with less confidence near the
   threshold. (Full table in `runs/magnitude_precision_routes/psycho/curves_numonly.json`.)
-- **Open question that remains worth one run:** whether a full-scale residual on numerals only still hurts
-  unseen values (a shortcut that competes with the ramp) or is simply unused; `grid_ramp_res_orth_numonly`
-  is running. If it hurts, the residual is a genuine shortcut and the fade is a cure for a self-inflicted
-  wound; if it does not, the residual is inert and the only lesson is the confound.
+- **The residual is a genuine shortcut for numerals, not an inert passenger.** With a full-scale residual
+  on numerals only (operators learned), seen precision is the same as the ramp alone (99.0%, gap 1 at 88%)
+  but the held-out band drops from 96.0 to 88.4% (both-unseen pairs 92 → 77%, gaps 2-5 86 → 57%) and the
+  far band from 89.8 to 76.1% (both-unseen 80 → 55%), in three seeds of three. The comparator leans on
+  per-cell texture when it is there, at the expense of the shared code. (Caveat: 40 epochs against the
+  ramp's 120, the precision study's convention for this arm; the ramp alone was already at 95% on the
+  held-out band by its best epoch of seed 2 at 73, so the gap is not a budget effect.) So the fade was a
+  cure for a self-inflicted wound: the right move is not to add the residual, and the hold arm's role
+  shrinks to showing that a comparator can be weaned off one.
 
