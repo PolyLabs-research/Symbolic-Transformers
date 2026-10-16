@@ -288,6 +288,13 @@ the two operators apart. With the operators given learned rows (`--grid-numerals
 directly with no residual and generalises as well as the faded models: 99% on seen pairs, 96% on the held-out
 band, 90% past the trained range (the 80-epoch dropout arm still leads past the range, at the cost of the
 held-out band) (`experiments/magnitude_precision.md` point 15, `experiments/withdrawal_routes.md`).
+A head-to-head against an xVal-style code (one learned direction scaled by the standardised value; Golkar
+et al. 2023) then showed the simpler code is the better default. On the comparison task it leads on every
+unseen measure (96% held-out and 95% past the range on pairs of two unseen values, against 92% and 80%). On
+a sum-comparison task (a + b against c + d) it is the only code that trains from scratch; our ramp stalls at
+a constant answer. Warm-started from the comparison task, the ramp interpolates unseen sums somewhat better
+(85% against 79%, three seeds, overlapping) while xVal extrapolates past the trained range far better (72%
+against 51%) (`experiments/numeral_codes.md`).
 
 Manual equivalents for the FOL experiment:
 
