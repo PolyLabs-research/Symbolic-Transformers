@@ -240,6 +240,16 @@ def _sample_context(sample: Dict) -> List[int]:
     return sample.get('input', [])
 
 
+def trim_padding(input_ids: torch.Tensor, lengths: torch.Tensor) -> torch.Tensor:
+    """Drop the padding columns past the batch's longest real context.
+
+    Padding is on the right and attention is causal, so the logits at every real
+    position are unchanged; the batch just costs less than one padded to the file's
+    longest context.
+    """
+    return input_ids[:, :int(lengths.max())]
+
+
 class FOLDataset(Dataset):
     """PyTorch Dataset for FOL next-symbol prediction.
 
@@ -371,6 +381,7 @@ class Trainer:
             input_ids = batch['input_ids'].to(self.device)
             targets = batch['target'].to(self.device)
             lengths = batch['length'].to(self.device)
+            input_ids = trim_padding(input_ids, lengths)
             
             # Forward pass
             logits = self.model(input_ids)
@@ -421,6 +432,7 @@ class Trainer:
                 input_ids = batch['input_ids'].to(self.device)
                 targets = batch['target'].to(self.device)
                 lengths = batch['length'].to(self.device)
+                input_ids = trim_padding(input_ids, lengths)
                 
                 logits = self.model(input_ids)
                 
