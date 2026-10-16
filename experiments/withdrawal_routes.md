@@ -198,7 +198,7 @@ ever. Three seeds, 120 epochs, same data and schedule as the deep anneal (accura
 | arm | seen | seen gap 1 / 2-5 | held-out band | held-out both unseen (gap 1 / 2-5 / 6-20) | far band | far both unseen |
 |---|---|---|---|---|---|---|
 | ramp alone, operators learned (3 seeds) | 99.3 ± 0.2 | 90 / 98 | 96.0 ± 0.5 | 92 (57 / 86 / 99) | 89.8 ± 0.8 | 80 |
-| anneal and hold, operators learned (seed 1; seeds 2-3 running) | 98.7 | 85 / 94 | 96.2 | 92 (55 / 90 / 100) | 78.2 | 58 |
+| anneal and hold, operators learned, 80 epochs (3 seeds) | 98.6 ± 0.1 | 85 / 94 | 92.8 ± 2.7 | 86 (49 / 75 / 95) | 82.8 ± 4.2 | 67 |
 | residual at full scale on numerals only, 40 epochs (3 seeds) | 99.0 ± 0.4 | 88 / 98 | 88.4 ± 0.7 | 77 (48 / 57 / 84) | 76.1 ± 4.1 | 55 |
 | for reference: ramp alone, operators through the encoder (3 seeds) | 52.4 | chance | 49.8 | chance | 50.4 | chance |
 | for reference: deep anneal to 1e-6, operators through the encoder (3 seeds) | 99.6 | 92 / 99 | 97.8 | 95 (70 / 95 / 100) | 77.7 | 64 |
