@@ -188,3 +188,39 @@ Reading:
   and good resolution past the range, which is the interpolation / extrapolation split in its accuracy
   tables made visible. The sinusoid features fail everywhere, with transition widths that mean nothing
   because the curves are not monotone.
+
+## The clean comparison: operators as learned rows (`--grid-numerals-only`)
+
+With the operator and answer tokens given learned embedding rows, the shared encoder and its residual
+touch numerals only. The first arm to run was the decisive one: the ramp alone, from scratch, no residual
+ever. Three seeds, 120 epochs, same data and schedule as the deep anneal (accuracy, %):
+
+| arm | seen | seen gap 1 / 2-5 | held-out band | held-out both unseen (gap 1 / 2-5 / 6-20) | far band | far both unseen |
+|---|---|---|---|---|---|---|
+| ramp alone, operators learned (3 seeds) | 99.3 ± 0.2 | 90 / 98 | 96.0 ± 0.5 | 92 (57 / 86 / 99) | 89.8 ± 0.8 | 80 |
+| anneal and hold, operators learned (seed 1) | 98.7 | 85 / 94 | 96.2 | 92 (55 / 90 / 100) | 78.2 | 58 |
+| for reference: ramp alone, operators through the encoder (3 seeds) | 52.4 | chance | 49.8 | chance | 50.4 | chance |
+| for reference: deep anneal to 1e-6, operators through the encoder (3 seeds) | 99.6 | 92 / 99 | 97.8 | 95 (70 / 95 / 100) | 77.7 | 64 |
+| for reference: anneal and hold, operators through the encoder (3 seeds) | 99.4 | 90 / 99 | 97.5 | 95 (75 / 94 / 100) | 86.6 | 74 |
+
+Validation loss of the ramp alone is 0.23-0.33 by epoch 10 and 0.05-0.08 at its best epoch, where the same
+arm with the operators through the encoder sat at 0.693 for 120 epochs in every seed.
+
+Reading:
+
+- **The scaffold was never necessary.** The two-direction numeral code trains directly once the operators
+  are not pushed through it. It reaches the seen precision of the 80-epoch scaffolded runs, the held-out
+  band of the hold and deep arms within a point or two, and the best far band of the whole study (80% on
+  pairs of two never-seen values past the trained range, against 58-74% for the annealed models and the
+  93%-with-52%-held-out of the dropout arm).
+- **What the residual and the fade were doing.** Every residual arm so far was compensating for an
+  architecture choice: with the operator distinction in the residual, a model without one could not learn
+  the task at all, a model with one could not give it up for the operators, and the fade's dynamics (the
+  crossing, the cliff, the recovery) were the comparator being taught to read a 0.3% difference between
+  two token embeddings. The numeral handover the hold arm showed is real but superfluous: a numeral-only
+  ramp does not need to be handed anything.
+- **Open question that remains worth one run:** whether a full-scale residual on numerals only still hurts
+  unseen values (a shortcut that competes with the ramp) or is simply unused; `grid_ramp_res_orth_numonly`
+  is running. If it hurts, the residual is a genuine shortcut and the fade is a cure for a self-inflicted
+  wound; if it does not, the residual is inert and the only lesson is the confound.
+

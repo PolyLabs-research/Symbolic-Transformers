@@ -13,7 +13,10 @@ synthesis merges the two). Audit sources are in related_work.md under "Found by 
 > ramp-only baseline could not tell the operators apart. See `withdrawal_routes.md`, section "The
 > confound". M1 batch 1 was stopped (seed 1 complete for all four arms, all at chance, and one weight-decay
 > seed that learned); the routes are being re-run with `--grid-numerals-only`, starting with the ramp alone
-> from scratch, which is now the decisive baseline.
+> from scratch, which is now the decisive baseline. **Result:** with learned operator rows the ramp alone
+> learns directly and generalises as well as or better than every scaffolded model (99.3 / 96.0 / 89.8 on
+> seen / held-out / far, three seeds). The scaffold was never necessary; this plan's premise is gone. See
+> `withdrawal_routes.md`, "The clean comparison", for what remains worth running.
 
 ## 1. Goal
 

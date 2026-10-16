@@ -309,8 +309,11 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
    What survives: the numeral handover to the ramp happens in the anneal from 1 to 0.01 (point 10's hold
    arm), the dropout and full-scale comparators do depend on the numeral residual, and the baselines of
    point 14 are confounded in the other direction (a ramp-only model has no way to tell the operators
-   apart). The arms are being re-run with `--grid-numerals-only`, which gives operators and answers learned
-   rows so that the residual and anything done to it act on numerals alone.
+   apart). Re-run with `--grid-numerals-only` (operators and answers as learned rows), the ramp alone from
+   scratch learns the task directly, three seeds: 99.3 ± 0.2% on seen pairs (gap 1 at 90%), 96.0 ± 0.5% on
+   the held-out band with both-unseen pairs at 92%, and 89.8 ± 0.8% on the far band with both-unseen pairs
+   at 80%, the best far-band result of the study. The scaffold, the fade and the readability floor were
+   compensating for the operators sharing the residual; `withdrawal_routes.md` has the clean comparison.
 
 ## Where precision stands
 

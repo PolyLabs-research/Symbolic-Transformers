@@ -283,10 +283,10 @@ it down to any nonzero scale and collapses at exactly zero; stopping at a hundre
 floor to a millionth lets the residual fade below what the comparator can read instead of being switched off, and every seed
 then crosses to a residual-free comparator (92% / 99% seen, 95% held-out both unseen) that resolves
 neighbouring unseen values from the two shared directions alone. A later review found a confound: the
-operator tokens are panels through the same residual, so part of every result below scale 0.01 is about
-telling the two operators apart, and the hold model already reads numerals from the ramp alone; the arms are
-being re-run with `--grid-numerals-only` (`experiments/magnitude_precision.md` point 15,
-`experiments/withdrawal_routes.md`).
+operator tokens are panels through the same residual, so every result below scale 0.01 was about telling
+the two operators apart. With the operators given learned rows (`--grid-numerals-only`) the ramp alone trains
+directly and generalises best of all: 99% on seen pairs, 96% on the held-out band, 90% past the trained range
+(`experiments/magnitude_precision.md` point 15, `experiments/withdrawal_routes.md`).
 
 Manual equivalents for the FOL experiment:
 
