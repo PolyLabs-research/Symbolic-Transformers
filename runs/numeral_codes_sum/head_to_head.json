@@ -1,0 +1,267 @@
+{
+ "comparison: NUM_a OP NUM_b": {
+  "smooth sinusoid features": {
+   "files": [
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_anneal_v2/sinusoid_smooth_s1/eval.json",
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_anneal_v2/sinusoid_smooth_s2/eval.json",
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_anneal_v2/sinusoid_smooth_s3/eval.json"
+   ],
+   "per_seed": [
+    {
+     "seen": 1.0,
+     "seen_gap1": 1.0,
+     "seen_gap2_5": 1.0,
+     "held": 0.723,
+     "held_tf": 0.723,
+     "held_all": 0.5794924909373381,
+     "held_all_gap1": 0.5496688741721855,
+     "held_all_gap2_5": 0.6241007194244604,
+     "held_all_gap6_20": 0.6298619824341279,
+     "far": 0.61275,
+     "far_tf": 0.61275,
+     "far_all": 0.7513540128015755,
+     "epoch": 107
+    },
+    {
+     "seen": 1.0,
+     "seen_gap1": 1.0,
+     "seen_gap2_5": 1.0,
+     "held": 0.72825,
+     "held_tf": 0.72825,
+     "held_all": 0.45882962195753496,
+     "held_all_gap1": 0.5496688741721855,
+     "held_all_gap2_5": 0.5953237410071942,
+     "held_all_gap6_20": 0.46675031367628605,
+     "far": 0.62775,
+     "far_tf": 0.62775,
+     "far_all": 0.6602658788774003,
+     "epoch": 118
+    },
+    {
+     "seen": 1.0,
+     "seen_gap1": 1.0,
+     "seen_gap2_5": 1.0,
+     "held": 0.6705,
+     "held_tf": 0.6705,
+     "held_all": 0.3469704816157431,
+     "held_all_gap1": 0.5298013245033113,
+     "held_all_gap2_5": 0.4118705035971223,
+     "held_all_gap6_20": 0.3337515683814304,
+     "far": 0.5455,
+     "far_tf": 0.5455,
+     "far_all": 0.5204332840965041,
+     "epoch": 101
+    }
+   ],
+   "escape_epoch": [
+    "2",
+    "2",
+    "3"
+   ]
+  },
+  "xVal-style (value x one direction)": {
+   "files": [
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_routes/xval_s1/eval.json",
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_routes/xval_s2/eval.json",
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_routes/xval_s3/eval.json"
+   ],
+   "per_seed": [
+    {
+     "seen": 0.99475,
+     "seen_gap1": 0.9174311926605505,
+     "seen_gap2_5": 0.9819587628865979,
+     "held": 0.9665,
+     "held_tf": 0.9665,
+     "held_all": 0.9321595028482651,
+     "held_all_gap1": 0.6754966887417219,
+     "held_all_gap2_5": 0.9010791366906474,
+     "held_all_gap6_20": 1.0,
+     "far": 0.95975,
+     "far_tf": 0.95975,
+     "far_all": 0.9222058099458394,
+     "epoch": 110
+    },
+    {
+     "seen": 0.98975,
+     "seen_gap1": 0.8715596330275229,
+     "seen_gap2_5": 0.9948453608247423,
+     "held": 0.97975,
+     "held_tf": 0.97975,
+     "held_all": 0.9580528223718281,
+     "held_all_gap1": 0.609271523178808,
+     "held_all_gap2_5": 0.9946043165467626,
+     "held_all_gap6_20": 1.0,
+     "far": 0.97,
+     "far_tf": 0.97,
+     "far_all": 0.9409158050221565,
+     "epoch": 103
+    },
+    {
+     "seen": 0.99675,
+     "seen_gap1": 1.0,
+     "seen_gap2_5": 1.0,
+     "held": 1.0,
+     "held_tf": 1.0,
+     "held_all": 1.0,
+     "held_all_gap1": 1.0,
+     "held_all_gap2_5": 1.0,
+     "held_all_gap6_20": 1.0,
+     "far": 0.9855,
+     "far_tf": 0.9855,
+     "far_all": 0.9714426390940424,
+     "epoch": 48
+    }
+   ],
+   "escape_epoch": [
+    "2",
+    "2",
+    "2"
+   ]
+  },
+  "ramp, numerals only (ours)": {
+   "files": [
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_routes/grid_ramp_numonly_s1/eval.json",
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_routes/grid_ramp_numonly_s2/eval.json",
+    "/home/user/Symbolic-Transformers/runs/magnitude_precision_routes/grid_ramp_numonly_s3/eval.json"
+   ],
+   "per_seed": [
+    {
+     "seen": 0.9935,
+     "seen_gap1": 0.9174311926605505,
+     "seen_gap2_5": 0.9716494845360825,
+     "held": 0.95425,
+     "held_tf": 0.95425,
+     "held_all": 0.9083376488865873,
+     "held_all_gap1": 0.5629139072847682,
+     "held_all_gap2_5": 0.8309352517985612,
+     "held_all_gap6_20": 0.9786700125470514,
+     "far": 0.896,
+     "far_tf": 0.896,
+     "far_all": 0.7971442639094042,
+     "epoch": 113
+    },
+    {
+     "seen": 0.99525,
+     "seen_gap1": 0.908256880733945,
+     "seen_gap2_5": 0.9845360824742269,
+     "held": 0.96025,
+     "held_tf": 0.96025,
+     "held_all": 0.9202485758674263,
+     "held_all_gap1": 0.47019867549668876,
+     "held_all_gap2_5": 0.8669064748201439,
+     "held_all_gap6_20": 1.0,
+     "far": 0.889,
+     "far_tf": 0.889,
+     "far_all": 0.7828655834564254,
+     "epoch": 73
+    },
+    {
+     "seen": 0.99125,
+     "seen_gap1": 0.8715596330275229,
+     "seen_gap2_5": 0.9742268041237113,
+     "held": 0.96575,
+     "held_tf": 0.96575,
+     "held_all": 0.9311237700673226,
+     "held_all_gap1": 0.6754966887417219,
+     "held_all_gap2_5": 0.8758992805755396,
+     "held_all_gap6_20": 1.0,
+     "far": 0.909,
+     "far_tf": 0.909,
+     "far_all": 0.8207779419005417,
+     "epoch": 97
+    }
+   ],
+   "escape_epoch": [
+    "6",
+    "9",
+    "7"
+   ]
+  }
+ },
+ "sum comparison: NUM_a + NUM_b OP NUM_c + NUM_d": {
+  "xVal-style (value x one direction)": {
+   "files": [
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/xval_s1/eval.json",
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/xval_s2/eval.json"
+   ],
+   "per_seed": [
+    {
+     "seen": 0.93625,
+     "seen_gap1": 0.6456692913385826,
+     "seen_gap2_5": 0.7441860465116279,
+     "held": 0.8335,
+     "held_tf": 0.8335,
+     "held_all": 0.7567829457364341,
+     "held_all_gap1": 0.5106382978723404,
+     "held_all_gap2_5": 0.6275659824046921,
+     "held_all_gap6_20": 0.7090301003344481,
+     "far": 0.747,
+     "far_tf": 0.747,
+     "far_all": 0.6323119777158774,
+     "epoch": 120
+    },
+    {
+     "seen": 0.9445,
+     "seen_gap1": 0.6141732283464567,
+     "seen_gap2_5": 0.7780126849894292,
+     "held": 0.8475,
+     "held_tf": 0.8475,
+     "held_all": 0.7693798449612403,
+     "held_all_gap1": 0.425531914893617,
+     "held_all_gap2_5": 0.530791788856305,
+     "held_all_gap6_20": 0.6387959866220736,
+     "far": 0.6595,
+     "far_tf": 0.6595,
+     "far_all": 0.48792943361188484,
+     "epoch": 119
+    }
+   ],
+   "escape_epoch": [
+    "2",
+    "2"
+   ]
+  },
+  "ramp, numerals only (ours)": {
+   "files": [
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/grid_ramp_numonly_s1/eval.json",
+    "/home/user/Symbolic-Transformers/runs/numeral_codes_sum/grid_ramp_numonly_s2/eval.json"
+   ],
+   "per_seed": [
+    {
+     "seen": 0.50325,
+     "seen_gap1": 0.5590551181102362,
+     "seen_gap2_5": 0.5285412262156448,
+     "held": 0.498,
+     "held_tf": 0.498,
+     "held_all": 0.5087209302325582,
+     "held_all_gap1": 0.5106382978723404,
+     "held_all_gap2_5": 0.4809384164222874,
+     "held_all_gap6_20": 0.5016722408026756,
+     "far": 0.51,
+     "far_tf": 0.51,
+     "far_all": 0.5194986072423399,
+     "epoch": 41
+    },
+    {
+     "seen": 0.50325,
+     "seen_gap1": 0.5590551181102362,
+     "seen_gap2_5": 0.5285412262156448,
+     "held": 0.498,
+     "held_tf": 0.498,
+     "held_all": 0.5087209302325582,
+     "held_all_gap1": 0.5106382978723404,
+     "held_all_gap2_5": 0.4809384164222874,
+     "held_all_gap6_20": 0.5016722408026756,
+     "far": 0.51,
+     "far_tf": 0.51,
+     "far_all": 0.5194986072423399,
+     "epoch": 14
+    }
+   ],
+   "escape_epoch": [
+    "never",
+    "never"
+   ]
+  }
+ }
+}
