@@ -6,6 +6,15 @@ synthesis merges the two). Audit sources are in related_work.md under "Found by 
 
 # Plan: every withdrawal route on one task, with the readability curve as the artefact
 
+
+> **Status note (2026-10-16).** M0 is done and its review found a confound that changes the premise: the
+> operator and answer tokens are grid panels through the same residual as the numerals, so every arm run
+> before this date faded or removed the operator distinction along with the numeral residual, and the
+> ramp-only baseline could not tell the operators apart. See `withdrawal_routes.md`, section "The
+> confound". M1 batch 1 was stopped (seed 1 complete for all four arms, all at chance, and one weight-decay
+> seed that learned); the routes are being re-run with `--grid-numerals-only`, starting with the ramp alone
+> from scratch, which is now the decisive baseline.
+
 ## 1. Goal
 
 The artefact is one figure and its table (`experiments/withdrawal_routes.md`): every known route to a scaffold-free comparator (distillation from final and intermediate teachers, scheduled dropout, residual weight decay, stagewise removal with optimizer reset, longer or hotter ramp-only training, the step to zero, and the fade at four rates) run on the same data, seeds and model, each final model scored with the residual set to exactly zero and then re-scored across re-applied residual scales from 0 to 1. The claim under test: on this task only a fade through the readability floor gives a residual-free comparator in every seed, and the readability curve shows why the other routes fail (they never built the ramp route, or they tracked the residual down and collapsed).

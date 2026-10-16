@@ -66,20 +66,83 @@ per-seed numbers in `runs/magnitude_precision_routes/sweeps/existing_models.json
 | deep anneal to 1e-6 (residual-free) | 1e-06 | 100 ± 0 | 100 ± 0 | 100 ± 0 | 99 ± 0 | 98 ± 1 | 76 ± 5 | 48 ± 0 | 51 ± 2 |
 | ramp alone from scratch (no residual) | none | 52 ± 0 | 52 ± 0 | 52 ± 0 | 52 ± 0 | 52 ± 0 | 52 ± 0 | 52 ± 0 | 52 ± 0 |
 | smooth sinusoid features (no residual) | none | 100 ± 0 | 100 ± 0 | 100 ± 0 | 100 ± 0 | 100 ± 0 | 100 ± 0 | 100 ± 0 | 100 ± 0 |
-Reading the curves:
+Reading the all-rows curves (every grid-backed row scaled together):
 
 - Trained with the residual at full scale (plain, or with dropout), the comparator reads it only at full
   scale: at 0.1 every such model is at chance and at 0 the 40-epoch plain models are inverted on seen pairs
-  (27-41%) and one is at 6% on both-unseen held-out pairs. Without its residual such a comparator is not
-  ignorant but confidently wrong.
+  (27-41%) and one is at 6% on both-unseen held-out pairs.
 - Annealed and held at 0.01, the comparator reads a window around the scale it was trained at: chance at
   1e-3, 90-100% at 1e-2, 51-63% at 0.1, chance at 1.
 - Faded below readability (deep arm) or recovered from the step (the two lucky geometric seeds), the
-  comparator is flat from 0 to 1e-4, degrades from 1e-3 and is at chance by 0.1: re-applying the residual
-  it was weaned off hurts it, because the residual parameter it no longer reads is still a norm-5 row.
+  comparator is flat from 0 to 1e-4, degrades from 1e-3 and is at chance by 0.1.
 - Collapsed seeds and the residual-free codes are flat at chance (or, for the sinusoid features, flat at
-  their memorised seen-pair score) across the whole axis, as they must be.
+  their memorised seen-pair score) across the whole axis.
 
+### The confound: the residual also carries the operator distinction
+
+The adversarial review of these scripts found what the all-rows curves actually measure. The operator
+tokens LESS_THAN and GREATER_THAN and the answer tokens TRUE and FALSE are grid panels that go through the
+same shared encoder and the same per-cell residual as the numerals, and under the ramp basis (two shared
+directions) the generated parts of the two operator panels are nearly identical: after LayerNorm their
+difference has norm 0.005 on a row of norm 1.5-2.1 (cosine 0.999996). The operator distinction therefore
+lives in the residual. The per-row override (`--residual-scale-rows numerals|glyphs`) separates the two
+effects. Accuracy (%) with only the numeral rows re-scaled, the four glyph rows kept at the saved scale:
+
+Seen pairs (test):
+
+| model | 0 | 1e-06 | 1e-05 | 0.0001 | 0.001 | 0.01 | 0.1 | 1 |
+|---|---|---|---|---|---|---|---|---|
+| anneal and hold, seed 1 (saved 0.01) | 98.8 | 98.8 | 98.8 | 98.8 | 98.8 | 99.3 | 90.4 | 51.7 |
+| deep anneal, seed 1 (saved 1e-6) | 99.0 | 99.0 | 99.0 | 99.0 | 99.1 | 97.5 | 66.4 | 51.2 |
+| residual dropout, 80 epochs, seed 1 (saved 1) | 2.0 | 2.0 | 2.0 | 2.0 | 2.0 | 2.0 | 2.1 | 99.7 |
+| residual at full scale, 40 epochs, seed 1 (saved 1) | 50.4 | 50.4 | 50.4 | 50.4 | 50.4 | 50.4 | 50.6 | 98.2 |
+| geometric step to zero, the recovered seed 2 (saved 0) | 99.7 | 99.7 | 99.7 | 99.7 | 99.7 | 99.7 | 98.6 | 61.3 |
+
+Held-out band (all pairs):
+
+| model | 0 | 1e-06 | 1e-05 | 0.0001 | 0.001 | 0.01 | 0.1 | 1 |
+|---|---|---|---|---|---|---|---|---|
+| anneal and hold, seed 1 (saved 0.01) | 98.3 | 98.3 | 98.3 | 98.3 | 98.2 | 97.5 | 78.2 | 49.5 |
+| deep anneal, seed 1 (saved 1e-6) | 98.2 | 98.2 | 98.2 | 98.2 | 98.2 | 94.7 | 49.7 | 48.8 |
+| residual dropout, 80 epochs, seed 1 (saved 1) | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 | 72.4 |
+| residual at full scale, 40 epochs, seed 1 (saved 1) | 50.2 | 50.2 | 50.2 | 50.2 | 50.2 | 50.2 | 50.2 | 84.9 |
+| geometric step to zero, the recovered seed 2 (saved 0) | 99.7 | 99.7 | 99.7 | 99.7 | 99.7 | 100.0 | 98.0 | 59.3 |
+
+And with only the glyph rows re-scaled, numerals kept at the saved scale (held-out band):
+
+
+
+| model | 0 | 1e-06 | 1e-05 | 0.0001 | 0.001 | 0.01 | 0.1 | 1 |
+|---|---|---|---|---|---|---|---|---|
+| anneal and hold, seed 1 (saved 0.01) | 50.6 | 50.6 | 50.6 | 50.9 | 53.7 | 97.5 | 76.1 | 79.4 |
+| deep anneal, seed 1 (saved 1e-6) | 98.2 | 98.2 | 98.3 | 97.7 | 91.6 | 70.8 | 57.7 | 49.4 |
+| residual dropout, 80 epochs, seed 1 (saved 1) | 49.5 | 49.5 | 49.5 | 49.5 | 49.5 | 49.8 | 52.0 | 72.4 |
+| residual at full scale, 40 epochs, seed 1 (saved 1) | 51.0 | 51.0 | 51.0 | 51.0 | 51.0 | 51.0 | 51.9 | 84.9 |
+| geometric step to zero, the recovered seed 2 (saved 0) | 99.7 | 99.7 | 99.6 | 99.3 | 97.5 | 71.2 | 50.2 | 49.4 |
+
+What this changes:
+
+- **The hold model already reads numerals from the ramp alone.** With its numeral residual at zero and the
+  glyph rows untouched it scores 98.8 / 98.3 / 88.6 (seen / held-out / far), flat across every scale up to
+  the one it was trained at. The numeral handover happened during the anneal from 1 to 0.01; nothing below
+  0.01 was needed for numerals.
+- **Everything between 0.01 and 1e-6 in the precision study was about the operators.** The crossing at a
+  scale of 1e-4 to 1e-5, the dip-and-recovery, the cliff at exactly zero, the seed-dependent recovery and
+  the failure of the learning-rate re-warm-up are the comparator losing, and sometimes relearning, the
+  distinction between two token embeddings that differ by 0.3%. The deep model's achievement is to read
+  that 0.005 difference, not to read numerals it could already read.
+- **"Zeroing the residual gives chance" was two things.** With glyphs intact, the plain 40-epoch model with
+  its numeral residual removed is at chance (50%), as claimed; the 80-epoch dropout model is not at chance
+  but inverted (2.0% on seen pairs, 0.2% on the held-out band): its comparator reads the ramp with the sign
+  flipped once the residual that shared the embedding with it is gone.
+- **The ramp-only baseline was confounded too.** `grid_ramp` trained from scratch had no residual and
+  therefore no way to tell the two operators apart, which is sufficient on its own to pin it at the coin's
+  entropy. Whether the ramp alone is learnable with distinguishable operators is untested; it is being
+  tested now (`--grid-numerals-only`: numerals through the encoder, operators and answers as learned rows).
+  The same applies to the hot and weight-decayed ramp-only controls of M1, which were stopped.
+- The residual share at the saved scale is 2.3e-2 of the generated numeral embedding for the hold model
+  and 2.7e-6 for the deep model (JSON `share`), so the numeral readability floor, if the hold model is
+  typical, lies at a few percent of the embedding, not at 1e-5.
 
 ### Psychometric decision curves
 
