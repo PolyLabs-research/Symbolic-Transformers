@@ -289,17 +289,28 @@ BENCHMARKS = {
 class BenchmarkRunner:
     """Runs structural benchmarks against a Symbolic Transformer model."""
     
-    def __init__(self, model, vocab, device='cpu'):
+    def __init__(self, model, vocab, device='cpu', prepend_start: bool = True):
         """
         Args:
             model: Trained Symbolic Transformer model
             vocab: Vocabulary object with encode/decode methods
             device: torch device
+            prepend_start: Prepend MESSAGE_START to every input (when the
+                vocabulary has it). Every training context begins with
+                MESSAGE_START, so probing without it is out of distribution.
         """
         self.model = model
         self.vocab = vocab
         self.device = device
+        self.prepend_start = prepend_start and vocab.message_start is not None
         self.model.eval()
+    
+    def tokenize(self, input_str: str) -> List[int]:
+        """Encode a space-separated label string, adding MESSAGE_START if needed."""
+        tokens = self.vocab.encode_formula_simple(input_str)
+        if self.prepend_start and (not tokens or tokens[0] != self.vocab.message_start):
+            tokens = [self.vocab.message_start] + tokens
+        return tokens
     
     def get_predictions(self, input_str: str) -> Dict[str, float]:
         """
@@ -315,7 +326,7 @@ class BenchmarkRunner:
         import torch.nn.functional as F
         
         # Tokenize input
-        tokens = self.vocab.encode(input_str)
+        tokens = self.tokenize(input_str)
         input_tensor = torch.tensor([tokens], device=self.device)
         
         # Get model predictions
@@ -541,14 +552,34 @@ if __name__ == "__main__":
     parser.add_argument("--output", help="Path to save JSON report")
     parser.add_argument("--category", help="Run only specific category")
     
+    parser.add_argument("--no-prepend-start", action="store_true",
+                        help="Do not prepend MESSAGE_START to benchmark inputs")
     args = parser.parse_args()
     
-    # These imports would be needed when running as script
-    # import torch
-    # from model import SymbolicTransformer
-    # from vocabulary import Vocabulary
+    import os
+    import sys
+    import torch
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from models.transformer import load_model_from_checkpoint
+    from utils.vocabulary import Vocabulary
     
-    print("To run benchmarks, load your model and vocabulary, then:")
-    print("  runner = BenchmarkRunner(model, vocab)")
-    print("  report = runner.run_all()")
-    print("  print(runner.generate_report(report))")
+    vocab = Vocabulary(args.vocab)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model, checkpoint = load_model_from_checkpoint(args.checkpoint, vocab.vocab_size, device)
+    
+    runner = BenchmarkRunner(model, vocab, device, prepend_start=not args.no_prepend_start)
+    if args.category:
+        category = runner.run_category(args.category)
+        report = {"timestamp": datetime.now().isoformat(), "categories": {args.category: category},
+                  "summary": {"passed": 0, "failed": 0, "observational": 0}}
+        for t in category["tests"]:
+            key = "observational" if t.get("observational") else ("passed" if t.get("passed") else "failed")
+            report["summary"][key] += 1
+        total = report["summary"]["passed"] + report["summary"]["failed"]
+        report["summary"]["pass_rate"] = f"{report['summary']['passed'] / total * 100:.1f}" if total else "N/A"
+    else:
+        report = runner.run_all()
+    print(runner.generate_report(report))
+    if args.output:
+        runner.save_report(report, args.output)
+        print(f"Saved report to {args.output}")

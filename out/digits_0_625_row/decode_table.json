@@ -3,7 +3,7 @@
     {
       "number": 0,
       "filename": "sym_000.png",
-      "path": "base 625/out/digits_0_625_row/sym_000.png",
+      "path": "out/digits_0_625_row/sym_000.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -14,7 +14,7 @@
     {
       "number": 1,
       "filename": "sym_001.png",
-      "path": "base 625/out/digits_0_625_row/sym_001.png",
+      "path": "out/digits_0_625_row/sym_001.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -25,7 +25,7 @@
     {
       "number": 2,
       "filename": "sym_002.png",
-      "path": "base 625/out/digits_0_625_row/sym_002.png",
+      "path": "out/digits_0_625_row/sym_002.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -36,7 +36,7 @@
     {
       "number": 3,
       "filename": "sym_003.png",
-      "path": "base 625/out/digits_0_625_row/sym_003.png",
+      "path": "out/digits_0_625_row/sym_003.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -47,7 +47,7 @@
     {
       "number": 4,
       "filename": "sym_004.png",
-      "path": "base 625/out/digits_0_625_row/sym_004.png",
+      "path": "out/digits_0_625_row/sym_004.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -58,7 +58,7 @@
     {
       "number": 5,
       "filename": "sym_005.png",
-      "path": "base 625/out/digits_0_625_row/sym_005.png",
+      "path": "out/digits_0_625_row/sym_005.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -69,7 +69,7 @@
     {
       "number": 6,
       "filename": "sym_006.png",
-      "path": "base 625/out/digits_0_625_row/sym_006.png",
+      "path": "out/digits_0_625_row/sym_006.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -80,7 +80,7 @@
     {
       "number": 7,
       "filename": "sym_007.png",
-      "path": "base 625/out/digits_0_625_row/sym_007.png",
+      "path": "out/digits_0_625_row/sym_007.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -91,7 +91,7 @@
     {
       "number": 8,
       "filename": "sym_008.png",
-      "path": "base 625/out/digits_0_625_row/sym_008.png",
+      "path": "out/digits_0_625_row/sym_008.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -102,7 +102,7 @@
     {
       "number": 9,
       "filename": "sym_009.png",
-      "path": "base 625/out/digits_0_625_row/sym_009.png",
+      "path": "out/digits_0_625_row/sym_009.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -113,7 +113,7 @@
     {
       "number": 10,
       "filename": "sym_010.png",
-      "path": "base 625/out/digits_0_625_row/sym_010.png",
+      "path": "out/digits_0_625_row/sym_010.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -124,7 +124,7 @@
     {
       "number": 11,
       "filename": "sym_011.png",
-      "path": "base 625/out/digits_0_625_row/sym_011.png",
+      "path": "out/digits_0_625_row/sym_011.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -135,7 +135,7 @@
     {
       "number": 12,
       "filename": "sym_012.png",
-      "path": "base 625/out/digits_0_625_row/sym_012.png",
+      "path": "out/digits_0_625_row/sym_012.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -146,7 +146,7 @@
     {
       "number": 13,
       "filename": "sym_013.png",
-      "path": "base 625/out/digits_0_625_row/sym_013.png",
+      "path": "out/digits_0_625_row/sym_013.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -157,7 +157,7 @@
     {
       "number": 14,
       "filename": "sym_014.png",
-      "path": "base 625/out/digits_0_625_row/sym_014.png",
+      "path": "out/digits_0_625_row/sym_014.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -168,7 +168,7 @@
     {
       "number": 15,
       "filename": "sym_015.png",
-      "path": "base 625/out/digits_0_625_row/sym_015.png",
+      "path": "out/digits_0_625_row/sym_015.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -179,7 +179,7 @@
     {
       "number": 16,
       "filename": "sym_016.png",
-      "path": "base 625/out/digits_0_625_row/sym_016.png",
+      "path": "out/digits_0_625_row/sym_016.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -190,7 +190,7 @@
     {
       "number": 17,
       "filename": "sym_017.png",
-      "path": "base 625/out/digits_0_625_row/sym_017.png",
+      "path": "out/digits_0_625_row/sym_017.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -201,7 +201,7 @@
     {
       "number": 18,
       "filename": "sym_018.png",
-      "path": "base 625/out/digits_0_625_row/sym_018.png",
+      "path": "out/digits_0_625_row/sym_018.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -212,7 +212,7 @@
     {
       "number": 19,
       "filename": "sym_019.png",
-      "path": "base 625/out/digits_0_625_row/sym_019.png",
+      "path": "out/digits_0_625_row/sym_019.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -223,7 +223,7 @@
     {
       "number": 20,
       "filename": "sym_020.png",
-      "path": "base 625/out/digits_0_625_row/sym_020.png",
+      "path": "out/digits_0_625_row/sym_020.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -234,7 +234,7 @@
     {
       "number": 21,
       "filename": "sym_021.png",
-      "path": "base 625/out/digits_0_625_row/sym_021.png",
+      "path": "out/digits_0_625_row/sym_021.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -245,7 +245,7 @@
     {
       "number": 22,
       "filename": "sym_022.png",
-      "path": "base 625/out/digits_0_625_row/sym_022.png",
+      "path": "out/digits_0_625_row/sym_022.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -256,7 +256,7 @@
     {
       "number": 23,
       "filename": "sym_023.png",
-      "path": "base 625/out/digits_0_625_row/sym_023.png",
+      "path": "out/digits_0_625_row/sym_023.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -267,7 +267,7 @@
     {
       "number": 24,
       "filename": "sym_024.png",
-      "path": "base 625/out/digits_0_625_row/sym_024.png",
+      "path": "out/digits_0_625_row/sym_024.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -278,7 +278,7 @@
     {
       "number": 25,
       "filename": "sym_025.png",
-      "path": "base 625/out/digits_0_625_row/sym_025.png",
+      "path": "out/digits_0_625_row/sym_025.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -289,7 +289,7 @@
     {
       "number": 26,
       "filename": "sym_026.png",
-      "path": "base 625/out/digits_0_625_row/sym_026.png",
+      "path": "out/digits_0_625_row/sym_026.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -300,7 +300,7 @@
     {
       "number": 27,
       "filename": "sym_027.png",
-      "path": "base 625/out/digits_0_625_row/sym_027.png",
+      "path": "out/digits_0_625_row/sym_027.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -311,7 +311,7 @@
     {
       "number": 28,
       "filename": "sym_028.png",
-      "path": "base 625/out/digits_0_625_row/sym_028.png",
+      "path": "out/digits_0_625_row/sym_028.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -322,7 +322,7 @@
     {
       "number": 29,
       "filename": "sym_029.png",
-      "path": "base 625/out/digits_0_625_row/sym_029.png",
+      "path": "out/digits_0_625_row/sym_029.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -333,7 +333,7 @@
     {
       "number": 30,
       "filename": "sym_030.png",
-      "path": "base 625/out/digits_0_625_row/sym_030.png",
+      "path": "out/digits_0_625_row/sym_030.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -344,7 +344,7 @@
     {
       "number": 31,
       "filename": "sym_031.png",
-      "path": "base 625/out/digits_0_625_row/sym_031.png",
+      "path": "out/digits_0_625_row/sym_031.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -355,7 +355,7 @@
     {
       "number": 32,
       "filename": "sym_032.png",
-      "path": "base 625/out/digits_0_625_row/sym_032.png",
+      "path": "out/digits_0_625_row/sym_032.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -366,7 +366,7 @@
     {
       "number": 33,
       "filename": "sym_033.png",
-      "path": "base 625/out/digits_0_625_row/sym_033.png",
+      "path": "out/digits_0_625_row/sym_033.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -377,7 +377,7 @@
     {
       "number": 34,
       "filename": "sym_034.png",
-      "path": "base 625/out/digits_0_625_row/sym_034.png",
+      "path": "out/digits_0_625_row/sym_034.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -388,7 +388,7 @@
     {
       "number": 35,
       "filename": "sym_035.png",
-      "path": "base 625/out/digits_0_625_row/sym_035.png",
+      "path": "out/digits_0_625_row/sym_035.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -399,7 +399,7 @@
     {
       "number": 36,
       "filename": "sym_036.png",
-      "path": "base 625/out/digits_0_625_row/sym_036.png",
+      "path": "out/digits_0_625_row/sym_036.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -410,7 +410,7 @@
     {
       "number": 37,
       "filename": "sym_037.png",
-      "path": "base 625/out/digits_0_625_row/sym_037.png",
+      "path": "out/digits_0_625_row/sym_037.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -421,7 +421,7 @@
     {
       "number": 38,
       "filename": "sym_038.png",
-      "path": "base 625/out/digits_0_625_row/sym_038.png",
+      "path": "out/digits_0_625_row/sym_038.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -432,7 +432,7 @@
     {
       "number": 39,
       "filename": "sym_039.png",
-      "path": "base 625/out/digits_0_625_row/sym_039.png",
+      "path": "out/digits_0_625_row/sym_039.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -443,7 +443,7 @@
     {
       "number": 40,
       "filename": "sym_040.png",
-      "path": "base 625/out/digits_0_625_row/sym_040.png",
+      "path": "out/digits_0_625_row/sym_040.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -454,7 +454,7 @@
     {
       "number": 41,
       "filename": "sym_041.png",
-      "path": "base 625/out/digits_0_625_row/sym_041.png",
+      "path": "out/digits_0_625_row/sym_041.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -465,7 +465,7 @@
     {
       "number": 42,
       "filename": "sym_042.png",
-      "path": "base 625/out/digits_0_625_row/sym_042.png",
+      "path": "out/digits_0_625_row/sym_042.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -476,7 +476,7 @@
     {
       "number": 43,
       "filename": "sym_043.png",
-      "path": "base 625/out/digits_0_625_row/sym_043.png",
+      "path": "out/digits_0_625_row/sym_043.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -487,7 +487,7 @@
     {
       "number": 44,
       "filename": "sym_044.png",
-      "path": "base 625/out/digits_0_625_row/sym_044.png",
+      "path": "out/digits_0_625_row/sym_044.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -498,7 +498,7 @@
     {
       "number": 45,
       "filename": "sym_045.png",
-      "path": "base 625/out/digits_0_625_row/sym_045.png",
+      "path": "out/digits_0_625_row/sym_045.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -509,7 +509,7 @@
     {
       "number": 46,
       "filename": "sym_046.png",
-      "path": "base 625/out/digits_0_625_row/sym_046.png",
+      "path": "out/digits_0_625_row/sym_046.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -520,7 +520,7 @@
     {
       "number": 47,
       "filename": "sym_047.png",
-      "path": "base 625/out/digits_0_625_row/sym_047.png",
+      "path": "out/digits_0_625_row/sym_047.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -531,7 +531,7 @@
     {
       "number": 48,
       "filename": "sym_048.png",
-      "path": "base 625/out/digits_0_625_row/sym_048.png",
+      "path": "out/digits_0_625_row/sym_048.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -542,7 +542,7 @@
     {
       "number": 49,
       "filename": "sym_049.png",
-      "path": "base 625/out/digits_0_625_row/sym_049.png",
+      "path": "out/digits_0_625_row/sym_049.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -553,7 +553,7 @@
     {
       "number": 50,
       "filename": "sym_050.png",
-      "path": "base 625/out/digits_0_625_row/sym_050.png",
+      "path": "out/digits_0_625_row/sym_050.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -564,7 +564,7 @@
     {
       "number": 51,
       "filename": "sym_051.png",
-      "path": "base 625/out/digits_0_625_row/sym_051.png",
+      "path": "out/digits_0_625_row/sym_051.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -575,7 +575,7 @@
     {
       "number": 52,
       "filename": "sym_052.png",
-      "path": "base 625/out/digits_0_625_row/sym_052.png",
+      "path": "out/digits_0_625_row/sym_052.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -586,7 +586,7 @@
     {
       "number": 53,
       "filename": "sym_053.png",
-      "path": "base 625/out/digits_0_625_row/sym_053.png",
+      "path": "out/digits_0_625_row/sym_053.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -597,7 +597,7 @@
     {
       "number": 54,
       "filename": "sym_054.png",
-      "path": "base 625/out/digits_0_625_row/sym_054.png",
+      "path": "out/digits_0_625_row/sym_054.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -608,7 +608,7 @@
     {
       "number": 55,
       "filename": "sym_055.png",
-      "path": "base 625/out/digits_0_625_row/sym_055.png",
+      "path": "out/digits_0_625_row/sym_055.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -619,7 +619,7 @@
     {
       "number": 56,
       "filename": "sym_056.png",
-      "path": "base 625/out/digits_0_625_row/sym_056.png",
+      "path": "out/digits_0_625_row/sym_056.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -630,7 +630,7 @@
     {
       "number": 57,
       "filename": "sym_057.png",
-      "path": "base 625/out/digits_0_625_row/sym_057.png",
+      "path": "out/digits_0_625_row/sym_057.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -641,7 +641,7 @@
     {
       "number": 58,
       "filename": "sym_058.png",
-      "path": "base 625/out/digits_0_625_row/sym_058.png",
+      "path": "out/digits_0_625_row/sym_058.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -652,7 +652,7 @@
     {
       "number": 59,
       "filename": "sym_059.png",
-      "path": "base 625/out/digits_0_625_row/sym_059.png",
+      "path": "out/digits_0_625_row/sym_059.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -663,7 +663,7 @@
     {
       "number": 60,
       "filename": "sym_060.png",
-      "path": "base 625/out/digits_0_625_row/sym_060.png",
+      "path": "out/digits_0_625_row/sym_060.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -674,7 +674,7 @@
     {
       "number": 61,
       "filename": "sym_061.png",
-      "path": "base 625/out/digits_0_625_row/sym_061.png",
+      "path": "out/digits_0_625_row/sym_061.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -685,7 +685,7 @@
     {
       "number": 62,
       "filename": "sym_062.png",
-      "path": "base 625/out/digits_0_625_row/sym_062.png",
+      "path": "out/digits_0_625_row/sym_062.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -696,7 +696,7 @@
     {
       "number": 63,
       "filename": "sym_063.png",
-      "path": "base 625/out/digits_0_625_row/sym_063.png",
+      "path": "out/digits_0_625_row/sym_063.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -707,7 +707,7 @@
     {
       "number": 64,
       "filename": "sym_064.png",
-      "path": "base 625/out/digits_0_625_row/sym_064.png",
+      "path": "out/digits_0_625_row/sym_064.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -718,7 +718,7 @@
     {
       "number": 65,
       "filename": "sym_065.png",
-      "path": "base 625/out/digits_0_625_row/sym_065.png",
+      "path": "out/digits_0_625_row/sym_065.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -729,7 +729,7 @@
     {
       "number": 66,
       "filename": "sym_066.png",
-      "path": "base 625/out/digits_0_625_row/sym_066.png",
+      "path": "out/digits_0_625_row/sym_066.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -740,7 +740,7 @@
     {
       "number": 67,
       "filename": "sym_067.png",
-      "path": "base 625/out/digits_0_625_row/sym_067.png",
+      "path": "out/digits_0_625_row/sym_067.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -751,7 +751,7 @@
     {
       "number": 68,
       "filename": "sym_068.png",
-      "path": "base 625/out/digits_0_625_row/sym_068.png",
+      "path": "out/digits_0_625_row/sym_068.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -762,7 +762,7 @@
     {
       "number": 69,
       "filename": "sym_069.png",
-      "path": "base 625/out/digits_0_625_row/sym_069.png",
+      "path": "out/digits_0_625_row/sym_069.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -773,7 +773,7 @@
     {
       "number": 70,
       "filename": "sym_070.png",
-      "path": "base 625/out/digits_0_625_row/sym_070.png",
+      "path": "out/digits_0_625_row/sym_070.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -784,7 +784,7 @@
     {
       "number": 71,
       "filename": "sym_071.png",
-      "path": "base 625/out/digits_0_625_row/sym_071.png",
+      "path": "out/digits_0_625_row/sym_071.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -795,7 +795,7 @@
     {
       "number": 72,
       "filename": "sym_072.png",
-      "path": "base 625/out/digits_0_625_row/sym_072.png",
+      "path": "out/digits_0_625_row/sym_072.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -806,7 +806,7 @@
     {
       "number": 73,
       "filename": "sym_073.png",
-      "path": "base 625/out/digits_0_625_row/sym_073.png",
+      "path": "out/digits_0_625_row/sym_073.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -817,7 +817,7 @@
     {
       "number": 74,
       "filename": "sym_074.png",
-      "path": "base 625/out/digits_0_625_row/sym_074.png",
+      "path": "out/digits_0_625_row/sym_074.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -828,7 +828,7 @@
     {
       "number": 75,
       "filename": "sym_075.png",
-      "path": "base 625/out/digits_0_625_row/sym_075.png",
+      "path": "out/digits_0_625_row/sym_075.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -839,7 +839,7 @@
     {
       "number": 76,
       "filename": "sym_076.png",
-      "path": "base 625/out/digits_0_625_row/sym_076.png",
+      "path": "out/digits_0_625_row/sym_076.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -850,7 +850,7 @@
     {
       "number": 77,
       "filename": "sym_077.png",
-      "path": "base 625/out/digits_0_625_row/sym_077.png",
+      "path": "out/digits_0_625_row/sym_077.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -861,7 +861,7 @@
     {
       "number": 78,
       "filename": "sym_078.png",
-      "path": "base 625/out/digits_0_625_row/sym_078.png",
+      "path": "out/digits_0_625_row/sym_078.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -872,7 +872,7 @@
     {
       "number": 79,
       "filename": "sym_079.png",
-      "path": "base 625/out/digits_0_625_row/sym_079.png",
+      "path": "out/digits_0_625_row/sym_079.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -883,7 +883,7 @@
     {
       "number": 80,
       "filename": "sym_080.png",
-      "path": "base 625/out/digits_0_625_row/sym_080.png",
+      "path": "out/digits_0_625_row/sym_080.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -894,7 +894,7 @@
     {
       "number": 81,
       "filename": "sym_081.png",
-      "path": "base 625/out/digits_0_625_row/sym_081.png",
+      "path": "out/digits_0_625_row/sym_081.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -905,7 +905,7 @@
     {
       "number": 82,
       "filename": "sym_082.png",
-      "path": "base 625/out/digits_0_625_row/sym_082.png",
+      "path": "out/digits_0_625_row/sym_082.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -916,7 +916,7 @@
     {
       "number": 83,
       "filename": "sym_083.png",
-      "path": "base 625/out/digits_0_625_row/sym_083.png",
+      "path": "out/digits_0_625_row/sym_083.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -927,7 +927,7 @@
     {
       "number": 84,
       "filename": "sym_084.png",
-      "path": "base 625/out/digits_0_625_row/sym_084.png",
+      "path": "out/digits_0_625_row/sym_084.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -938,7 +938,7 @@
     {
       "number": 85,
       "filename": "sym_085.png",
-      "path": "base 625/out/digits_0_625_row/sym_085.png",
+      "path": "out/digits_0_625_row/sym_085.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -949,7 +949,7 @@
     {
       "number": 86,
       "filename": "sym_086.png",
-      "path": "base 625/out/digits_0_625_row/sym_086.png",
+      "path": "out/digits_0_625_row/sym_086.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -960,7 +960,7 @@
     {
       "number": 87,
       "filename": "sym_087.png",
-      "path": "base 625/out/digits_0_625_row/sym_087.png",
+      "path": "out/digits_0_625_row/sym_087.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -971,7 +971,7 @@
     {
       "number": 88,
       "filename": "sym_088.png",
-      "path": "base 625/out/digits_0_625_row/sym_088.png",
+      "path": "out/digits_0_625_row/sym_088.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -982,7 +982,7 @@
     {
       "number": 89,
       "filename": "sym_089.png",
-      "path": "base 625/out/digits_0_625_row/sym_089.png",
+      "path": "out/digits_0_625_row/sym_089.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -993,7 +993,7 @@
     {
       "number": 90,
       "filename": "sym_090.png",
-      "path": "base 625/out/digits_0_625_row/sym_090.png",
+      "path": "out/digits_0_625_row/sym_090.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1004,7 +1004,7 @@
     {
       "number": 91,
       "filename": "sym_091.png",
-      "path": "base 625/out/digits_0_625_row/sym_091.png",
+      "path": "out/digits_0_625_row/sym_091.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1015,7 +1015,7 @@
     {
       "number": 92,
       "filename": "sym_092.png",
-      "path": "base 625/out/digits_0_625_row/sym_092.png",
+      "path": "out/digits_0_625_row/sym_092.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1026,7 +1026,7 @@
     {
       "number": 93,
       "filename": "sym_093.png",
-      "path": "base 625/out/digits_0_625_row/sym_093.png",
+      "path": "out/digits_0_625_row/sym_093.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1037,7 +1037,7 @@
     {
       "number": 94,
       "filename": "sym_094.png",
-      "path": "base 625/out/digits_0_625_row/sym_094.png",
+      "path": "out/digits_0_625_row/sym_094.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1048,7 +1048,7 @@
     {
       "number": 95,
       "filename": "sym_095.png",
-      "path": "base 625/out/digits_0_625_row/sym_095.png",
+      "path": "out/digits_0_625_row/sym_095.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1059,7 +1059,7 @@
     {
       "number": 96,
       "filename": "sym_096.png",
-      "path": "base 625/out/digits_0_625_row/sym_096.png",
+      "path": "out/digits_0_625_row/sym_096.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1070,7 +1070,7 @@
     {
       "number": 97,
       "filename": "sym_097.png",
-      "path": "base 625/out/digits_0_625_row/sym_097.png",
+      "path": "out/digits_0_625_row/sym_097.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1081,7 +1081,7 @@
     {
       "number": 98,
       "filename": "sym_098.png",
-      "path": "base 625/out/digits_0_625_row/sym_098.png",
+      "path": "out/digits_0_625_row/sym_098.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1092,7 +1092,7 @@
     {
       "number": 99,
       "filename": "sym_099.png",
-      "path": "base 625/out/digits_0_625_row/sym_099.png",
+      "path": "out/digits_0_625_row/sym_099.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1103,7 +1103,7 @@
     {
       "number": 100,
       "filename": "sym_100.png",
-      "path": "base 625/out/digits_0_625_row/sym_100.png",
+      "path": "out/digits_0_625_row/sym_100.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1114,7 +1114,7 @@
     {
       "number": 101,
       "filename": "sym_101.png",
-      "path": "base 625/out/digits_0_625_row/sym_101.png",
+      "path": "out/digits_0_625_row/sym_101.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1125,7 +1125,7 @@
     {
       "number": 102,
       "filename": "sym_102.png",
-      "path": "base 625/out/digits_0_625_row/sym_102.png",
+      "path": "out/digits_0_625_row/sym_102.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1136,7 +1136,7 @@
     {
       "number": 103,
       "filename": "sym_103.png",
-      "path": "base 625/out/digits_0_625_row/sym_103.png",
+      "path": "out/digits_0_625_row/sym_103.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1147,7 +1147,7 @@
     {
       "number": 104,
       "filename": "sym_104.png",
-      "path": "base 625/out/digits_0_625_row/sym_104.png",
+      "path": "out/digits_0_625_row/sym_104.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1158,7 +1158,7 @@
     {
       "number": 105,
       "filename": "sym_105.png",
-      "path": "base 625/out/digits_0_625_row/sym_105.png",
+      "path": "out/digits_0_625_row/sym_105.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1169,7 +1169,7 @@
     {
       "number": 106,
       "filename": "sym_106.png",
-      "path": "base 625/out/digits_0_625_row/sym_106.png",
+      "path": "out/digits_0_625_row/sym_106.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1180,7 +1180,7 @@
     {
       "number": 107,
       "filename": "sym_107.png",
-      "path": "base 625/out/digits_0_625_row/sym_107.png",
+      "path": "out/digits_0_625_row/sym_107.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1191,7 +1191,7 @@
     {
       "number": 108,
       "filename": "sym_108.png",
-      "path": "base 625/out/digits_0_625_row/sym_108.png",
+      "path": "out/digits_0_625_row/sym_108.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1202,7 +1202,7 @@
     {
       "number": 109,
       "filename": "sym_109.png",
-      "path": "base 625/out/digits_0_625_row/sym_109.png",
+      "path": "out/digits_0_625_row/sym_109.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1213,7 +1213,7 @@
     {
       "number": 110,
       "filename": "sym_110.png",
-      "path": "base 625/out/digits_0_625_row/sym_110.png",
+      "path": "out/digits_0_625_row/sym_110.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1224,7 +1224,7 @@
     {
       "number": 111,
       "filename": "sym_111.png",
-      "path": "base 625/out/digits_0_625_row/sym_111.png",
+      "path": "out/digits_0_625_row/sym_111.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1235,7 +1235,7 @@
     {
       "number": 112,
       "filename": "sym_112.png",
-      "path": "base 625/out/digits_0_625_row/sym_112.png",
+      "path": "out/digits_0_625_row/sym_112.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1246,7 +1246,7 @@
     {
       "number": 113,
       "filename": "sym_113.png",
-      "path": "base 625/out/digits_0_625_row/sym_113.png",
+      "path": "out/digits_0_625_row/sym_113.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1257,7 +1257,7 @@
     {
       "number": 114,
       "filename": "sym_114.png",
-      "path": "base 625/out/digits_0_625_row/sym_114.png",
+      "path": "out/digits_0_625_row/sym_114.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1268,7 +1268,7 @@
     {
       "number": 115,
       "filename": "sym_115.png",
-      "path": "base 625/out/digits_0_625_row/sym_115.png",
+      "path": "out/digits_0_625_row/sym_115.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1279,7 +1279,7 @@
     {
       "number": 116,
       "filename": "sym_116.png",
-      "path": "base 625/out/digits_0_625_row/sym_116.png",
+      "path": "out/digits_0_625_row/sym_116.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1290,7 +1290,7 @@
     {
       "number": 117,
       "filename": "sym_117.png",
-      "path": "base 625/out/digits_0_625_row/sym_117.png",
+      "path": "out/digits_0_625_row/sym_117.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1301,7 +1301,7 @@
     {
       "number": 118,
       "filename": "sym_118.png",
-      "path": "base 625/out/digits_0_625_row/sym_118.png",
+      "path": "out/digits_0_625_row/sym_118.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1312,7 +1312,7 @@
     {
       "number": 119,
       "filename": "sym_119.png",
-      "path": "base 625/out/digits_0_625_row/sym_119.png",
+      "path": "out/digits_0_625_row/sym_119.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1323,7 +1323,7 @@
     {
       "number": 120,
       "filename": "sym_120.png",
-      "path": "base 625/out/digits_0_625_row/sym_120.png",
+      "path": "out/digits_0_625_row/sym_120.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1334,7 +1334,7 @@
     {
       "number": 121,
       "filename": "sym_121.png",
-      "path": "base 625/out/digits_0_625_row/sym_121.png",
+      "path": "out/digits_0_625_row/sym_121.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1345,7 +1345,7 @@
     {
       "number": 122,
       "filename": "sym_122.png",
-      "path": "base 625/out/digits_0_625_row/sym_122.png",
+      "path": "out/digits_0_625_row/sym_122.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1356,7 +1356,7 @@
     {
       "number": 123,
       "filename": "sym_123.png",
-      "path": "base 625/out/digits_0_625_row/sym_123.png",
+      "path": "out/digits_0_625_row/sym_123.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1367,7 +1367,7 @@
     {
       "number": 124,
       "filename": "sym_124.png",
-      "path": "base 625/out/digits_0_625_row/sym_124.png",
+      "path": "out/digits_0_625_row/sym_124.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1378,7 +1378,7 @@
     {
       "number": 125,
       "filename": "sym_125.png",
-      "path": "base 625/out/digits_0_625_row/sym_125.png",
+      "path": "out/digits_0_625_row/sym_125.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1389,7 +1389,7 @@
     {
       "number": 126,
       "filename": "sym_126.png",
-      "path": "base 625/out/digits_0_625_row/sym_126.png",
+      "path": "out/digits_0_625_row/sym_126.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1400,7 +1400,7 @@
     {
       "number": 127,
       "filename": "sym_127.png",
-      "path": "base 625/out/digits_0_625_row/sym_127.png",
+      "path": "out/digits_0_625_row/sym_127.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1411,7 +1411,7 @@
     {
       "number": 128,
       "filename": "sym_128.png",
-      "path": "base 625/out/digits_0_625_row/sym_128.png",
+      "path": "out/digits_0_625_row/sym_128.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1422,7 +1422,7 @@
     {
       "number": 129,
       "filename": "sym_129.png",
-      "path": "base 625/out/digits_0_625_row/sym_129.png",
+      "path": "out/digits_0_625_row/sym_129.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1433,7 +1433,7 @@
     {
       "number": 130,
       "filename": "sym_130.png",
-      "path": "base 625/out/digits_0_625_row/sym_130.png",
+      "path": "out/digits_0_625_row/sym_130.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1444,7 +1444,7 @@
     {
       "number": 131,
       "filename": "sym_131.png",
-      "path": "base 625/out/digits_0_625_row/sym_131.png",
+      "path": "out/digits_0_625_row/sym_131.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1455,7 +1455,7 @@
     {
       "number": 132,
       "filename": "sym_132.png",
-      "path": "base 625/out/digits_0_625_row/sym_132.png",
+      "path": "out/digits_0_625_row/sym_132.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1466,7 +1466,7 @@
     {
       "number": 133,
       "filename": "sym_133.png",
-      "path": "base 625/out/digits_0_625_row/sym_133.png",
+      "path": "out/digits_0_625_row/sym_133.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1477,7 +1477,7 @@
     {
       "number": 134,
       "filename": "sym_134.png",
-      "path": "base 625/out/digits_0_625_row/sym_134.png",
+      "path": "out/digits_0_625_row/sym_134.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1488,7 +1488,7 @@
     {
       "number": 135,
       "filename": "sym_135.png",
-      "path": "base 625/out/digits_0_625_row/sym_135.png",
+      "path": "out/digits_0_625_row/sym_135.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1499,7 +1499,7 @@
     {
       "number": 136,
       "filename": "sym_136.png",
-      "path": "base 625/out/digits_0_625_row/sym_136.png",
+      "path": "out/digits_0_625_row/sym_136.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1510,7 +1510,7 @@
     {
       "number": 137,
       "filename": "sym_137.png",
-      "path": "base 625/out/digits_0_625_row/sym_137.png",
+      "path": "out/digits_0_625_row/sym_137.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1521,7 +1521,7 @@
     {
       "number": 138,
       "filename": "sym_138.png",
-      "path": "base 625/out/digits_0_625_row/sym_138.png",
+      "path": "out/digits_0_625_row/sym_138.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1532,7 +1532,7 @@
     {
       "number": 139,
       "filename": "sym_139.png",
-      "path": "base 625/out/digits_0_625_row/sym_139.png",
+      "path": "out/digits_0_625_row/sym_139.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1543,7 +1543,7 @@
     {
       "number": 140,
       "filename": "sym_140.png",
-      "path": "base 625/out/digits_0_625_row/sym_140.png",
+      "path": "out/digits_0_625_row/sym_140.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1554,7 +1554,7 @@
     {
       "number": 141,
       "filename": "sym_141.png",
-      "path": "base 625/out/digits_0_625_row/sym_141.png",
+      "path": "out/digits_0_625_row/sym_141.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1565,7 +1565,7 @@
     {
       "number": 142,
       "filename": "sym_142.png",
-      "path": "base 625/out/digits_0_625_row/sym_142.png",
+      "path": "out/digits_0_625_row/sym_142.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1576,7 +1576,7 @@
     {
       "number": 143,
       "filename": "sym_143.png",
-      "path": "base 625/out/digits_0_625_row/sym_143.png",
+      "path": "out/digits_0_625_row/sym_143.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1587,7 +1587,7 @@
     {
       "number": 144,
       "filename": "sym_144.png",
-      "path": "base 625/out/digits_0_625_row/sym_144.png",
+      "path": "out/digits_0_625_row/sym_144.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1598,7 +1598,7 @@
     {
       "number": 145,
       "filename": "sym_145.png",
-      "path": "base 625/out/digits_0_625_row/sym_145.png",
+      "path": "out/digits_0_625_row/sym_145.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1609,7 +1609,7 @@
     {
       "number": 146,
       "filename": "sym_146.png",
-      "path": "base 625/out/digits_0_625_row/sym_146.png",
+      "path": "out/digits_0_625_row/sym_146.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1620,7 +1620,7 @@
     {
       "number": 147,
       "filename": "sym_147.png",
-      "path": "base 625/out/digits_0_625_row/sym_147.png",
+      "path": "out/digits_0_625_row/sym_147.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1631,7 +1631,7 @@
     {
       "number": 148,
       "filename": "sym_148.png",
-      "path": "base 625/out/digits_0_625_row/sym_148.png",
+      "path": "out/digits_0_625_row/sym_148.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1642,7 +1642,7 @@
     {
       "number": 149,
       "filename": "sym_149.png",
-      "path": "base 625/out/digits_0_625_row/sym_149.png",
+      "path": "out/digits_0_625_row/sym_149.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1653,7 +1653,7 @@
     {
       "number": 150,
       "filename": "sym_150.png",
-      "path": "base 625/out/digits_0_625_row/sym_150.png",
+      "path": "out/digits_0_625_row/sym_150.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1664,7 +1664,7 @@
     {
       "number": 151,
       "filename": "sym_151.png",
-      "path": "base 625/out/digits_0_625_row/sym_151.png",
+      "path": "out/digits_0_625_row/sym_151.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1675,7 +1675,7 @@
     {
       "number": 152,
       "filename": "sym_152.png",
-      "path": "base 625/out/digits_0_625_row/sym_152.png",
+      "path": "out/digits_0_625_row/sym_152.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1686,7 +1686,7 @@
     {
       "number": 153,
       "filename": "sym_153.png",
-      "path": "base 625/out/digits_0_625_row/sym_153.png",
+      "path": "out/digits_0_625_row/sym_153.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1697,7 +1697,7 @@
     {
       "number": 154,
       "filename": "sym_154.png",
-      "path": "base 625/out/digits_0_625_row/sym_154.png",
+      "path": "out/digits_0_625_row/sym_154.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1708,7 +1708,7 @@
     {
       "number": 155,
       "filename": "sym_155.png",
-      "path": "base 625/out/digits_0_625_row/sym_155.png",
+      "path": "out/digits_0_625_row/sym_155.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1719,7 +1719,7 @@
     {
       "number": 156,
       "filename": "sym_156.png",
-      "path": "base 625/out/digits_0_625_row/sym_156.png",
+      "path": "out/digits_0_625_row/sym_156.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1730,7 +1730,7 @@
     {
       "number": 157,
       "filename": "sym_157.png",
-      "path": "base 625/out/digits_0_625_row/sym_157.png",
+      "path": "out/digits_0_625_row/sym_157.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1741,7 +1741,7 @@
     {
       "number": 158,
       "filename": "sym_158.png",
-      "path": "base 625/out/digits_0_625_row/sym_158.png",
+      "path": "out/digits_0_625_row/sym_158.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1752,7 +1752,7 @@
     {
       "number": 159,
       "filename": "sym_159.png",
-      "path": "base 625/out/digits_0_625_row/sym_159.png",
+      "path": "out/digits_0_625_row/sym_159.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1763,7 +1763,7 @@
     {
       "number": 160,
       "filename": "sym_160.png",
-      "path": "base 625/out/digits_0_625_row/sym_160.png",
+      "path": "out/digits_0_625_row/sym_160.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1774,7 +1774,7 @@
     {
       "number": 161,
       "filename": "sym_161.png",
-      "path": "base 625/out/digits_0_625_row/sym_161.png",
+      "path": "out/digits_0_625_row/sym_161.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1785,7 +1785,7 @@
     {
       "number": 162,
       "filename": "sym_162.png",
-      "path": "base 625/out/digits_0_625_row/sym_162.png",
+      "path": "out/digits_0_625_row/sym_162.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1796,7 +1796,7 @@
     {
       "number": 163,
       "filename": "sym_163.png",
-      "path": "base 625/out/digits_0_625_row/sym_163.png",
+      "path": "out/digits_0_625_row/sym_163.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1807,7 +1807,7 @@
     {
       "number": 164,
       "filename": "sym_164.png",
-      "path": "base 625/out/digits_0_625_row/sym_164.png",
+      "path": "out/digits_0_625_row/sym_164.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1818,7 +1818,7 @@
     {
       "number": 165,
       "filename": "sym_165.png",
-      "path": "base 625/out/digits_0_625_row/sym_165.png",
+      "path": "out/digits_0_625_row/sym_165.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1829,7 +1829,7 @@
     {
       "number": 166,
       "filename": "sym_166.png",
-      "path": "base 625/out/digits_0_625_row/sym_166.png",
+      "path": "out/digits_0_625_row/sym_166.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1840,7 +1840,7 @@
     {
       "number": 167,
       "filename": "sym_167.png",
-      "path": "base 625/out/digits_0_625_row/sym_167.png",
+      "path": "out/digits_0_625_row/sym_167.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1851,7 +1851,7 @@
     {
       "number": 168,
       "filename": "sym_168.png",
-      "path": "base 625/out/digits_0_625_row/sym_168.png",
+      "path": "out/digits_0_625_row/sym_168.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1862,7 +1862,7 @@
     {
       "number": 169,
       "filename": "sym_169.png",
-      "path": "base 625/out/digits_0_625_row/sym_169.png",
+      "path": "out/digits_0_625_row/sym_169.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1873,7 +1873,7 @@
     {
       "number": 170,
       "filename": "sym_170.png",
-      "path": "base 625/out/digits_0_625_row/sym_170.png",
+      "path": "out/digits_0_625_row/sym_170.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1884,7 +1884,7 @@
     {
       "number": 171,
       "filename": "sym_171.png",
-      "path": "base 625/out/digits_0_625_row/sym_171.png",
+      "path": "out/digits_0_625_row/sym_171.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1895,7 +1895,7 @@
     {
       "number": 172,
       "filename": "sym_172.png",
-      "path": "base 625/out/digits_0_625_row/sym_172.png",
+      "path": "out/digits_0_625_row/sym_172.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1906,7 +1906,7 @@
     {
       "number": 173,
       "filename": "sym_173.png",
-      "path": "base 625/out/digits_0_625_row/sym_173.png",
+      "path": "out/digits_0_625_row/sym_173.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1917,7 +1917,7 @@
     {
       "number": 174,
       "filename": "sym_174.png",
-      "path": "base 625/out/digits_0_625_row/sym_174.png",
+      "path": "out/digits_0_625_row/sym_174.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1928,7 +1928,7 @@
     {
       "number": 175,
       "filename": "sym_175.png",
-      "path": "base 625/out/digits_0_625_row/sym_175.png",
+      "path": "out/digits_0_625_row/sym_175.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1939,7 +1939,7 @@
     {
       "number": 176,
       "filename": "sym_176.png",
-      "path": "base 625/out/digits_0_625_row/sym_176.png",
+      "path": "out/digits_0_625_row/sym_176.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1950,7 +1950,7 @@
     {
       "number": 177,
       "filename": "sym_177.png",
-      "path": "base 625/out/digits_0_625_row/sym_177.png",
+      "path": "out/digits_0_625_row/sym_177.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1961,7 +1961,7 @@
     {
       "number": 178,
       "filename": "sym_178.png",
-      "path": "base 625/out/digits_0_625_row/sym_178.png",
+      "path": "out/digits_0_625_row/sym_178.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1972,7 +1972,7 @@
     {
       "number": 179,
       "filename": "sym_179.png",
-      "path": "base 625/out/digits_0_625_row/sym_179.png",
+      "path": "out/digits_0_625_row/sym_179.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1983,7 +1983,7 @@
     {
       "number": 180,
       "filename": "sym_180.png",
-      "path": "base 625/out/digits_0_625_row/sym_180.png",
+      "path": "out/digits_0_625_row/sym_180.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -1994,7 +1994,7 @@
     {
       "number": 181,
       "filename": "sym_181.png",
-      "path": "base 625/out/digits_0_625_row/sym_181.png",
+      "path": "out/digits_0_625_row/sym_181.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2005,7 +2005,7 @@
     {
       "number": 182,
       "filename": "sym_182.png",
-      "path": "base 625/out/digits_0_625_row/sym_182.png",
+      "path": "out/digits_0_625_row/sym_182.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2016,7 +2016,7 @@
     {
       "number": 183,
       "filename": "sym_183.png",
-      "path": "base 625/out/digits_0_625_row/sym_183.png",
+      "path": "out/digits_0_625_row/sym_183.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2027,7 +2027,7 @@
     {
       "number": 184,
       "filename": "sym_184.png",
-      "path": "base 625/out/digits_0_625_row/sym_184.png",
+      "path": "out/digits_0_625_row/sym_184.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2038,7 +2038,7 @@
     {
       "number": 185,
       "filename": "sym_185.png",
-      "path": "base 625/out/digits_0_625_row/sym_185.png",
+      "path": "out/digits_0_625_row/sym_185.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2049,7 +2049,7 @@
     {
       "number": 186,
       "filename": "sym_186.png",
-      "path": "base 625/out/digits_0_625_row/sym_186.png",
+      "path": "out/digits_0_625_row/sym_186.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2060,7 +2060,7 @@
     {
       "number": 187,
       "filename": "sym_187.png",
-      "path": "base 625/out/digits_0_625_row/sym_187.png",
+      "path": "out/digits_0_625_row/sym_187.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2071,7 +2071,7 @@
     {
       "number": 188,
       "filename": "sym_188.png",
-      "path": "base 625/out/digits_0_625_row/sym_188.png",
+      "path": "out/digits_0_625_row/sym_188.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2082,7 +2082,7 @@
     {
       "number": 189,
       "filename": "sym_189.png",
-      "path": "base 625/out/digits_0_625_row/sym_189.png",
+      "path": "out/digits_0_625_row/sym_189.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2093,7 +2093,7 @@
     {
       "number": 190,
       "filename": "sym_190.png",
-      "path": "base 625/out/digits_0_625_row/sym_190.png",
+      "path": "out/digits_0_625_row/sym_190.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2104,7 +2104,7 @@
     {
       "number": 191,
       "filename": "sym_191.png",
-      "path": "base 625/out/digits_0_625_row/sym_191.png",
+      "path": "out/digits_0_625_row/sym_191.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2115,7 +2115,7 @@
     {
       "number": 192,
       "filename": "sym_192.png",
-      "path": "base 625/out/digits_0_625_row/sym_192.png",
+      "path": "out/digits_0_625_row/sym_192.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2126,7 +2126,7 @@
     {
       "number": 193,
       "filename": "sym_193.png",
-      "path": "base 625/out/digits_0_625_row/sym_193.png",
+      "path": "out/digits_0_625_row/sym_193.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2137,7 +2137,7 @@
     {
       "number": 194,
       "filename": "sym_194.png",
-      "path": "base 625/out/digits_0_625_row/sym_194.png",
+      "path": "out/digits_0_625_row/sym_194.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2148,7 +2148,7 @@
     {
       "number": 195,
       "filename": "sym_195.png",
-      "path": "base 625/out/digits_0_625_row/sym_195.png",
+      "path": "out/digits_0_625_row/sym_195.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2159,7 +2159,7 @@
     {
       "number": 196,
       "filename": "sym_196.png",
-      "path": "base 625/out/digits_0_625_row/sym_196.png",
+      "path": "out/digits_0_625_row/sym_196.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2170,7 +2170,7 @@
     {
       "number": 197,
       "filename": "sym_197.png",
-      "path": "base 625/out/digits_0_625_row/sym_197.png",
+      "path": "out/digits_0_625_row/sym_197.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2181,7 +2181,7 @@
     {
       "number": 198,
       "filename": "sym_198.png",
-      "path": "base 625/out/digits_0_625_row/sym_198.png",
+      "path": "out/digits_0_625_row/sym_198.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2192,7 +2192,7 @@
     {
       "number": 199,
       "filename": "sym_199.png",
-      "path": "base 625/out/digits_0_625_row/sym_199.png",
+      "path": "out/digits_0_625_row/sym_199.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2203,7 +2203,7 @@
     {
       "number": 200,
       "filename": "sym_200.png",
-      "path": "base 625/out/digits_0_625_row/sym_200.png",
+      "path": "out/digits_0_625_row/sym_200.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2214,7 +2214,7 @@
     {
       "number": 201,
       "filename": "sym_201.png",
-      "path": "base 625/out/digits_0_625_row/sym_201.png",
+      "path": "out/digits_0_625_row/sym_201.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2225,7 +2225,7 @@
     {
       "number": 202,
       "filename": "sym_202.png",
-      "path": "base 625/out/digits_0_625_row/sym_202.png",
+      "path": "out/digits_0_625_row/sym_202.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2236,7 +2236,7 @@
     {
       "number": 203,
       "filename": "sym_203.png",
-      "path": "base 625/out/digits_0_625_row/sym_203.png",
+      "path": "out/digits_0_625_row/sym_203.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2247,7 +2247,7 @@
     {
       "number": 204,
       "filename": "sym_204.png",
-      "path": "base 625/out/digits_0_625_row/sym_204.png",
+      "path": "out/digits_0_625_row/sym_204.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2258,7 +2258,7 @@
     {
       "number": 205,
       "filename": "sym_205.png",
-      "path": "base 625/out/digits_0_625_row/sym_205.png",
+      "path": "out/digits_0_625_row/sym_205.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2269,7 +2269,7 @@
     {
       "number": 206,
       "filename": "sym_206.png",
-      "path": "base 625/out/digits_0_625_row/sym_206.png",
+      "path": "out/digits_0_625_row/sym_206.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2280,7 +2280,7 @@
     {
       "number": 207,
       "filename": "sym_207.png",
-      "path": "base 625/out/digits_0_625_row/sym_207.png",
+      "path": "out/digits_0_625_row/sym_207.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2291,7 +2291,7 @@
     {
       "number": 208,
       "filename": "sym_208.png",
-      "path": "base 625/out/digits_0_625_row/sym_208.png",
+      "path": "out/digits_0_625_row/sym_208.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2302,7 +2302,7 @@
     {
       "number": 209,
       "filename": "sym_209.png",
-      "path": "base 625/out/digits_0_625_row/sym_209.png",
+      "path": "out/digits_0_625_row/sym_209.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2313,7 +2313,7 @@
     {
       "number": 210,
       "filename": "sym_210.png",
-      "path": "base 625/out/digits_0_625_row/sym_210.png",
+      "path": "out/digits_0_625_row/sym_210.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2324,7 +2324,7 @@
     {
       "number": 211,
       "filename": "sym_211.png",
-      "path": "base 625/out/digits_0_625_row/sym_211.png",
+      "path": "out/digits_0_625_row/sym_211.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2335,7 +2335,7 @@
     {
       "number": 212,
       "filename": "sym_212.png",
-      "path": "base 625/out/digits_0_625_row/sym_212.png",
+      "path": "out/digits_0_625_row/sym_212.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2346,7 +2346,7 @@
     {
       "number": 213,
       "filename": "sym_213.png",
-      "path": "base 625/out/digits_0_625_row/sym_213.png",
+      "path": "out/digits_0_625_row/sym_213.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2357,7 +2357,7 @@
     {
       "number": 214,
       "filename": "sym_214.png",
-      "path": "base 625/out/digits_0_625_row/sym_214.png",
+      "path": "out/digits_0_625_row/sym_214.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2368,7 +2368,7 @@
     {
       "number": 215,
       "filename": "sym_215.png",
-      "path": "base 625/out/digits_0_625_row/sym_215.png",
+      "path": "out/digits_0_625_row/sym_215.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2379,7 +2379,7 @@
     {
       "number": 216,
       "filename": "sym_216.png",
-      "path": "base 625/out/digits_0_625_row/sym_216.png",
+      "path": "out/digits_0_625_row/sym_216.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2390,7 +2390,7 @@
     {
       "number": 217,
       "filename": "sym_217.png",
-      "path": "base 625/out/digits_0_625_row/sym_217.png",
+      "path": "out/digits_0_625_row/sym_217.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2401,7 +2401,7 @@
     {
       "number": 218,
       "filename": "sym_218.png",
-      "path": "base 625/out/digits_0_625_row/sym_218.png",
+      "path": "out/digits_0_625_row/sym_218.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2412,7 +2412,7 @@
     {
       "number": 219,
       "filename": "sym_219.png",
-      "path": "base 625/out/digits_0_625_row/sym_219.png",
+      "path": "out/digits_0_625_row/sym_219.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2423,7 +2423,7 @@
     {
       "number": 220,
       "filename": "sym_220.png",
-      "path": "base 625/out/digits_0_625_row/sym_220.png",
+      "path": "out/digits_0_625_row/sym_220.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2434,7 +2434,7 @@
     {
       "number": 221,
       "filename": "sym_221.png",
-      "path": "base 625/out/digits_0_625_row/sym_221.png",
+      "path": "out/digits_0_625_row/sym_221.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2445,7 +2445,7 @@
     {
       "number": 222,
       "filename": "sym_222.png",
-      "path": "base 625/out/digits_0_625_row/sym_222.png",
+      "path": "out/digits_0_625_row/sym_222.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2456,7 +2456,7 @@
     {
       "number": 223,
       "filename": "sym_223.png",
-      "path": "base 625/out/digits_0_625_row/sym_223.png",
+      "path": "out/digits_0_625_row/sym_223.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2467,7 +2467,7 @@
     {
       "number": 224,
       "filename": "sym_224.png",
-      "path": "base 625/out/digits_0_625_row/sym_224.png",
+      "path": "out/digits_0_625_row/sym_224.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2478,7 +2478,7 @@
     {
       "number": 225,
       "filename": "sym_225.png",
-      "path": "base 625/out/digits_0_625_row/sym_225.png",
+      "path": "out/digits_0_625_row/sym_225.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2489,7 +2489,7 @@
     {
       "number": 226,
       "filename": "sym_226.png",
-      "path": "base 625/out/digits_0_625_row/sym_226.png",
+      "path": "out/digits_0_625_row/sym_226.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2500,7 +2500,7 @@
     {
       "number": 227,
       "filename": "sym_227.png",
-      "path": "base 625/out/digits_0_625_row/sym_227.png",
+      "path": "out/digits_0_625_row/sym_227.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2511,7 +2511,7 @@
     {
       "number": 228,
       "filename": "sym_228.png",
-      "path": "base 625/out/digits_0_625_row/sym_228.png",
+      "path": "out/digits_0_625_row/sym_228.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2522,7 +2522,7 @@
     {
       "number": 229,
       "filename": "sym_229.png",
-      "path": "base 625/out/digits_0_625_row/sym_229.png",
+      "path": "out/digits_0_625_row/sym_229.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2533,7 +2533,7 @@
     {
       "number": 230,
       "filename": "sym_230.png",
-      "path": "base 625/out/digits_0_625_row/sym_230.png",
+      "path": "out/digits_0_625_row/sym_230.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2544,7 +2544,7 @@
     {
       "number": 231,
       "filename": "sym_231.png",
-      "path": "base 625/out/digits_0_625_row/sym_231.png",
+      "path": "out/digits_0_625_row/sym_231.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2555,7 +2555,7 @@
     {
       "number": 232,
       "filename": "sym_232.png",
-      "path": "base 625/out/digits_0_625_row/sym_232.png",
+      "path": "out/digits_0_625_row/sym_232.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2566,7 +2566,7 @@
     {
       "number": 233,
       "filename": "sym_233.png",
-      "path": "base 625/out/digits_0_625_row/sym_233.png",
+      "path": "out/digits_0_625_row/sym_233.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2577,7 +2577,7 @@
     {
       "number": 234,
       "filename": "sym_234.png",
-      "path": "base 625/out/digits_0_625_row/sym_234.png",
+      "path": "out/digits_0_625_row/sym_234.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2588,7 +2588,7 @@
     {
       "number": 235,
       "filename": "sym_235.png",
-      "path": "base 625/out/digits_0_625_row/sym_235.png",
+      "path": "out/digits_0_625_row/sym_235.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2599,7 +2599,7 @@
     {
       "number": 236,
       "filename": "sym_236.png",
-      "path": "base 625/out/digits_0_625_row/sym_236.png",
+      "path": "out/digits_0_625_row/sym_236.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2610,7 +2610,7 @@
     {
       "number": 237,
       "filename": "sym_237.png",
-      "path": "base 625/out/digits_0_625_row/sym_237.png",
+      "path": "out/digits_0_625_row/sym_237.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2621,7 +2621,7 @@
     {
       "number": 238,
       "filename": "sym_238.png",
-      "path": "base 625/out/digits_0_625_row/sym_238.png",
+      "path": "out/digits_0_625_row/sym_238.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2632,7 +2632,7 @@
     {
       "number": 239,
       "filename": "sym_239.png",
-      "path": "base 625/out/digits_0_625_row/sym_239.png",
+      "path": "out/digits_0_625_row/sym_239.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2643,7 +2643,7 @@
     {
       "number": 240,
       "filename": "sym_240.png",
-      "path": "base 625/out/digits_0_625_row/sym_240.png",
+      "path": "out/digits_0_625_row/sym_240.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2654,7 +2654,7 @@
     {
       "number": 241,
       "filename": "sym_241.png",
-      "path": "base 625/out/digits_0_625_row/sym_241.png",
+      "path": "out/digits_0_625_row/sym_241.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2665,7 +2665,7 @@
     {
       "number": 242,
       "filename": "sym_242.png",
-      "path": "base 625/out/digits_0_625_row/sym_242.png",
+      "path": "out/digits_0_625_row/sym_242.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2676,7 +2676,7 @@
     {
       "number": 243,
       "filename": "sym_243.png",
-      "path": "base 625/out/digits_0_625_row/sym_243.png",
+      "path": "out/digits_0_625_row/sym_243.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2687,7 +2687,7 @@
     {
       "number": 244,
       "filename": "sym_244.png",
-      "path": "base 625/out/digits_0_625_row/sym_244.png",
+      "path": "out/digits_0_625_row/sym_244.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2698,7 +2698,7 @@
     {
       "number": 245,
       "filename": "sym_245.png",
-      "path": "base 625/out/digits_0_625_row/sym_245.png",
+      "path": "out/digits_0_625_row/sym_245.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2709,7 +2709,7 @@
     {
       "number": 246,
       "filename": "sym_246.png",
-      "path": "base 625/out/digits_0_625_row/sym_246.png",
+      "path": "out/digits_0_625_row/sym_246.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2720,7 +2720,7 @@
     {
       "number": 247,
       "filename": "sym_247.png",
-      "path": "base 625/out/digits_0_625_row/sym_247.png",
+      "path": "out/digits_0_625_row/sym_247.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2731,7 +2731,7 @@
     {
       "number": 248,
       "filename": "sym_248.png",
-      "path": "base 625/out/digits_0_625_row/sym_248.png",
+      "path": "out/digits_0_625_row/sym_248.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2742,7 +2742,7 @@
     {
       "number": 249,
       "filename": "sym_249.png",
-      "path": "base 625/out/digits_0_625_row/sym_249.png",
+      "path": "out/digits_0_625_row/sym_249.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2753,7 +2753,7 @@
     {
       "number": 250,
       "filename": "sym_250.png",
-      "path": "base 625/out/digits_0_625_row/sym_250.png",
+      "path": "out/digits_0_625_row/sym_250.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2764,7 +2764,7 @@
     {
       "number": 251,
       "filename": "sym_251.png",
-      "path": "base 625/out/digits_0_625_row/sym_251.png",
+      "path": "out/digits_0_625_row/sym_251.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2775,7 +2775,7 @@
     {
       "number": 252,
       "filename": "sym_252.png",
-      "path": "base 625/out/digits_0_625_row/sym_252.png",
+      "path": "out/digits_0_625_row/sym_252.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2786,7 +2786,7 @@
     {
       "number": 253,
       "filename": "sym_253.png",
-      "path": "base 625/out/digits_0_625_row/sym_253.png",
+      "path": "out/digits_0_625_row/sym_253.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2797,7 +2797,7 @@
     {
       "number": 254,
       "filename": "sym_254.png",
-      "path": "base 625/out/digits_0_625_row/sym_254.png",
+      "path": "out/digits_0_625_row/sym_254.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2808,7 +2808,7 @@
     {
       "number": 255,
       "filename": "sym_255.png",
-      "path": "base 625/out/digits_0_625_row/sym_255.png",
+      "path": "out/digits_0_625_row/sym_255.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2819,7 +2819,7 @@
     {
       "number": 256,
       "filename": "sym_256.png",
-      "path": "base 625/out/digits_0_625_row/sym_256.png",
+      "path": "out/digits_0_625_row/sym_256.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2830,7 +2830,7 @@
     {
       "number": 257,
       "filename": "sym_257.png",
-      "path": "base 625/out/digits_0_625_row/sym_257.png",
+      "path": "out/digits_0_625_row/sym_257.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2841,7 +2841,7 @@
     {
       "number": 258,
       "filename": "sym_258.png",
-      "path": "base 625/out/digits_0_625_row/sym_258.png",
+      "path": "out/digits_0_625_row/sym_258.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2852,7 +2852,7 @@
     {
       "number": 259,
       "filename": "sym_259.png",
-      "path": "base 625/out/digits_0_625_row/sym_259.png",
+      "path": "out/digits_0_625_row/sym_259.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2863,7 +2863,7 @@
     {
       "number": 260,
       "filename": "sym_260.png",
-      "path": "base 625/out/digits_0_625_row/sym_260.png",
+      "path": "out/digits_0_625_row/sym_260.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2874,7 +2874,7 @@
     {
       "number": 261,
       "filename": "sym_261.png",
-      "path": "base 625/out/digits_0_625_row/sym_261.png",
+      "path": "out/digits_0_625_row/sym_261.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2885,7 +2885,7 @@
     {
       "number": 262,
       "filename": "sym_262.png",
-      "path": "base 625/out/digits_0_625_row/sym_262.png",
+      "path": "out/digits_0_625_row/sym_262.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2896,7 +2896,7 @@
     {
       "number": 263,
       "filename": "sym_263.png",
-      "path": "base 625/out/digits_0_625_row/sym_263.png",
+      "path": "out/digits_0_625_row/sym_263.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2907,7 +2907,7 @@
     {
       "number": 264,
       "filename": "sym_264.png",
-      "path": "base 625/out/digits_0_625_row/sym_264.png",
+      "path": "out/digits_0_625_row/sym_264.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2918,7 +2918,7 @@
     {
       "number": 265,
       "filename": "sym_265.png",
-      "path": "base 625/out/digits_0_625_row/sym_265.png",
+      "path": "out/digits_0_625_row/sym_265.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2929,7 +2929,7 @@
     {
       "number": 266,
       "filename": "sym_266.png",
-      "path": "base 625/out/digits_0_625_row/sym_266.png",
+      "path": "out/digits_0_625_row/sym_266.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2940,7 +2940,7 @@
     {
       "number": 267,
       "filename": "sym_267.png",
-      "path": "base 625/out/digits_0_625_row/sym_267.png",
+      "path": "out/digits_0_625_row/sym_267.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2951,7 +2951,7 @@
     {
       "number": 268,
       "filename": "sym_268.png",
-      "path": "base 625/out/digits_0_625_row/sym_268.png",
+      "path": "out/digits_0_625_row/sym_268.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2962,7 +2962,7 @@
     {
       "number": 269,
       "filename": "sym_269.png",
-      "path": "base 625/out/digits_0_625_row/sym_269.png",
+      "path": "out/digits_0_625_row/sym_269.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2973,7 +2973,7 @@
     {
       "number": 270,
       "filename": "sym_270.png",
-      "path": "base 625/out/digits_0_625_row/sym_270.png",
+      "path": "out/digits_0_625_row/sym_270.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2984,7 +2984,7 @@
     {
       "number": 271,
       "filename": "sym_271.png",
-      "path": "base 625/out/digits_0_625_row/sym_271.png",
+      "path": "out/digits_0_625_row/sym_271.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -2995,7 +2995,7 @@
     {
       "number": 272,
       "filename": "sym_272.png",
-      "path": "base 625/out/digits_0_625_row/sym_272.png",
+      "path": "out/digits_0_625_row/sym_272.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3006,7 +3006,7 @@
     {
       "number": 273,
       "filename": "sym_273.png",
-      "path": "base 625/out/digits_0_625_row/sym_273.png",
+      "path": "out/digits_0_625_row/sym_273.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3017,7 +3017,7 @@
     {
       "number": 274,
       "filename": "sym_274.png",
-      "path": "base 625/out/digits_0_625_row/sym_274.png",
+      "path": "out/digits_0_625_row/sym_274.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3028,7 +3028,7 @@
     {
       "number": 275,
       "filename": "sym_275.png",
-      "path": "base 625/out/digits_0_625_row/sym_275.png",
+      "path": "out/digits_0_625_row/sym_275.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3039,7 +3039,7 @@
     {
       "number": 276,
       "filename": "sym_276.png",
-      "path": "base 625/out/digits_0_625_row/sym_276.png",
+      "path": "out/digits_0_625_row/sym_276.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3050,7 +3050,7 @@
     {
       "number": 277,
       "filename": "sym_277.png",
-      "path": "base 625/out/digits_0_625_row/sym_277.png",
+      "path": "out/digits_0_625_row/sym_277.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3061,7 +3061,7 @@
     {
       "number": 278,
       "filename": "sym_278.png",
-      "path": "base 625/out/digits_0_625_row/sym_278.png",
+      "path": "out/digits_0_625_row/sym_278.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3072,7 +3072,7 @@
     {
       "number": 279,
       "filename": "sym_279.png",
-      "path": "base 625/out/digits_0_625_row/sym_279.png",
+      "path": "out/digits_0_625_row/sym_279.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3083,7 +3083,7 @@
     {
       "number": 280,
       "filename": "sym_280.png",
-      "path": "base 625/out/digits_0_625_row/sym_280.png",
+      "path": "out/digits_0_625_row/sym_280.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3094,7 +3094,7 @@
     {
       "number": 281,
       "filename": "sym_281.png",
-      "path": "base 625/out/digits_0_625_row/sym_281.png",
+      "path": "out/digits_0_625_row/sym_281.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3105,7 +3105,7 @@
     {
       "number": 282,
       "filename": "sym_282.png",
-      "path": "base 625/out/digits_0_625_row/sym_282.png",
+      "path": "out/digits_0_625_row/sym_282.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3116,7 +3116,7 @@
     {
       "number": 283,
       "filename": "sym_283.png",
-      "path": "base 625/out/digits_0_625_row/sym_283.png",
+      "path": "out/digits_0_625_row/sym_283.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3127,7 +3127,7 @@
     {
       "number": 284,
       "filename": "sym_284.png",
-      "path": "base 625/out/digits_0_625_row/sym_284.png",
+      "path": "out/digits_0_625_row/sym_284.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3138,7 +3138,7 @@
     {
       "number": 285,
       "filename": "sym_285.png",
-      "path": "base 625/out/digits_0_625_row/sym_285.png",
+      "path": "out/digits_0_625_row/sym_285.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3149,7 +3149,7 @@
     {
       "number": 286,
       "filename": "sym_286.png",
-      "path": "base 625/out/digits_0_625_row/sym_286.png",
+      "path": "out/digits_0_625_row/sym_286.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3160,7 +3160,7 @@
     {
       "number": 287,
       "filename": "sym_287.png",
-      "path": "base 625/out/digits_0_625_row/sym_287.png",
+      "path": "out/digits_0_625_row/sym_287.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3171,7 +3171,7 @@
     {
       "number": 288,
       "filename": "sym_288.png",
-      "path": "base 625/out/digits_0_625_row/sym_288.png",
+      "path": "out/digits_0_625_row/sym_288.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3182,7 +3182,7 @@
     {
       "number": 289,
       "filename": "sym_289.png",
-      "path": "base 625/out/digits_0_625_row/sym_289.png",
+      "path": "out/digits_0_625_row/sym_289.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3193,7 +3193,7 @@
     {
       "number": 290,
       "filename": "sym_290.png",
-      "path": "base 625/out/digits_0_625_row/sym_290.png",
+      "path": "out/digits_0_625_row/sym_290.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3204,7 +3204,7 @@
     {
       "number": 291,
       "filename": "sym_291.png",
-      "path": "base 625/out/digits_0_625_row/sym_291.png",
+      "path": "out/digits_0_625_row/sym_291.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3215,7 +3215,7 @@
     {
       "number": 292,
       "filename": "sym_292.png",
-      "path": "base 625/out/digits_0_625_row/sym_292.png",
+      "path": "out/digits_0_625_row/sym_292.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3226,7 +3226,7 @@
     {
       "number": 293,
       "filename": "sym_293.png",
-      "path": "base 625/out/digits_0_625_row/sym_293.png",
+      "path": "out/digits_0_625_row/sym_293.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3237,7 +3237,7 @@
     {
       "number": 294,
       "filename": "sym_294.png",
-      "path": "base 625/out/digits_0_625_row/sym_294.png",
+      "path": "out/digits_0_625_row/sym_294.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3248,7 +3248,7 @@
     {
       "number": 295,
       "filename": "sym_295.png",
-      "path": "base 625/out/digits_0_625_row/sym_295.png",
+      "path": "out/digits_0_625_row/sym_295.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3259,7 +3259,7 @@
     {
       "number": 296,
       "filename": "sym_296.png",
-      "path": "base 625/out/digits_0_625_row/sym_296.png",
+      "path": "out/digits_0_625_row/sym_296.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3270,7 +3270,7 @@
     {
       "number": 297,
       "filename": "sym_297.png",
-      "path": "base 625/out/digits_0_625_row/sym_297.png",
+      "path": "out/digits_0_625_row/sym_297.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3281,7 +3281,7 @@
     {
       "number": 298,
       "filename": "sym_298.png",
-      "path": "base 625/out/digits_0_625_row/sym_298.png",
+      "path": "out/digits_0_625_row/sym_298.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3292,7 +3292,7 @@
     {
       "number": 299,
       "filename": "sym_299.png",
-      "path": "base 625/out/digits_0_625_row/sym_299.png",
+      "path": "out/digits_0_625_row/sym_299.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3303,7 +3303,7 @@
     {
       "number": 300,
       "filename": "sym_300.png",
-      "path": "base 625/out/digits_0_625_row/sym_300.png",
+      "path": "out/digits_0_625_row/sym_300.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3314,7 +3314,7 @@
     {
       "number": 301,
       "filename": "sym_301.png",
-      "path": "base 625/out/digits_0_625_row/sym_301.png",
+      "path": "out/digits_0_625_row/sym_301.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3325,7 +3325,7 @@
     {
       "number": 302,
       "filename": "sym_302.png",
-      "path": "base 625/out/digits_0_625_row/sym_302.png",
+      "path": "out/digits_0_625_row/sym_302.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3336,7 +3336,7 @@
     {
       "number": 303,
       "filename": "sym_303.png",
-      "path": "base 625/out/digits_0_625_row/sym_303.png",
+      "path": "out/digits_0_625_row/sym_303.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3347,7 +3347,7 @@
     {
       "number": 304,
       "filename": "sym_304.png",
-      "path": "base 625/out/digits_0_625_row/sym_304.png",
+      "path": "out/digits_0_625_row/sym_304.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3358,7 +3358,7 @@
     {
       "number": 305,
       "filename": "sym_305.png",
-      "path": "base 625/out/digits_0_625_row/sym_305.png",
+      "path": "out/digits_0_625_row/sym_305.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3369,7 +3369,7 @@
     {
       "number": 306,
       "filename": "sym_306.png",
-      "path": "base 625/out/digits_0_625_row/sym_306.png",
+      "path": "out/digits_0_625_row/sym_306.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3380,7 +3380,7 @@
     {
       "number": 307,
       "filename": "sym_307.png",
-      "path": "base 625/out/digits_0_625_row/sym_307.png",
+      "path": "out/digits_0_625_row/sym_307.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3391,7 +3391,7 @@
     {
       "number": 308,
       "filename": "sym_308.png",
-      "path": "base 625/out/digits_0_625_row/sym_308.png",
+      "path": "out/digits_0_625_row/sym_308.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3402,7 +3402,7 @@
     {
       "number": 309,
       "filename": "sym_309.png",
-      "path": "base 625/out/digits_0_625_row/sym_309.png",
+      "path": "out/digits_0_625_row/sym_309.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3413,7 +3413,7 @@
     {
       "number": 310,
       "filename": "sym_310.png",
-      "path": "base 625/out/digits_0_625_row/sym_310.png",
+      "path": "out/digits_0_625_row/sym_310.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3424,7 +3424,7 @@
     {
       "number": 311,
       "filename": "sym_311.png",
-      "path": "base 625/out/digits_0_625_row/sym_311.png",
+      "path": "out/digits_0_625_row/sym_311.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3435,7 +3435,7 @@
     {
       "number": 312,
       "filename": "sym_312.png",
-      "path": "base 625/out/digits_0_625_row/sym_312.png",
+      "path": "out/digits_0_625_row/sym_312.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3446,7 +3446,7 @@
     {
       "number": 313,
       "filename": "sym_313.png",
-      "path": "base 625/out/digits_0_625_row/sym_313.png",
+      "path": "out/digits_0_625_row/sym_313.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3457,7 +3457,7 @@
     {
       "number": 314,
       "filename": "sym_314.png",
-      "path": "base 625/out/digits_0_625_row/sym_314.png",
+      "path": "out/digits_0_625_row/sym_314.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3468,7 +3468,7 @@
     {
       "number": 315,
       "filename": "sym_315.png",
-      "path": "base 625/out/digits_0_625_row/sym_315.png",
+      "path": "out/digits_0_625_row/sym_315.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3479,7 +3479,7 @@
     {
       "number": 316,
       "filename": "sym_316.png",
-      "path": "base 625/out/digits_0_625_row/sym_316.png",
+      "path": "out/digits_0_625_row/sym_316.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3490,7 +3490,7 @@
     {
       "number": 317,
       "filename": "sym_317.png",
-      "path": "base 625/out/digits_0_625_row/sym_317.png",
+      "path": "out/digits_0_625_row/sym_317.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3501,7 +3501,7 @@
     {
       "number": 318,
       "filename": "sym_318.png",
-      "path": "base 625/out/digits_0_625_row/sym_318.png",
+      "path": "out/digits_0_625_row/sym_318.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3512,7 +3512,7 @@
     {
       "number": 319,
       "filename": "sym_319.png",
-      "path": "base 625/out/digits_0_625_row/sym_319.png",
+      "path": "out/digits_0_625_row/sym_319.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3523,7 +3523,7 @@
     {
       "number": 320,
       "filename": "sym_320.png",
-      "path": "base 625/out/digits_0_625_row/sym_320.png",
+      "path": "out/digits_0_625_row/sym_320.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3534,7 +3534,7 @@
     {
       "number": 321,
       "filename": "sym_321.png",
-      "path": "base 625/out/digits_0_625_row/sym_321.png",
+      "path": "out/digits_0_625_row/sym_321.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3545,7 +3545,7 @@
     {
       "number": 322,
       "filename": "sym_322.png",
-      "path": "base 625/out/digits_0_625_row/sym_322.png",
+      "path": "out/digits_0_625_row/sym_322.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3556,7 +3556,7 @@
     {
       "number": 323,
       "filename": "sym_323.png",
-      "path": "base 625/out/digits_0_625_row/sym_323.png",
+      "path": "out/digits_0_625_row/sym_323.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3567,7 +3567,7 @@
     {
       "number": 324,
       "filename": "sym_324.png",
-      "path": "base 625/out/digits_0_625_row/sym_324.png",
+      "path": "out/digits_0_625_row/sym_324.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3578,7 +3578,7 @@
     {
       "number": 325,
       "filename": "sym_325.png",
-      "path": "base 625/out/digits_0_625_row/sym_325.png",
+      "path": "out/digits_0_625_row/sym_325.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3589,7 +3589,7 @@
     {
       "number": 326,
       "filename": "sym_326.png",
-      "path": "base 625/out/digits_0_625_row/sym_326.png",
+      "path": "out/digits_0_625_row/sym_326.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3600,7 +3600,7 @@
     {
       "number": 327,
       "filename": "sym_327.png",
-      "path": "base 625/out/digits_0_625_row/sym_327.png",
+      "path": "out/digits_0_625_row/sym_327.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3611,7 +3611,7 @@
     {
       "number": 328,
       "filename": "sym_328.png",
-      "path": "base 625/out/digits_0_625_row/sym_328.png",
+      "path": "out/digits_0_625_row/sym_328.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3622,7 +3622,7 @@
     {
       "number": 329,
       "filename": "sym_329.png",
-      "path": "base 625/out/digits_0_625_row/sym_329.png",
+      "path": "out/digits_0_625_row/sym_329.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3633,7 +3633,7 @@
     {
       "number": 330,
       "filename": "sym_330.png",
-      "path": "base 625/out/digits_0_625_row/sym_330.png",
+      "path": "out/digits_0_625_row/sym_330.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3644,7 +3644,7 @@
     {
       "number": 331,
       "filename": "sym_331.png",
-      "path": "base 625/out/digits_0_625_row/sym_331.png",
+      "path": "out/digits_0_625_row/sym_331.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3655,7 +3655,7 @@
     {
       "number": 332,
       "filename": "sym_332.png",
-      "path": "base 625/out/digits_0_625_row/sym_332.png",
+      "path": "out/digits_0_625_row/sym_332.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3666,7 +3666,7 @@
     {
       "number": 333,
       "filename": "sym_333.png",
-      "path": "base 625/out/digits_0_625_row/sym_333.png",
+      "path": "out/digits_0_625_row/sym_333.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3677,7 +3677,7 @@
     {
       "number": 334,
       "filename": "sym_334.png",
-      "path": "base 625/out/digits_0_625_row/sym_334.png",
+      "path": "out/digits_0_625_row/sym_334.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3688,7 +3688,7 @@
     {
       "number": 335,
       "filename": "sym_335.png",
-      "path": "base 625/out/digits_0_625_row/sym_335.png",
+      "path": "out/digits_0_625_row/sym_335.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3699,7 +3699,7 @@
     {
       "number": 336,
       "filename": "sym_336.png",
-      "path": "base 625/out/digits_0_625_row/sym_336.png",
+      "path": "out/digits_0_625_row/sym_336.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3710,7 +3710,7 @@
     {
       "number": 337,
       "filename": "sym_337.png",
-      "path": "base 625/out/digits_0_625_row/sym_337.png",
+      "path": "out/digits_0_625_row/sym_337.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3721,7 +3721,7 @@
     {
       "number": 338,
       "filename": "sym_338.png",
-      "path": "base 625/out/digits_0_625_row/sym_338.png",
+      "path": "out/digits_0_625_row/sym_338.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3732,7 +3732,7 @@
     {
       "number": 339,
       "filename": "sym_339.png",
-      "path": "base 625/out/digits_0_625_row/sym_339.png",
+      "path": "out/digits_0_625_row/sym_339.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3743,7 +3743,7 @@
     {
       "number": 340,
       "filename": "sym_340.png",
-      "path": "base 625/out/digits_0_625_row/sym_340.png",
+      "path": "out/digits_0_625_row/sym_340.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3754,7 +3754,7 @@
     {
       "number": 341,
       "filename": "sym_341.png",
-      "path": "base 625/out/digits_0_625_row/sym_341.png",
+      "path": "out/digits_0_625_row/sym_341.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3765,7 +3765,7 @@
     {
       "number": 342,
       "filename": "sym_342.png",
-      "path": "base 625/out/digits_0_625_row/sym_342.png",
+      "path": "out/digits_0_625_row/sym_342.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3776,7 +3776,7 @@
     {
       "number": 343,
       "filename": "sym_343.png",
-      "path": "base 625/out/digits_0_625_row/sym_343.png",
+      "path": "out/digits_0_625_row/sym_343.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3787,7 +3787,7 @@
     {
       "number": 344,
       "filename": "sym_344.png",
-      "path": "base 625/out/digits_0_625_row/sym_344.png",
+      "path": "out/digits_0_625_row/sym_344.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3798,7 +3798,7 @@
     {
       "number": 345,
       "filename": "sym_345.png",
-      "path": "base 625/out/digits_0_625_row/sym_345.png",
+      "path": "out/digits_0_625_row/sym_345.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3809,7 +3809,7 @@
     {
       "number": 346,
       "filename": "sym_346.png",
-      "path": "base 625/out/digits_0_625_row/sym_346.png",
+      "path": "out/digits_0_625_row/sym_346.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3820,7 +3820,7 @@
     {
       "number": 347,
       "filename": "sym_347.png",
-      "path": "base 625/out/digits_0_625_row/sym_347.png",
+      "path": "out/digits_0_625_row/sym_347.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3831,7 +3831,7 @@
     {
       "number": 348,
       "filename": "sym_348.png",
-      "path": "base 625/out/digits_0_625_row/sym_348.png",
+      "path": "out/digits_0_625_row/sym_348.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3842,7 +3842,7 @@
     {
       "number": 349,
       "filename": "sym_349.png",
-      "path": "base 625/out/digits_0_625_row/sym_349.png",
+      "path": "out/digits_0_625_row/sym_349.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3853,7 +3853,7 @@
     {
       "number": 350,
       "filename": "sym_350.png",
-      "path": "base 625/out/digits_0_625_row/sym_350.png",
+      "path": "out/digits_0_625_row/sym_350.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3864,7 +3864,7 @@
     {
       "number": 351,
       "filename": "sym_351.png",
-      "path": "base 625/out/digits_0_625_row/sym_351.png",
+      "path": "out/digits_0_625_row/sym_351.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3875,7 +3875,7 @@
     {
       "number": 352,
       "filename": "sym_352.png",
-      "path": "base 625/out/digits_0_625_row/sym_352.png",
+      "path": "out/digits_0_625_row/sym_352.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3886,7 +3886,7 @@
     {
       "number": 353,
       "filename": "sym_353.png",
-      "path": "base 625/out/digits_0_625_row/sym_353.png",
+      "path": "out/digits_0_625_row/sym_353.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3897,7 +3897,7 @@
     {
       "number": 354,
       "filename": "sym_354.png",
-      "path": "base 625/out/digits_0_625_row/sym_354.png",
+      "path": "out/digits_0_625_row/sym_354.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3908,7 +3908,7 @@
     {
       "number": 355,
       "filename": "sym_355.png",
-      "path": "base 625/out/digits_0_625_row/sym_355.png",
+      "path": "out/digits_0_625_row/sym_355.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3919,7 +3919,7 @@
     {
       "number": 356,
       "filename": "sym_356.png",
-      "path": "base 625/out/digits_0_625_row/sym_356.png",
+      "path": "out/digits_0_625_row/sym_356.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3930,7 +3930,7 @@
     {
       "number": 357,
       "filename": "sym_357.png",
-      "path": "base 625/out/digits_0_625_row/sym_357.png",
+      "path": "out/digits_0_625_row/sym_357.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3941,7 +3941,7 @@
     {
       "number": 358,
       "filename": "sym_358.png",
-      "path": "base 625/out/digits_0_625_row/sym_358.png",
+      "path": "out/digits_0_625_row/sym_358.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3952,7 +3952,7 @@
     {
       "number": 359,
       "filename": "sym_359.png",
-      "path": "base 625/out/digits_0_625_row/sym_359.png",
+      "path": "out/digits_0_625_row/sym_359.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3963,7 +3963,7 @@
     {
       "number": 360,
       "filename": "sym_360.png",
-      "path": "base 625/out/digits_0_625_row/sym_360.png",
+      "path": "out/digits_0_625_row/sym_360.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3974,7 +3974,7 @@
     {
       "number": 361,
       "filename": "sym_361.png",
-      "path": "base 625/out/digits_0_625_row/sym_361.png",
+      "path": "out/digits_0_625_row/sym_361.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3985,7 +3985,7 @@
     {
       "number": 362,
       "filename": "sym_362.png",
-      "path": "base 625/out/digits_0_625_row/sym_362.png",
+      "path": "out/digits_0_625_row/sym_362.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -3996,7 +3996,7 @@
     {
       "number": 363,
       "filename": "sym_363.png",
-      "path": "base 625/out/digits_0_625_row/sym_363.png",
+      "path": "out/digits_0_625_row/sym_363.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4007,7 +4007,7 @@
     {
       "number": 364,
       "filename": "sym_364.png",
-      "path": "base 625/out/digits_0_625_row/sym_364.png",
+      "path": "out/digits_0_625_row/sym_364.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4018,7 +4018,7 @@
     {
       "number": 365,
       "filename": "sym_365.png",
-      "path": "base 625/out/digits_0_625_row/sym_365.png",
+      "path": "out/digits_0_625_row/sym_365.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4029,7 +4029,7 @@
     {
       "number": 366,
       "filename": "sym_366.png",
-      "path": "base 625/out/digits_0_625_row/sym_366.png",
+      "path": "out/digits_0_625_row/sym_366.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4040,7 +4040,7 @@
     {
       "number": 367,
       "filename": "sym_367.png",
-      "path": "base 625/out/digits_0_625_row/sym_367.png",
+      "path": "out/digits_0_625_row/sym_367.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4051,7 +4051,7 @@
     {
       "number": 368,
       "filename": "sym_368.png",
-      "path": "base 625/out/digits_0_625_row/sym_368.png",
+      "path": "out/digits_0_625_row/sym_368.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4062,7 +4062,7 @@
     {
       "number": 369,
       "filename": "sym_369.png",
-      "path": "base 625/out/digits_0_625_row/sym_369.png",
+      "path": "out/digits_0_625_row/sym_369.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4073,7 +4073,7 @@
     {
       "number": 370,
       "filename": "sym_370.png",
-      "path": "base 625/out/digits_0_625_row/sym_370.png",
+      "path": "out/digits_0_625_row/sym_370.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4084,7 +4084,7 @@
     {
       "number": 371,
       "filename": "sym_371.png",
-      "path": "base 625/out/digits_0_625_row/sym_371.png",
+      "path": "out/digits_0_625_row/sym_371.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4095,7 +4095,7 @@
     {
       "number": 372,
       "filename": "sym_372.png",
-      "path": "base 625/out/digits_0_625_row/sym_372.png",
+      "path": "out/digits_0_625_row/sym_372.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4106,7 +4106,7 @@
     {
       "number": 373,
       "filename": "sym_373.png",
-      "path": "base 625/out/digits_0_625_row/sym_373.png",
+      "path": "out/digits_0_625_row/sym_373.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4117,7 +4117,7 @@
     {
       "number": 374,
       "filename": "sym_374.png",
-      "path": "base 625/out/digits_0_625_row/sym_374.png",
+      "path": "out/digits_0_625_row/sym_374.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4128,7 +4128,7 @@
     {
       "number": 375,
       "filename": "sym_375.png",
-      "path": "base 625/out/digits_0_625_row/sym_375.png",
+      "path": "out/digits_0_625_row/sym_375.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4139,7 +4139,7 @@
     {
       "number": 376,
       "filename": "sym_376.png",
-      "path": "base 625/out/digits_0_625_row/sym_376.png",
+      "path": "out/digits_0_625_row/sym_376.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4150,7 +4150,7 @@
     {
       "number": 377,
       "filename": "sym_377.png",
-      "path": "base 625/out/digits_0_625_row/sym_377.png",
+      "path": "out/digits_0_625_row/sym_377.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4161,7 +4161,7 @@
     {
       "number": 378,
       "filename": "sym_378.png",
-      "path": "base 625/out/digits_0_625_row/sym_378.png",
+      "path": "out/digits_0_625_row/sym_378.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4172,7 +4172,7 @@
     {
       "number": 379,
       "filename": "sym_379.png",
-      "path": "base 625/out/digits_0_625_row/sym_379.png",
+      "path": "out/digits_0_625_row/sym_379.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4183,7 +4183,7 @@
     {
       "number": 380,
       "filename": "sym_380.png",
-      "path": "base 625/out/digits_0_625_row/sym_380.png",
+      "path": "out/digits_0_625_row/sym_380.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4194,7 +4194,7 @@
     {
       "number": 381,
       "filename": "sym_381.png",
-      "path": "base 625/out/digits_0_625_row/sym_381.png",
+      "path": "out/digits_0_625_row/sym_381.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4205,7 +4205,7 @@
     {
       "number": 382,
       "filename": "sym_382.png",
-      "path": "base 625/out/digits_0_625_row/sym_382.png",
+      "path": "out/digits_0_625_row/sym_382.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4216,7 +4216,7 @@
     {
       "number": 383,
       "filename": "sym_383.png",
-      "path": "base 625/out/digits_0_625_row/sym_383.png",
+      "path": "out/digits_0_625_row/sym_383.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4227,7 +4227,7 @@
     {
       "number": 384,
       "filename": "sym_384.png",
-      "path": "base 625/out/digits_0_625_row/sym_384.png",
+      "path": "out/digits_0_625_row/sym_384.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4238,7 +4238,7 @@
     {
       "number": 385,
       "filename": "sym_385.png",
-      "path": "base 625/out/digits_0_625_row/sym_385.png",
+      "path": "out/digits_0_625_row/sym_385.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4249,7 +4249,7 @@
     {
       "number": 386,
       "filename": "sym_386.png",
-      "path": "base 625/out/digits_0_625_row/sym_386.png",
+      "path": "out/digits_0_625_row/sym_386.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4260,7 +4260,7 @@
     {
       "number": 387,
       "filename": "sym_387.png",
-      "path": "base 625/out/digits_0_625_row/sym_387.png",
+      "path": "out/digits_0_625_row/sym_387.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4271,7 +4271,7 @@
     {
       "number": 388,
       "filename": "sym_388.png",
-      "path": "base 625/out/digits_0_625_row/sym_388.png",
+      "path": "out/digits_0_625_row/sym_388.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4282,7 +4282,7 @@
     {
       "number": 389,
       "filename": "sym_389.png",
-      "path": "base 625/out/digits_0_625_row/sym_389.png",
+      "path": "out/digits_0_625_row/sym_389.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4293,7 +4293,7 @@
     {
       "number": 390,
       "filename": "sym_390.png",
-      "path": "base 625/out/digits_0_625_row/sym_390.png",
+      "path": "out/digits_0_625_row/sym_390.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4304,7 +4304,7 @@
     {
       "number": 391,
       "filename": "sym_391.png",
-      "path": "base 625/out/digits_0_625_row/sym_391.png",
+      "path": "out/digits_0_625_row/sym_391.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4315,7 +4315,7 @@
     {
       "number": 392,
       "filename": "sym_392.png",
-      "path": "base 625/out/digits_0_625_row/sym_392.png",
+      "path": "out/digits_0_625_row/sym_392.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4326,7 +4326,7 @@
     {
       "number": 393,
       "filename": "sym_393.png",
-      "path": "base 625/out/digits_0_625_row/sym_393.png",
+      "path": "out/digits_0_625_row/sym_393.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4337,7 +4337,7 @@
     {
       "number": 394,
       "filename": "sym_394.png",
-      "path": "base 625/out/digits_0_625_row/sym_394.png",
+      "path": "out/digits_0_625_row/sym_394.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4348,7 +4348,7 @@
     {
       "number": 395,
       "filename": "sym_395.png",
-      "path": "base 625/out/digits_0_625_row/sym_395.png",
+      "path": "out/digits_0_625_row/sym_395.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4359,7 +4359,7 @@
     {
       "number": 396,
       "filename": "sym_396.png",
-      "path": "base 625/out/digits_0_625_row/sym_396.png",
+      "path": "out/digits_0_625_row/sym_396.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4370,7 +4370,7 @@
     {
       "number": 397,
       "filename": "sym_397.png",
-      "path": "base 625/out/digits_0_625_row/sym_397.png",
+      "path": "out/digits_0_625_row/sym_397.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4381,7 +4381,7 @@
     {
       "number": 398,
       "filename": "sym_398.png",
-      "path": "base 625/out/digits_0_625_row/sym_398.png",
+      "path": "out/digits_0_625_row/sym_398.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4392,7 +4392,7 @@
     {
       "number": 399,
       "filename": "sym_399.png",
-      "path": "base 625/out/digits_0_625_row/sym_399.png",
+      "path": "out/digits_0_625_row/sym_399.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4403,7 +4403,7 @@
     {
       "number": 400,
       "filename": "sym_400.png",
-      "path": "base 625/out/digits_0_625_row/sym_400.png",
+      "path": "out/digits_0_625_row/sym_400.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4414,7 +4414,7 @@
     {
       "number": 401,
       "filename": "sym_401.png",
-      "path": "base 625/out/digits_0_625_row/sym_401.png",
+      "path": "out/digits_0_625_row/sym_401.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4425,7 +4425,7 @@
     {
       "number": 402,
       "filename": "sym_402.png",
-      "path": "base 625/out/digits_0_625_row/sym_402.png",
+      "path": "out/digits_0_625_row/sym_402.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4436,7 +4436,7 @@
     {
       "number": 403,
       "filename": "sym_403.png",
-      "path": "base 625/out/digits_0_625_row/sym_403.png",
+      "path": "out/digits_0_625_row/sym_403.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4447,7 +4447,7 @@
     {
       "number": 404,
       "filename": "sym_404.png",
-      "path": "base 625/out/digits_0_625_row/sym_404.png",
+      "path": "out/digits_0_625_row/sym_404.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4458,7 +4458,7 @@
     {
       "number": 405,
       "filename": "sym_405.png",
-      "path": "base 625/out/digits_0_625_row/sym_405.png",
+      "path": "out/digits_0_625_row/sym_405.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4469,7 +4469,7 @@
     {
       "number": 406,
       "filename": "sym_406.png",
-      "path": "base 625/out/digits_0_625_row/sym_406.png",
+      "path": "out/digits_0_625_row/sym_406.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4480,7 +4480,7 @@
     {
       "number": 407,
       "filename": "sym_407.png",
-      "path": "base 625/out/digits_0_625_row/sym_407.png",
+      "path": "out/digits_0_625_row/sym_407.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4491,7 +4491,7 @@
     {
       "number": 408,
       "filename": "sym_408.png",
-      "path": "base 625/out/digits_0_625_row/sym_408.png",
+      "path": "out/digits_0_625_row/sym_408.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4502,7 +4502,7 @@
     {
       "number": 409,
       "filename": "sym_409.png",
-      "path": "base 625/out/digits_0_625_row/sym_409.png",
+      "path": "out/digits_0_625_row/sym_409.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4513,7 +4513,7 @@
     {
       "number": 410,
       "filename": "sym_410.png",
-      "path": "base 625/out/digits_0_625_row/sym_410.png",
+      "path": "out/digits_0_625_row/sym_410.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4524,7 +4524,7 @@
     {
       "number": 411,
       "filename": "sym_411.png",
-      "path": "base 625/out/digits_0_625_row/sym_411.png",
+      "path": "out/digits_0_625_row/sym_411.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4535,7 +4535,7 @@
     {
       "number": 412,
       "filename": "sym_412.png",
-      "path": "base 625/out/digits_0_625_row/sym_412.png",
+      "path": "out/digits_0_625_row/sym_412.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4546,7 +4546,7 @@
     {
       "number": 413,
       "filename": "sym_413.png",
-      "path": "base 625/out/digits_0_625_row/sym_413.png",
+      "path": "out/digits_0_625_row/sym_413.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4557,7 +4557,7 @@
     {
       "number": 414,
       "filename": "sym_414.png",
-      "path": "base 625/out/digits_0_625_row/sym_414.png",
+      "path": "out/digits_0_625_row/sym_414.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4568,7 +4568,7 @@
     {
       "number": 415,
       "filename": "sym_415.png",
-      "path": "base 625/out/digits_0_625_row/sym_415.png",
+      "path": "out/digits_0_625_row/sym_415.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4579,7 +4579,7 @@
     {
       "number": 416,
       "filename": "sym_416.png",
-      "path": "base 625/out/digits_0_625_row/sym_416.png",
+      "path": "out/digits_0_625_row/sym_416.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4590,7 +4590,7 @@
     {
       "number": 417,
       "filename": "sym_417.png",
-      "path": "base 625/out/digits_0_625_row/sym_417.png",
+      "path": "out/digits_0_625_row/sym_417.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4601,7 +4601,7 @@
     {
       "number": 418,
       "filename": "sym_418.png",
-      "path": "base 625/out/digits_0_625_row/sym_418.png",
+      "path": "out/digits_0_625_row/sym_418.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4612,7 +4612,7 @@
     {
       "number": 419,
       "filename": "sym_419.png",
-      "path": "base 625/out/digits_0_625_row/sym_419.png",
+      "path": "out/digits_0_625_row/sym_419.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4623,7 +4623,7 @@
     {
       "number": 420,
       "filename": "sym_420.png",
-      "path": "base 625/out/digits_0_625_row/sym_420.png",
+      "path": "out/digits_0_625_row/sym_420.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4634,7 +4634,7 @@
     {
       "number": 421,
       "filename": "sym_421.png",
-      "path": "base 625/out/digits_0_625_row/sym_421.png",
+      "path": "out/digits_0_625_row/sym_421.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4645,7 +4645,7 @@
     {
       "number": 422,
       "filename": "sym_422.png",
-      "path": "base 625/out/digits_0_625_row/sym_422.png",
+      "path": "out/digits_0_625_row/sym_422.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4656,7 +4656,7 @@
     {
       "number": 423,
       "filename": "sym_423.png",
-      "path": "base 625/out/digits_0_625_row/sym_423.png",
+      "path": "out/digits_0_625_row/sym_423.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4667,7 +4667,7 @@
     {
       "number": 424,
       "filename": "sym_424.png",
-      "path": "base 625/out/digits_0_625_row/sym_424.png",
+      "path": "out/digits_0_625_row/sym_424.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4678,7 +4678,7 @@
     {
       "number": 425,
       "filename": "sym_425.png",
-      "path": "base 625/out/digits_0_625_row/sym_425.png",
+      "path": "out/digits_0_625_row/sym_425.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4689,7 +4689,7 @@
     {
       "number": 426,
       "filename": "sym_426.png",
-      "path": "base 625/out/digits_0_625_row/sym_426.png",
+      "path": "out/digits_0_625_row/sym_426.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4700,7 +4700,7 @@
     {
       "number": 427,
       "filename": "sym_427.png",
-      "path": "base 625/out/digits_0_625_row/sym_427.png",
+      "path": "out/digits_0_625_row/sym_427.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4711,7 +4711,7 @@
     {
       "number": 428,
       "filename": "sym_428.png",
-      "path": "base 625/out/digits_0_625_row/sym_428.png",
+      "path": "out/digits_0_625_row/sym_428.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4722,7 +4722,7 @@
     {
       "number": 429,
       "filename": "sym_429.png",
-      "path": "base 625/out/digits_0_625_row/sym_429.png",
+      "path": "out/digits_0_625_row/sym_429.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4733,7 +4733,7 @@
     {
       "number": 430,
       "filename": "sym_430.png",
-      "path": "base 625/out/digits_0_625_row/sym_430.png",
+      "path": "out/digits_0_625_row/sym_430.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4744,7 +4744,7 @@
     {
       "number": 431,
       "filename": "sym_431.png",
-      "path": "base 625/out/digits_0_625_row/sym_431.png",
+      "path": "out/digits_0_625_row/sym_431.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4755,7 +4755,7 @@
     {
       "number": 432,
       "filename": "sym_432.png",
-      "path": "base 625/out/digits_0_625_row/sym_432.png",
+      "path": "out/digits_0_625_row/sym_432.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4766,7 +4766,7 @@
     {
       "number": 433,
       "filename": "sym_433.png",
-      "path": "base 625/out/digits_0_625_row/sym_433.png",
+      "path": "out/digits_0_625_row/sym_433.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4777,7 +4777,7 @@
     {
       "number": 434,
       "filename": "sym_434.png",
-      "path": "base 625/out/digits_0_625_row/sym_434.png",
+      "path": "out/digits_0_625_row/sym_434.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4788,7 +4788,7 @@
     {
       "number": 435,
       "filename": "sym_435.png",
-      "path": "base 625/out/digits_0_625_row/sym_435.png",
+      "path": "out/digits_0_625_row/sym_435.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4799,7 +4799,7 @@
     {
       "number": 436,
       "filename": "sym_436.png",
-      "path": "base 625/out/digits_0_625_row/sym_436.png",
+      "path": "out/digits_0_625_row/sym_436.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4810,7 +4810,7 @@
     {
       "number": 437,
       "filename": "sym_437.png",
-      "path": "base 625/out/digits_0_625_row/sym_437.png",
+      "path": "out/digits_0_625_row/sym_437.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4821,7 +4821,7 @@
     {
       "number": 438,
       "filename": "sym_438.png",
-      "path": "base 625/out/digits_0_625_row/sym_438.png",
+      "path": "out/digits_0_625_row/sym_438.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4832,7 +4832,7 @@
     {
       "number": 439,
       "filename": "sym_439.png",
-      "path": "base 625/out/digits_0_625_row/sym_439.png",
+      "path": "out/digits_0_625_row/sym_439.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4843,7 +4843,7 @@
     {
       "number": 440,
       "filename": "sym_440.png",
-      "path": "base 625/out/digits_0_625_row/sym_440.png",
+      "path": "out/digits_0_625_row/sym_440.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4854,7 +4854,7 @@
     {
       "number": 441,
       "filename": "sym_441.png",
-      "path": "base 625/out/digits_0_625_row/sym_441.png",
+      "path": "out/digits_0_625_row/sym_441.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4865,7 +4865,7 @@
     {
       "number": 442,
       "filename": "sym_442.png",
-      "path": "base 625/out/digits_0_625_row/sym_442.png",
+      "path": "out/digits_0_625_row/sym_442.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4876,7 +4876,7 @@
     {
       "number": 443,
       "filename": "sym_443.png",
-      "path": "base 625/out/digits_0_625_row/sym_443.png",
+      "path": "out/digits_0_625_row/sym_443.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4887,7 +4887,7 @@
     {
       "number": 444,
       "filename": "sym_444.png",
-      "path": "base 625/out/digits_0_625_row/sym_444.png",
+      "path": "out/digits_0_625_row/sym_444.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4898,7 +4898,7 @@
     {
       "number": 445,
       "filename": "sym_445.png",
-      "path": "base 625/out/digits_0_625_row/sym_445.png",
+      "path": "out/digits_0_625_row/sym_445.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4909,7 +4909,7 @@
     {
       "number": 446,
       "filename": "sym_446.png",
-      "path": "base 625/out/digits_0_625_row/sym_446.png",
+      "path": "out/digits_0_625_row/sym_446.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4920,7 +4920,7 @@
     {
       "number": 447,
       "filename": "sym_447.png",
-      "path": "base 625/out/digits_0_625_row/sym_447.png",
+      "path": "out/digits_0_625_row/sym_447.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4931,7 +4931,7 @@
     {
       "number": 448,
       "filename": "sym_448.png",
-      "path": "base 625/out/digits_0_625_row/sym_448.png",
+      "path": "out/digits_0_625_row/sym_448.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4942,7 +4942,7 @@
     {
       "number": 449,
       "filename": "sym_449.png",
-      "path": "base 625/out/digits_0_625_row/sym_449.png",
+      "path": "out/digits_0_625_row/sym_449.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4953,7 +4953,7 @@
     {
       "number": 450,
       "filename": "sym_450.png",
-      "path": "base 625/out/digits_0_625_row/sym_450.png",
+      "path": "out/digits_0_625_row/sym_450.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4964,7 +4964,7 @@
     {
       "number": 451,
       "filename": "sym_451.png",
-      "path": "base 625/out/digits_0_625_row/sym_451.png",
+      "path": "out/digits_0_625_row/sym_451.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4975,7 +4975,7 @@
     {
       "number": 452,
       "filename": "sym_452.png",
-      "path": "base 625/out/digits_0_625_row/sym_452.png",
+      "path": "out/digits_0_625_row/sym_452.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4986,7 +4986,7 @@
     {
       "number": 453,
       "filename": "sym_453.png",
-      "path": "base 625/out/digits_0_625_row/sym_453.png",
+      "path": "out/digits_0_625_row/sym_453.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -4997,7 +4997,7 @@
     {
       "number": 454,
       "filename": "sym_454.png",
-      "path": "base 625/out/digits_0_625_row/sym_454.png",
+      "path": "out/digits_0_625_row/sym_454.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5008,7 +5008,7 @@
     {
       "number": 455,
       "filename": "sym_455.png",
-      "path": "base 625/out/digits_0_625_row/sym_455.png",
+      "path": "out/digits_0_625_row/sym_455.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5019,7 +5019,7 @@
     {
       "number": 456,
       "filename": "sym_456.png",
-      "path": "base 625/out/digits_0_625_row/sym_456.png",
+      "path": "out/digits_0_625_row/sym_456.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5030,7 +5030,7 @@
     {
       "number": 457,
       "filename": "sym_457.png",
-      "path": "base 625/out/digits_0_625_row/sym_457.png",
+      "path": "out/digits_0_625_row/sym_457.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5041,7 +5041,7 @@
     {
       "number": 458,
       "filename": "sym_458.png",
-      "path": "base 625/out/digits_0_625_row/sym_458.png",
+      "path": "out/digits_0_625_row/sym_458.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5052,7 +5052,7 @@
     {
       "number": 459,
       "filename": "sym_459.png",
-      "path": "base 625/out/digits_0_625_row/sym_459.png",
+      "path": "out/digits_0_625_row/sym_459.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5063,7 +5063,7 @@
     {
       "number": 460,
       "filename": "sym_460.png",
-      "path": "base 625/out/digits_0_625_row/sym_460.png",
+      "path": "out/digits_0_625_row/sym_460.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5074,7 +5074,7 @@
     {
       "number": 461,
       "filename": "sym_461.png",
-      "path": "base 625/out/digits_0_625_row/sym_461.png",
+      "path": "out/digits_0_625_row/sym_461.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5085,7 +5085,7 @@
     {
       "number": 462,
       "filename": "sym_462.png",
-      "path": "base 625/out/digits_0_625_row/sym_462.png",
+      "path": "out/digits_0_625_row/sym_462.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5096,7 +5096,7 @@
     {
       "number": 463,
       "filename": "sym_463.png",
-      "path": "base 625/out/digits_0_625_row/sym_463.png",
+      "path": "out/digits_0_625_row/sym_463.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5107,7 +5107,7 @@
     {
       "number": 464,
       "filename": "sym_464.png",
-      "path": "base 625/out/digits_0_625_row/sym_464.png",
+      "path": "out/digits_0_625_row/sym_464.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5118,7 +5118,7 @@
     {
       "number": 465,
       "filename": "sym_465.png",
-      "path": "base 625/out/digits_0_625_row/sym_465.png",
+      "path": "out/digits_0_625_row/sym_465.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5129,7 +5129,7 @@
     {
       "number": 466,
       "filename": "sym_466.png",
-      "path": "base 625/out/digits_0_625_row/sym_466.png",
+      "path": "out/digits_0_625_row/sym_466.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5140,7 +5140,7 @@
     {
       "number": 467,
       "filename": "sym_467.png",
-      "path": "base 625/out/digits_0_625_row/sym_467.png",
+      "path": "out/digits_0_625_row/sym_467.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5151,7 +5151,7 @@
     {
       "number": 468,
       "filename": "sym_468.png",
-      "path": "base 625/out/digits_0_625_row/sym_468.png",
+      "path": "out/digits_0_625_row/sym_468.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5162,7 +5162,7 @@
     {
       "number": 469,
       "filename": "sym_469.png",
-      "path": "base 625/out/digits_0_625_row/sym_469.png",
+      "path": "out/digits_0_625_row/sym_469.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5173,7 +5173,7 @@
     {
       "number": 470,
       "filename": "sym_470.png",
-      "path": "base 625/out/digits_0_625_row/sym_470.png",
+      "path": "out/digits_0_625_row/sym_470.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5184,7 +5184,7 @@
     {
       "number": 471,
       "filename": "sym_471.png",
-      "path": "base 625/out/digits_0_625_row/sym_471.png",
+      "path": "out/digits_0_625_row/sym_471.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5195,7 +5195,7 @@
     {
       "number": 472,
       "filename": "sym_472.png",
-      "path": "base 625/out/digits_0_625_row/sym_472.png",
+      "path": "out/digits_0_625_row/sym_472.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5206,7 +5206,7 @@
     {
       "number": 473,
       "filename": "sym_473.png",
-      "path": "base 625/out/digits_0_625_row/sym_473.png",
+      "path": "out/digits_0_625_row/sym_473.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5217,7 +5217,7 @@
     {
       "number": 474,
       "filename": "sym_474.png",
-      "path": "base 625/out/digits_0_625_row/sym_474.png",
+      "path": "out/digits_0_625_row/sym_474.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5228,7 +5228,7 @@
     {
       "number": 475,
       "filename": "sym_475.png",
-      "path": "base 625/out/digits_0_625_row/sym_475.png",
+      "path": "out/digits_0_625_row/sym_475.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5239,7 +5239,7 @@
     {
       "number": 476,
       "filename": "sym_476.png",
-      "path": "base 625/out/digits_0_625_row/sym_476.png",
+      "path": "out/digits_0_625_row/sym_476.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5250,7 +5250,7 @@
     {
       "number": 477,
       "filename": "sym_477.png",
-      "path": "base 625/out/digits_0_625_row/sym_477.png",
+      "path": "out/digits_0_625_row/sym_477.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5261,7 +5261,7 @@
     {
       "number": 478,
       "filename": "sym_478.png",
-      "path": "base 625/out/digits_0_625_row/sym_478.png",
+      "path": "out/digits_0_625_row/sym_478.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5272,7 +5272,7 @@
     {
       "number": 479,
       "filename": "sym_479.png",
-      "path": "base 625/out/digits_0_625_row/sym_479.png",
+      "path": "out/digits_0_625_row/sym_479.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5283,7 +5283,7 @@
     {
       "number": 480,
       "filename": "sym_480.png",
-      "path": "base 625/out/digits_0_625_row/sym_480.png",
+      "path": "out/digits_0_625_row/sym_480.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5294,7 +5294,7 @@
     {
       "number": 481,
       "filename": "sym_481.png",
-      "path": "base 625/out/digits_0_625_row/sym_481.png",
+      "path": "out/digits_0_625_row/sym_481.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5305,7 +5305,7 @@
     {
       "number": 482,
       "filename": "sym_482.png",
-      "path": "base 625/out/digits_0_625_row/sym_482.png",
+      "path": "out/digits_0_625_row/sym_482.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5316,7 +5316,7 @@
     {
       "number": 483,
       "filename": "sym_483.png",
-      "path": "base 625/out/digits_0_625_row/sym_483.png",
+      "path": "out/digits_0_625_row/sym_483.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5327,7 +5327,7 @@
     {
       "number": 484,
       "filename": "sym_484.png",
-      "path": "base 625/out/digits_0_625_row/sym_484.png",
+      "path": "out/digits_0_625_row/sym_484.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5338,7 +5338,7 @@
     {
       "number": 485,
       "filename": "sym_485.png",
-      "path": "base 625/out/digits_0_625_row/sym_485.png",
+      "path": "out/digits_0_625_row/sym_485.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5349,7 +5349,7 @@
     {
       "number": 486,
       "filename": "sym_486.png",
-      "path": "base 625/out/digits_0_625_row/sym_486.png",
+      "path": "out/digits_0_625_row/sym_486.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5360,7 +5360,7 @@
     {
       "number": 487,
       "filename": "sym_487.png",
-      "path": "base 625/out/digits_0_625_row/sym_487.png",
+      "path": "out/digits_0_625_row/sym_487.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5371,7 +5371,7 @@
     {
       "number": 488,
       "filename": "sym_488.png",
-      "path": "base 625/out/digits_0_625_row/sym_488.png",
+      "path": "out/digits_0_625_row/sym_488.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5382,7 +5382,7 @@
     {
       "number": 489,
       "filename": "sym_489.png",
-      "path": "base 625/out/digits_0_625_row/sym_489.png",
+      "path": "out/digits_0_625_row/sym_489.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5393,7 +5393,7 @@
     {
       "number": 490,
       "filename": "sym_490.png",
-      "path": "base 625/out/digits_0_625_row/sym_490.png",
+      "path": "out/digits_0_625_row/sym_490.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5404,7 +5404,7 @@
     {
       "number": 491,
       "filename": "sym_491.png",
-      "path": "base 625/out/digits_0_625_row/sym_491.png",
+      "path": "out/digits_0_625_row/sym_491.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5415,7 +5415,7 @@
     {
       "number": 492,
       "filename": "sym_492.png",
-      "path": "base 625/out/digits_0_625_row/sym_492.png",
+      "path": "out/digits_0_625_row/sym_492.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5426,7 +5426,7 @@
     {
       "number": 493,
       "filename": "sym_493.png",
-      "path": "base 625/out/digits_0_625_row/sym_493.png",
+      "path": "out/digits_0_625_row/sym_493.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5437,7 +5437,7 @@
     {
       "number": 494,
       "filename": "sym_494.png",
-      "path": "base 625/out/digits_0_625_row/sym_494.png",
+      "path": "out/digits_0_625_row/sym_494.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5448,7 +5448,7 @@
     {
       "number": 495,
       "filename": "sym_495.png",
-      "path": "base 625/out/digits_0_625_row/sym_495.png",
+      "path": "out/digits_0_625_row/sym_495.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5459,7 +5459,7 @@
     {
       "number": 496,
       "filename": "sym_496.png",
-      "path": "base 625/out/digits_0_625_row/sym_496.png",
+      "path": "out/digits_0_625_row/sym_496.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5470,7 +5470,7 @@
     {
       "number": 497,
       "filename": "sym_497.png",
-      "path": "base 625/out/digits_0_625_row/sym_497.png",
+      "path": "out/digits_0_625_row/sym_497.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5481,7 +5481,7 @@
     {
       "number": 498,
       "filename": "sym_498.png",
-      "path": "base 625/out/digits_0_625_row/sym_498.png",
+      "path": "out/digits_0_625_row/sym_498.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5492,7 +5492,7 @@
     {
       "number": 499,
       "filename": "sym_499.png",
-      "path": "base 625/out/digits_0_625_row/sym_499.png",
+      "path": "out/digits_0_625_row/sym_499.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5503,7 +5503,7 @@
     {
       "number": 500,
       "filename": "sym_500.png",
-      "path": "base 625/out/digits_0_625_row/sym_500.png",
+      "path": "out/digits_0_625_row/sym_500.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5514,7 +5514,7 @@
     {
       "number": 501,
       "filename": "sym_501.png",
-      "path": "base 625/out/digits_0_625_row/sym_501.png",
+      "path": "out/digits_0_625_row/sym_501.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5525,7 +5525,7 @@
     {
       "number": 502,
       "filename": "sym_502.png",
-      "path": "base 625/out/digits_0_625_row/sym_502.png",
+      "path": "out/digits_0_625_row/sym_502.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5536,7 +5536,7 @@
     {
       "number": 503,
       "filename": "sym_503.png",
-      "path": "base 625/out/digits_0_625_row/sym_503.png",
+      "path": "out/digits_0_625_row/sym_503.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5547,7 +5547,7 @@
     {
       "number": 504,
       "filename": "sym_504.png",
-      "path": "base 625/out/digits_0_625_row/sym_504.png",
+      "path": "out/digits_0_625_row/sym_504.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5558,7 +5558,7 @@
     {
       "number": 505,
       "filename": "sym_505.png",
-      "path": "base 625/out/digits_0_625_row/sym_505.png",
+      "path": "out/digits_0_625_row/sym_505.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5569,7 +5569,7 @@
     {
       "number": 506,
       "filename": "sym_506.png",
-      "path": "base 625/out/digits_0_625_row/sym_506.png",
+      "path": "out/digits_0_625_row/sym_506.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5580,7 +5580,7 @@
     {
       "number": 507,
       "filename": "sym_507.png",
-      "path": "base 625/out/digits_0_625_row/sym_507.png",
+      "path": "out/digits_0_625_row/sym_507.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5591,7 +5591,7 @@
     {
       "number": 508,
       "filename": "sym_508.png",
-      "path": "base 625/out/digits_0_625_row/sym_508.png",
+      "path": "out/digits_0_625_row/sym_508.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5602,7 +5602,7 @@
     {
       "number": 509,
       "filename": "sym_509.png",
-      "path": "base 625/out/digits_0_625_row/sym_509.png",
+      "path": "out/digits_0_625_row/sym_509.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5613,7 +5613,7 @@
     {
       "number": 510,
       "filename": "sym_510.png",
-      "path": "base 625/out/digits_0_625_row/sym_510.png",
+      "path": "out/digits_0_625_row/sym_510.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5624,7 +5624,7 @@
     {
       "number": 511,
       "filename": "sym_511.png",
-      "path": "base 625/out/digits_0_625_row/sym_511.png",
+      "path": "out/digits_0_625_row/sym_511.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5635,7 +5635,7 @@
     {
       "number": 512,
       "filename": "sym_512.png",
-      "path": "base 625/out/digits_0_625_row/sym_512.png",
+      "path": "out/digits_0_625_row/sym_512.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5646,7 +5646,7 @@
     {
       "number": 513,
       "filename": "sym_513.png",
-      "path": "base 625/out/digits_0_625_row/sym_513.png",
+      "path": "out/digits_0_625_row/sym_513.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5657,7 +5657,7 @@
     {
       "number": 514,
       "filename": "sym_514.png",
-      "path": "base 625/out/digits_0_625_row/sym_514.png",
+      "path": "out/digits_0_625_row/sym_514.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5668,7 +5668,7 @@
     {
       "number": 515,
       "filename": "sym_515.png",
-      "path": "base 625/out/digits_0_625_row/sym_515.png",
+      "path": "out/digits_0_625_row/sym_515.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5679,7 +5679,7 @@
     {
       "number": 516,
       "filename": "sym_516.png",
-      "path": "base 625/out/digits_0_625_row/sym_516.png",
+      "path": "out/digits_0_625_row/sym_516.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5690,7 +5690,7 @@
     {
       "number": 517,
       "filename": "sym_517.png",
-      "path": "base 625/out/digits_0_625_row/sym_517.png",
+      "path": "out/digits_0_625_row/sym_517.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5701,7 +5701,7 @@
     {
       "number": 518,
       "filename": "sym_518.png",
-      "path": "base 625/out/digits_0_625_row/sym_518.png",
+      "path": "out/digits_0_625_row/sym_518.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5712,7 +5712,7 @@
     {
       "number": 519,
       "filename": "sym_519.png",
-      "path": "base 625/out/digits_0_625_row/sym_519.png",
+      "path": "out/digits_0_625_row/sym_519.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5723,7 +5723,7 @@
     {
       "number": 520,
       "filename": "sym_520.png",
-      "path": "base 625/out/digits_0_625_row/sym_520.png",
+      "path": "out/digits_0_625_row/sym_520.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5734,7 +5734,7 @@
     {
       "number": 521,
       "filename": "sym_521.png",
-      "path": "base 625/out/digits_0_625_row/sym_521.png",
+      "path": "out/digits_0_625_row/sym_521.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5745,7 +5745,7 @@
     {
       "number": 522,
       "filename": "sym_522.png",
-      "path": "base 625/out/digits_0_625_row/sym_522.png",
+      "path": "out/digits_0_625_row/sym_522.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5756,7 +5756,7 @@
     {
       "number": 523,
       "filename": "sym_523.png",
-      "path": "base 625/out/digits_0_625_row/sym_523.png",
+      "path": "out/digits_0_625_row/sym_523.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5767,7 +5767,7 @@
     {
       "number": 524,
       "filename": "sym_524.png",
-      "path": "base 625/out/digits_0_625_row/sym_524.png",
+      "path": "out/digits_0_625_row/sym_524.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5778,7 +5778,7 @@
     {
       "number": 525,
       "filename": "sym_525.png",
-      "path": "base 625/out/digits_0_625_row/sym_525.png",
+      "path": "out/digits_0_625_row/sym_525.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5789,7 +5789,7 @@
     {
       "number": 526,
       "filename": "sym_526.png",
-      "path": "base 625/out/digits_0_625_row/sym_526.png",
+      "path": "out/digits_0_625_row/sym_526.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5800,7 +5800,7 @@
     {
       "number": 527,
       "filename": "sym_527.png",
-      "path": "base 625/out/digits_0_625_row/sym_527.png",
+      "path": "out/digits_0_625_row/sym_527.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5811,7 +5811,7 @@
     {
       "number": 528,
       "filename": "sym_528.png",
-      "path": "base 625/out/digits_0_625_row/sym_528.png",
+      "path": "out/digits_0_625_row/sym_528.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5822,7 +5822,7 @@
     {
       "number": 529,
       "filename": "sym_529.png",
-      "path": "base 625/out/digits_0_625_row/sym_529.png",
+      "path": "out/digits_0_625_row/sym_529.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5833,7 +5833,7 @@
     {
       "number": 530,
       "filename": "sym_530.png",
-      "path": "base 625/out/digits_0_625_row/sym_530.png",
+      "path": "out/digits_0_625_row/sym_530.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5844,7 +5844,7 @@
     {
       "number": 531,
       "filename": "sym_531.png",
-      "path": "base 625/out/digits_0_625_row/sym_531.png",
+      "path": "out/digits_0_625_row/sym_531.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5855,7 +5855,7 @@
     {
       "number": 532,
       "filename": "sym_532.png",
-      "path": "base 625/out/digits_0_625_row/sym_532.png",
+      "path": "out/digits_0_625_row/sym_532.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5866,7 +5866,7 @@
     {
       "number": 533,
       "filename": "sym_533.png",
-      "path": "base 625/out/digits_0_625_row/sym_533.png",
+      "path": "out/digits_0_625_row/sym_533.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5877,7 +5877,7 @@
     {
       "number": 534,
       "filename": "sym_534.png",
-      "path": "base 625/out/digits_0_625_row/sym_534.png",
+      "path": "out/digits_0_625_row/sym_534.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5888,7 +5888,7 @@
     {
       "number": 535,
       "filename": "sym_535.png",
-      "path": "base 625/out/digits_0_625_row/sym_535.png",
+      "path": "out/digits_0_625_row/sym_535.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5899,7 +5899,7 @@
     {
       "number": 536,
       "filename": "sym_536.png",
-      "path": "base 625/out/digits_0_625_row/sym_536.png",
+      "path": "out/digits_0_625_row/sym_536.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5910,7 +5910,7 @@
     {
       "number": 537,
       "filename": "sym_537.png",
-      "path": "base 625/out/digits_0_625_row/sym_537.png",
+      "path": "out/digits_0_625_row/sym_537.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5921,7 +5921,7 @@
     {
       "number": 538,
       "filename": "sym_538.png",
-      "path": "base 625/out/digits_0_625_row/sym_538.png",
+      "path": "out/digits_0_625_row/sym_538.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5932,7 +5932,7 @@
     {
       "number": 539,
       "filename": "sym_539.png",
-      "path": "base 625/out/digits_0_625_row/sym_539.png",
+      "path": "out/digits_0_625_row/sym_539.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5943,7 +5943,7 @@
     {
       "number": 540,
       "filename": "sym_540.png",
-      "path": "base 625/out/digits_0_625_row/sym_540.png",
+      "path": "out/digits_0_625_row/sym_540.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5954,7 +5954,7 @@
     {
       "number": 541,
       "filename": "sym_541.png",
-      "path": "base 625/out/digits_0_625_row/sym_541.png",
+      "path": "out/digits_0_625_row/sym_541.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5965,7 +5965,7 @@
     {
       "number": 542,
       "filename": "sym_542.png",
-      "path": "base 625/out/digits_0_625_row/sym_542.png",
+      "path": "out/digits_0_625_row/sym_542.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5976,7 +5976,7 @@
     {
       "number": 543,
       "filename": "sym_543.png",
-      "path": "base 625/out/digits_0_625_row/sym_543.png",
+      "path": "out/digits_0_625_row/sym_543.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5987,7 +5987,7 @@
     {
       "number": 544,
       "filename": "sym_544.png",
-      "path": "base 625/out/digits_0_625_row/sym_544.png",
+      "path": "out/digits_0_625_row/sym_544.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -5998,7 +5998,7 @@
     {
       "number": 545,
       "filename": "sym_545.png",
-      "path": "base 625/out/digits_0_625_row/sym_545.png",
+      "path": "out/digits_0_625_row/sym_545.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6009,7 +6009,7 @@
     {
       "number": 546,
       "filename": "sym_546.png",
-      "path": "base 625/out/digits_0_625_row/sym_546.png",
+      "path": "out/digits_0_625_row/sym_546.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6020,7 +6020,7 @@
     {
       "number": 547,
       "filename": "sym_547.png",
-      "path": "base 625/out/digits_0_625_row/sym_547.png",
+      "path": "out/digits_0_625_row/sym_547.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6031,7 +6031,7 @@
     {
       "number": 548,
       "filename": "sym_548.png",
-      "path": "base 625/out/digits_0_625_row/sym_548.png",
+      "path": "out/digits_0_625_row/sym_548.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6042,7 +6042,7 @@
     {
       "number": 549,
       "filename": "sym_549.png",
-      "path": "base 625/out/digits_0_625_row/sym_549.png",
+      "path": "out/digits_0_625_row/sym_549.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6053,7 +6053,7 @@
     {
       "number": 550,
       "filename": "sym_550.png",
-      "path": "base 625/out/digits_0_625_row/sym_550.png",
+      "path": "out/digits_0_625_row/sym_550.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6064,7 +6064,7 @@
     {
       "number": 551,
       "filename": "sym_551.png",
-      "path": "base 625/out/digits_0_625_row/sym_551.png",
+      "path": "out/digits_0_625_row/sym_551.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6075,7 +6075,7 @@
     {
       "number": 552,
       "filename": "sym_552.png",
-      "path": "base 625/out/digits_0_625_row/sym_552.png",
+      "path": "out/digits_0_625_row/sym_552.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6086,7 +6086,7 @@
     {
       "number": 553,
       "filename": "sym_553.png",
-      "path": "base 625/out/digits_0_625_row/sym_553.png",
+      "path": "out/digits_0_625_row/sym_553.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6097,7 +6097,7 @@
     {
       "number": 554,
       "filename": "sym_554.png",
-      "path": "base 625/out/digits_0_625_row/sym_554.png",
+      "path": "out/digits_0_625_row/sym_554.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6108,7 +6108,7 @@
     {
       "number": 555,
       "filename": "sym_555.png",
-      "path": "base 625/out/digits_0_625_row/sym_555.png",
+      "path": "out/digits_0_625_row/sym_555.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6119,7 +6119,7 @@
     {
       "number": 556,
       "filename": "sym_556.png",
-      "path": "base 625/out/digits_0_625_row/sym_556.png",
+      "path": "out/digits_0_625_row/sym_556.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6130,7 +6130,7 @@
     {
       "number": 557,
       "filename": "sym_557.png",
-      "path": "base 625/out/digits_0_625_row/sym_557.png",
+      "path": "out/digits_0_625_row/sym_557.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6141,7 +6141,7 @@
     {
       "number": 558,
       "filename": "sym_558.png",
-      "path": "base 625/out/digits_0_625_row/sym_558.png",
+      "path": "out/digits_0_625_row/sym_558.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6152,7 +6152,7 @@
     {
       "number": 559,
       "filename": "sym_559.png",
-      "path": "base 625/out/digits_0_625_row/sym_559.png",
+      "path": "out/digits_0_625_row/sym_559.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6163,7 +6163,7 @@
     {
       "number": 560,
       "filename": "sym_560.png",
-      "path": "base 625/out/digits_0_625_row/sym_560.png",
+      "path": "out/digits_0_625_row/sym_560.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6174,7 +6174,7 @@
     {
       "number": 561,
       "filename": "sym_561.png",
-      "path": "base 625/out/digits_0_625_row/sym_561.png",
+      "path": "out/digits_0_625_row/sym_561.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6185,7 +6185,7 @@
     {
       "number": 562,
       "filename": "sym_562.png",
-      "path": "base 625/out/digits_0_625_row/sym_562.png",
+      "path": "out/digits_0_625_row/sym_562.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6196,7 +6196,7 @@
     {
       "number": 563,
       "filename": "sym_563.png",
-      "path": "base 625/out/digits_0_625_row/sym_563.png",
+      "path": "out/digits_0_625_row/sym_563.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6207,7 +6207,7 @@
     {
       "number": 564,
       "filename": "sym_564.png",
-      "path": "base 625/out/digits_0_625_row/sym_564.png",
+      "path": "out/digits_0_625_row/sym_564.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6218,7 +6218,7 @@
     {
       "number": 565,
       "filename": "sym_565.png",
-      "path": "base 625/out/digits_0_625_row/sym_565.png",
+      "path": "out/digits_0_625_row/sym_565.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6229,7 +6229,7 @@
     {
       "number": 566,
       "filename": "sym_566.png",
-      "path": "base 625/out/digits_0_625_row/sym_566.png",
+      "path": "out/digits_0_625_row/sym_566.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6240,7 +6240,7 @@
     {
       "number": 567,
       "filename": "sym_567.png",
-      "path": "base 625/out/digits_0_625_row/sym_567.png",
+      "path": "out/digits_0_625_row/sym_567.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6251,7 +6251,7 @@
     {
       "number": 568,
       "filename": "sym_568.png",
-      "path": "base 625/out/digits_0_625_row/sym_568.png",
+      "path": "out/digits_0_625_row/sym_568.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6262,7 +6262,7 @@
     {
       "number": 569,
       "filename": "sym_569.png",
-      "path": "base 625/out/digits_0_625_row/sym_569.png",
+      "path": "out/digits_0_625_row/sym_569.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6273,7 +6273,7 @@
     {
       "number": 570,
       "filename": "sym_570.png",
-      "path": "base 625/out/digits_0_625_row/sym_570.png",
+      "path": "out/digits_0_625_row/sym_570.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6284,7 +6284,7 @@
     {
       "number": 571,
       "filename": "sym_571.png",
-      "path": "base 625/out/digits_0_625_row/sym_571.png",
+      "path": "out/digits_0_625_row/sym_571.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6295,7 +6295,7 @@
     {
       "number": 572,
       "filename": "sym_572.png",
-      "path": "base 625/out/digits_0_625_row/sym_572.png",
+      "path": "out/digits_0_625_row/sym_572.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6306,7 +6306,7 @@
     {
       "number": 573,
       "filename": "sym_573.png",
-      "path": "base 625/out/digits_0_625_row/sym_573.png",
+      "path": "out/digits_0_625_row/sym_573.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6317,7 +6317,7 @@
     {
       "number": 574,
       "filename": "sym_574.png",
-      "path": "base 625/out/digits_0_625_row/sym_574.png",
+      "path": "out/digits_0_625_row/sym_574.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6328,7 +6328,7 @@
     {
       "number": 575,
       "filename": "sym_575.png",
-      "path": "base 625/out/digits_0_625_row/sym_575.png",
+      "path": "out/digits_0_625_row/sym_575.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6339,7 +6339,7 @@
     {
       "number": 576,
       "filename": "sym_576.png",
-      "path": "base 625/out/digits_0_625_row/sym_576.png",
+      "path": "out/digits_0_625_row/sym_576.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6350,7 +6350,7 @@
     {
       "number": 577,
       "filename": "sym_577.png",
-      "path": "base 625/out/digits_0_625_row/sym_577.png",
+      "path": "out/digits_0_625_row/sym_577.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6361,7 +6361,7 @@
     {
       "number": 578,
       "filename": "sym_578.png",
-      "path": "base 625/out/digits_0_625_row/sym_578.png",
+      "path": "out/digits_0_625_row/sym_578.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6372,7 +6372,7 @@
     {
       "number": 579,
       "filename": "sym_579.png",
-      "path": "base 625/out/digits_0_625_row/sym_579.png",
+      "path": "out/digits_0_625_row/sym_579.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6383,7 +6383,7 @@
     {
       "number": 580,
       "filename": "sym_580.png",
-      "path": "base 625/out/digits_0_625_row/sym_580.png",
+      "path": "out/digits_0_625_row/sym_580.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6394,7 +6394,7 @@
     {
       "number": 581,
       "filename": "sym_581.png",
-      "path": "base 625/out/digits_0_625_row/sym_581.png",
+      "path": "out/digits_0_625_row/sym_581.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6405,7 +6405,7 @@
     {
       "number": 582,
       "filename": "sym_582.png",
-      "path": "base 625/out/digits_0_625_row/sym_582.png",
+      "path": "out/digits_0_625_row/sym_582.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6416,7 +6416,7 @@
     {
       "number": 583,
       "filename": "sym_583.png",
-      "path": "base 625/out/digits_0_625_row/sym_583.png",
+      "path": "out/digits_0_625_row/sym_583.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6427,7 +6427,7 @@
     {
       "number": 584,
       "filename": "sym_584.png",
-      "path": "base 625/out/digits_0_625_row/sym_584.png",
+      "path": "out/digits_0_625_row/sym_584.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6438,7 +6438,7 @@
     {
       "number": 585,
       "filename": "sym_585.png",
-      "path": "base 625/out/digits_0_625_row/sym_585.png",
+      "path": "out/digits_0_625_row/sym_585.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6449,7 +6449,7 @@
     {
       "number": 586,
       "filename": "sym_586.png",
-      "path": "base 625/out/digits_0_625_row/sym_586.png",
+      "path": "out/digits_0_625_row/sym_586.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6460,7 +6460,7 @@
     {
       "number": 587,
       "filename": "sym_587.png",
-      "path": "base 625/out/digits_0_625_row/sym_587.png",
+      "path": "out/digits_0_625_row/sym_587.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6471,7 +6471,7 @@
     {
       "number": 588,
       "filename": "sym_588.png",
-      "path": "base 625/out/digits_0_625_row/sym_588.png",
+      "path": "out/digits_0_625_row/sym_588.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6482,7 +6482,7 @@
     {
       "number": 589,
       "filename": "sym_589.png",
-      "path": "base 625/out/digits_0_625_row/sym_589.png",
+      "path": "out/digits_0_625_row/sym_589.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6493,7 +6493,7 @@
     {
       "number": 590,
       "filename": "sym_590.png",
-      "path": "base 625/out/digits_0_625_row/sym_590.png",
+      "path": "out/digits_0_625_row/sym_590.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6504,7 +6504,7 @@
     {
       "number": 591,
       "filename": "sym_591.png",
-      "path": "base 625/out/digits_0_625_row/sym_591.png",
+      "path": "out/digits_0_625_row/sym_591.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6515,7 +6515,7 @@
     {
       "number": 592,
       "filename": "sym_592.png",
-      "path": "base 625/out/digits_0_625_row/sym_592.png",
+      "path": "out/digits_0_625_row/sym_592.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6526,7 +6526,7 @@
     {
       "number": 593,
       "filename": "sym_593.png",
-      "path": "base 625/out/digits_0_625_row/sym_593.png",
+      "path": "out/digits_0_625_row/sym_593.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6537,7 +6537,7 @@
     {
       "number": 594,
       "filename": "sym_594.png",
-      "path": "base 625/out/digits_0_625_row/sym_594.png",
+      "path": "out/digits_0_625_row/sym_594.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6548,7 +6548,7 @@
     {
       "number": 595,
       "filename": "sym_595.png",
-      "path": "base 625/out/digits_0_625_row/sym_595.png",
+      "path": "out/digits_0_625_row/sym_595.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6559,7 +6559,7 @@
     {
       "number": 596,
       "filename": "sym_596.png",
-      "path": "base 625/out/digits_0_625_row/sym_596.png",
+      "path": "out/digits_0_625_row/sym_596.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6570,7 +6570,7 @@
     {
       "number": 597,
       "filename": "sym_597.png",
-      "path": "base 625/out/digits_0_625_row/sym_597.png",
+      "path": "out/digits_0_625_row/sym_597.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6581,7 +6581,7 @@
     {
       "number": 598,
       "filename": "sym_598.png",
-      "path": "base 625/out/digits_0_625_row/sym_598.png",
+      "path": "out/digits_0_625_row/sym_598.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6592,7 +6592,7 @@
     {
       "number": 599,
       "filename": "sym_599.png",
-      "path": "base 625/out/digits_0_625_row/sym_599.png",
+      "path": "out/digits_0_625_row/sym_599.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6603,7 +6603,7 @@
     {
       "number": 600,
       "filename": "sym_600.png",
-      "path": "base 625/out/digits_0_625_row/sym_600.png",
+      "path": "out/digits_0_625_row/sym_600.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6614,7 +6614,7 @@
     {
       "number": 601,
       "filename": "sym_601.png",
-      "path": "base 625/out/digits_0_625_row/sym_601.png",
+      "path": "out/digits_0_625_row/sym_601.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6625,7 +6625,7 @@
     {
       "number": 602,
       "filename": "sym_602.png",
-      "path": "base 625/out/digits_0_625_row/sym_602.png",
+      "path": "out/digits_0_625_row/sym_602.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6636,7 +6636,7 @@
     {
       "number": 603,
       "filename": "sym_603.png",
-      "path": "base 625/out/digits_0_625_row/sym_603.png",
+      "path": "out/digits_0_625_row/sym_603.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6647,7 +6647,7 @@
     {
       "number": 604,
       "filename": "sym_604.png",
-      "path": "base 625/out/digits_0_625_row/sym_604.png",
+      "path": "out/digits_0_625_row/sym_604.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6658,7 +6658,7 @@
     {
       "number": 605,
       "filename": "sym_605.png",
-      "path": "base 625/out/digits_0_625_row/sym_605.png",
+      "path": "out/digits_0_625_row/sym_605.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6669,7 +6669,7 @@
     {
       "number": 606,
       "filename": "sym_606.png",
-      "path": "base 625/out/digits_0_625_row/sym_606.png",
+      "path": "out/digits_0_625_row/sym_606.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6680,7 +6680,7 @@
     {
       "number": 607,
       "filename": "sym_607.png",
-      "path": "base 625/out/digits_0_625_row/sym_607.png",
+      "path": "out/digits_0_625_row/sym_607.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6691,7 +6691,7 @@
     {
       "number": 608,
       "filename": "sym_608.png",
-      "path": "base 625/out/digits_0_625_row/sym_608.png",
+      "path": "out/digits_0_625_row/sym_608.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6702,7 +6702,7 @@
     {
       "number": 609,
       "filename": "sym_609.png",
-      "path": "base 625/out/digits_0_625_row/sym_609.png",
+      "path": "out/digits_0_625_row/sym_609.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6713,7 +6713,7 @@
     {
       "number": 610,
       "filename": "sym_610.png",
-      "path": "base 625/out/digits_0_625_row/sym_610.png",
+      "path": "out/digits_0_625_row/sym_610.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6724,7 +6724,7 @@
     {
       "number": 611,
       "filename": "sym_611.png",
-      "path": "base 625/out/digits_0_625_row/sym_611.png",
+      "path": "out/digits_0_625_row/sym_611.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6735,7 +6735,7 @@
     {
       "number": 612,
       "filename": "sym_612.png",
-      "path": "base 625/out/digits_0_625_row/sym_612.png",
+      "path": "out/digits_0_625_row/sym_612.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6746,7 +6746,7 @@
     {
       "number": 613,
       "filename": "sym_613.png",
-      "path": "base 625/out/digits_0_625_row/sym_613.png",
+      "path": "out/digits_0_625_row/sym_613.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6757,7 +6757,7 @@
     {
       "number": 614,
       "filename": "sym_614.png",
-      "path": "base 625/out/digits_0_625_row/sym_614.png",
+      "path": "out/digits_0_625_row/sym_614.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6768,7 +6768,7 @@
     {
       "number": 615,
       "filename": "sym_615.png",
-      "path": "base 625/out/digits_0_625_row/sym_615.png",
+      "path": "out/digits_0_625_row/sym_615.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6779,7 +6779,7 @@
     {
       "number": 616,
       "filename": "sym_616.png",
-      "path": "base 625/out/digits_0_625_row/sym_616.png",
+      "path": "out/digits_0_625_row/sym_616.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6790,7 +6790,7 @@
     {
       "number": 617,
       "filename": "sym_617.png",
-      "path": "base 625/out/digits_0_625_row/sym_617.png",
+      "path": "out/digits_0_625_row/sym_617.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6801,7 +6801,7 @@
     {
       "number": 618,
       "filename": "sym_618.png",
-      "path": "base 625/out/digits_0_625_row/sym_618.png",
+      "path": "out/digits_0_625_row/sym_618.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6812,7 +6812,7 @@
     {
       "number": 619,
       "filename": "sym_619.png",
-      "path": "base 625/out/digits_0_625_row/sym_619.png",
+      "path": "out/digits_0_625_row/sym_619.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6823,7 +6823,7 @@
     {
       "number": 620,
       "filename": "sym_620.png",
-      "path": "base 625/out/digits_0_625_row/sym_620.png",
+      "path": "out/digits_0_625_row/sym_620.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6834,7 +6834,7 @@
     {
       "number": 621,
       "filename": "sym_621.png",
-      "path": "base 625/out/digits_0_625_row/sym_621.png",
+      "path": "out/digits_0_625_row/sym_621.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6845,7 +6845,7 @@
     {
       "number": 622,
       "filename": "sym_622.png",
-      "path": "base 625/out/digits_0_625_row/sym_622.png",
+      "path": "out/digits_0_625_row/sym_622.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6856,7 +6856,7 @@
     {
       "number": 623,
       "filename": "sym_623.png",
-      "path": "base 625/out/digits_0_625_row/sym_623.png",
+      "path": "out/digits_0_625_row/sym_623.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6867,7 +6867,7 @@
     {
       "number": 624,
       "filename": "sym_624.png",
-      "path": "base 625/out/digits_0_625_row/sym_624.png",
+      "path": "out/digits_0_625_row/sym_624.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,
@@ -6878,7 +6878,7 @@
     {
       "number": 625,
       "filename": "sym_625.png",
-      "path": "base 625/out/digits_0_625_row/sym_625.png",
+      "path": "out/digits_0_625_row/sym_625.png",
       "mode": "count",
       "order": "row",
       "cell_px": 20,

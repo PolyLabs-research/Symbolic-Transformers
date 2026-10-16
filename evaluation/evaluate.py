@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
@@ -45,9 +45,11 @@ class Evaluator:
                 sample = dataset[i]
                 input_ids = sample['input_ids'].unsqueeze(0).to(self.device)
                 target = sample['target'].unsqueeze(0).to(self.device)
+                last = int(sample['length']) - 1
                 
                 logits = self.model(input_ids)
-                loss = F.cross_entropy(logits[:, -1, :], target)
+                # Read logits at the last real token, not the last padded slot.
+                loss = F.cross_entropy(logits[:, last, :], target)
                 
                 total_loss += loss.item()
                 num_samples += 1
@@ -73,9 +75,10 @@ class Evaluator:
                 sample = dataset[i]
                 input_ids = sample['input_ids'].unsqueeze(0).to(self.device)
                 target = sample['target'].item()
+                last = int(sample['length']) - 1
                 
                 logits = self.model(input_ids)
-                top_k_preds = torch.topk(logits[0, -1, :], k=top_k).indices.tolist()
+                top_k_preds = torch.topk(logits[0, last, :], k=top_k).indices.tolist()
                 
                 if target in top_k_preds:
                     correct += 1
@@ -96,9 +99,7 @@ class Evaluator:
         Returns:
             (generated_tokens, confidence_scores)
         """
-        prompt_tensor = torch.tensor([prompt], dtype=torch.long).to(self.device)
-        
-        generated = prompt.copy()
+        generated = list(prompt)
         confidences = []
         
         with torch.no_grad():
@@ -157,7 +158,8 @@ class Evaluator:
         
         for i in range(min(5, len(test_dataset))):
             sample = test_dataset[i]
-            prompt = [t for t in sample['input_ids'].tolist() if t != 0][:10]
+            length = int(sample['length'])
+            prompt = sample['input_ids'].tolist()[:length][:10]
             target = sample['target'].item()
             
             generated, confidences = self.generate_completion(
@@ -188,18 +190,10 @@ class Evaluator:
 
 
 def load_checkpoint(checkpoint_path: str, vocab_size: int, device: str = "cuda") -> SymbolicTransformer:
-    """Load model from checkpoint."""
-    checkpoint = torch.load(checkpoint_path, map_location=device)
-    
-    # Get model config
-    config = checkpoint['config']
-    
-    # Create model
-    from models.transformer import create_model
-    model = create_model(vocab_size, config['model_size'])
-    
-    # Load weights
-    model.load_state_dict(checkpoint['model_state_dict'])
+    """Load model from checkpoint (any embedding type)."""
+    from models.transformer import load_model_from_checkpoint
+    device = device if torch.cuda.is_available() else "cpu"
+    model, checkpoint = load_model_from_checkpoint(checkpoint_path, vocab_size, device)
     
     print(f"✓ Loaded checkpoint from epoch {checkpoint['epoch']}")
     print(f"✓ Best val loss: {checkpoint['best_val_loss']:.4f}")
@@ -224,7 +218,8 @@ def main():
     
     # Load test data
     print("\nLoading test dataset...")
-    test_dataset = FOLDataset(test_data_path)
+    pad_id = vocab.pad_token if vocab.pad_token is not None else 0
+    test_dataset = FOLDataset(test_data_path, pad_id=pad_id)
     
     # Create evaluator
     evaluator = Evaluator(model, vocab)

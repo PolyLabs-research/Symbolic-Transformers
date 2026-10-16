@@ -26,6 +26,10 @@ class FormulaConfig:
     use_equality: bool = True
     use_arithmetic: bool = False  # For future extension
     use_message_boundaries: bool = True  # NEW: Control MESSAGE_START/END
+    # Explicit index pools override max_variables / max_predicates. Used to
+    # hold out an index band for generalisation experiments.
+    variable_pool: Optional[List[int]] = None
+    predicate_pool: Optional[List[int]] = None
 
 
 class FOLFormulaGenerator:
@@ -70,11 +74,17 @@ class FOLFormulaGenerator:
         self.var_token = vocab.compositional_tokens['VAR']
         self.pred_token = vocab.compositional_tokens['PRED']
         self.func_token = vocab.compositional_tokens.get('FUNC')
+        
+        # Index pools: every variable / predicate index is drawn from these.
+        self.var_pool = list(config.variable_pool) if config.variable_pool else list(range(config.max_variables))
+        self.pred_pool = list(config.predicate_pool) if config.predicate_pool else list(range(config.max_predicates))
+        if not self.var_pool or not self.pred_pool:
+            raise ValueError("variable and predicate pools must be non-empty")
     
     def generate_variable(self, var_idx: Optional[int] = None) -> List[int]:
         """Generate variable token sequence VAR n."""
         if var_idx is None:
-            var_idx = random.randint(0, self.config.max_variables - 1)
+            var_idx = random.choice(self.var_pool)
         return self.vocab.encode_compositional('VAR', var_idx)
     
     def generate_predicate(
@@ -92,14 +102,13 @@ class FOLFormulaGenerator:
             var_indices: Specific variable indices (random if None)
         """
         if pred_idx is None:
-            pred_idx = random.randint(0, self.config.max_predicates - 1)
+            pred_idx = random.choice(self.pred_pool)
         
         tokens = self.vocab.encode_compositional('PRED', pred_idx)
         tokens.append(self.lparen)
         
         if var_indices is None:
-            var_indices = [random.randint(0, self.config.max_variables - 1) 
-                          for _ in range(arity)]
+            var_indices = [random.choice(self.var_pool) for _ in range(arity)]
         
         for i, var_idx in enumerate(var_indices):
             tokens.extend(self.generate_variable(var_idx))
@@ -121,8 +130,8 @@ class FOLFormulaGenerator:
             if bound_vars and len(bound_vars) >= 2:
                 var1, var2 = random.sample(bound_vars, 2)
             else:
-                var1 = random.randint(0, self.config.max_variables - 1)
-                var2 = random.randint(0, self.config.max_variables - 1)
+                var1 = random.choice(self.var_pool)
+                var2 = random.choice(self.var_pool)
             
             tokens = self.generate_variable(var1)
             tokens.append(self.vocab.encode_label('EQUALS'))
@@ -164,7 +173,7 @@ class FOLFormulaGenerator:
         if formula_type == 'quantifier' and self.config.use_quantifiers:
             # Generate quantified formula: ∀x φ or ∃x φ
             quantifier = random.choice(self.quantifiers)
-            var_idx = random.randint(0, self.config.max_variables - 1)
+            var_idx = random.choice(self.var_pool)
             
             tokens = [self.vocab.encode_label(quantifier)]
             tokens.extend(self.generate_variable(var_idx))
@@ -339,7 +348,17 @@ def generate_training_data(
     n_val: int = 1000,
     n_test: int = 1000,
     complexity_distribution: Optional[List[Tuple[int, float]]] = None,
-    use_boundaries: bool = True
+    use_boundaries: bool = True,
+    max_variables: int = FormulaConfig.max_variables,
+    max_predicates: int = FormulaConfig.max_predicates,
+    max_depth: int = 3,
+    max_seq_len: int = 128,
+    seed: Optional[int] = 42,
+    index_range: Optional[Tuple[int, int]] = None,
+    holdout: Optional[Tuple[int, int]] = None,
+    far_range: Optional[Tuple[int, int]] = None,
+    n_test_holdout: Optional[int] = None,
+    n_test_far: Optional[int] = None,
 ):
     """
     Generate complete training/validation/test datasets.
@@ -352,9 +371,29 @@ def generate_training_data(
         n_test: Number of test formulas
         complexity_distribution: List of (complexity, weight) tuples
         use_boundaries: Whether to wrap formulas with MESSAGE_START/END
+        max_variables: Variable indices are drawn from 0..max_variables-1
+        max_predicates: Predicate indices are drawn from 0..max_predicates-1
+        max_depth: Maximum nesting depth of generated formulas
+        max_seq_len: Formulas longer than this (with boundaries) are skipped
+        seed: Random seed for reproducible datasets (None = unseeded)
+        index_range: Inclusive (lo, hi) of variable/predicate indices to use;
+            overrides max_variables / max_predicates when given
+        holdout: Inclusive (lo, hi) band removed from the training pool and
+            used alone for the extra 'test_holdout' split
+        far_range: Inclusive (lo, hi) band never seen in training, used alone
+            for the extra 'test_far' split
+        n_test_holdout / n_test_far: formulas in the extra splits (default n_test)
+
+    Every formula is unique within its split and appears in only one split, so
+    validation and test scores are never measured on formulas seen in training.
+    Splits are drawn in order (train, val, test, then the extra splits) and each
+    rejects formulas already drawn; collisions are mostly short formulas, so the
+    later splits are very slightly poorer in the commonest short formulas.
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    if seed is not None:
+        random.seed(seed)
     
     print("="*60)
     print("FOL DATASET GENERATION (BASIC with MESSAGE BOUNDARIES)")
@@ -377,17 +416,46 @@ def generate_training_data(
     elif use_boundaries:
         print(f"✓ Using MESSAGE_START (ID {vocab.message_start}) and MESSAGE_END (ID {vocab.message_end})")
     
-    # Setup generator
-    config = FormulaConfig(
-        max_depth=3,
-        max_variables=5,
-        max_predicates=5,
-        use_quantifiers=True,
-        use_connectives=True,
-        use_equality=True,
-        use_message_boundaries=use_boundaries
-    )
-    generator = FOLFormulaGenerator(vocab, config)
+    # Index pools
+    def _band(lo_hi: Optional[Tuple[int, int]]) -> Optional[List[int]]:
+        if lo_hi is None:
+            return None
+        lo, hi = lo_hi
+        if not (0 <= lo <= hi <= vocab.numeral_range[1]):
+            raise ValueError(f"index band {lo_hi} must lie within 0..{vocab.numeral_range[1]}")
+        return list(range(lo, hi + 1))
+    
+    holdout_pool = _band(holdout)
+    far_pool = _band(far_range)
+    if index_range is not None:
+        train_pool = _band(index_range)
+    else:
+        train_pool = list(range(max(max_variables, max_predicates)))
+    if holdout_pool:
+        train_pool = [i for i in train_pool if i not in set(holdout_pool)]
+    if far_pool and set(far_pool) & set(train_pool):
+        raise ValueError("far_range overlaps the training index range")
+    if not train_pool:
+        raise ValueError("training index pool is empty after removing the holdout band")
+    
+    def _make_generator(pool: Optional[List[int]]) -> FOLFormulaGenerator:
+        cfg = FormulaConfig(
+            max_depth=max_depth,
+            max_variables=max_variables,
+            max_predicates=max_predicates,
+            use_quantifiers=True,
+            use_connectives=True,
+            use_equality=True,
+            use_message_boundaries=use_boundaries,
+            variable_pool=pool,
+            predicate_pool=pool,
+        )
+        return FOLFormulaGenerator(vocab, cfg)
+    
+    # The training generator uses the (holdout-free) pool when index pools are in play.
+    pooled = index_range is not None or holdout_pool is not None
+    generator = _make_generator(train_pool if pooled else None)
+    config = generator.config
     
     # Default complexity distribution
     if complexity_distribution is None:
@@ -398,18 +466,35 @@ def generate_training_data(
             (4, 0.1),  # 10% very complex
         ]
     
-    def generate_split(n_formulas: int, split_name: str) -> NextSymbolDataset:
-        """Generate one data split."""
+    seen = set()  # every formula drawn so far, across all splits
+    redrawn = {}  # split name -> duplicate draws redrawn
+
+    def generate_split(n_formulas: int, split_name: str, gen: FOLFormulaGenerator = generator) -> NextSymbolDataset:
+        """Generate one data split of formulas not drawn before in this or any earlier split."""
         print(f"\nGenerating {split_name} set ({n_formulas} formulas)...")
         
         formulas = []
+        redrawn[split_name] = 0
         for complexity, weight in complexity_distribution:
             n_for_complexity = int(n_formulas * weight)
-            batch = generator.generate_batch(n_for_complexity, complexity)
+            batch, dup = [], 0
+            while len(batch) < n_for_complexity:
+                formula = gen.generate_batch(1, complexity)[0]
+                key = tuple(formula)
+                if key in seen:
+                    dup += 1
+                    if dup > 10 * n_for_complexity + 100:
+                        raise RuntimeError(
+                            f"{split_name}: could not draw {n_for_complexity} distinct complexity-{complexity} "
+                            f"formulas ({len(batch)} after {dup} duplicates); widen the index range or ask for fewer")
+                    continue
+                seen.add(key)
+                batch.append(formula)
             formulas.extend(batch)
-            print(f"  Complexity {complexity}: {n_for_complexity} formulas")
+            redrawn[split_name] += dup
+            print(f"  Complexity {complexity}: {n_for_complexity} formulas ({dup} duplicates redrawn)")
         
-        dataset = NextSymbolDataset(formulas, vocab, max_seq_len=512, use_boundaries=use_boundaries)
+        dataset = NextSymbolDataset(formulas, vocab, max_seq_len=max_seq_len, use_boundaries=use_boundaries)
         
         output_path = output_dir / f"{split_name}.json"
         dataset.save(str(output_path))
@@ -420,24 +505,46 @@ def generate_training_data(
     train_dataset = generate_split(n_train, 'train')
     val_dataset = generate_split(n_val, 'val')
     test_dataset = generate_split(n_test, 'test')
+    extra_splits = {}
+    if holdout_pool:
+        ds = generate_split(n_test_holdout or n_test, 'test_holdout', _make_generator(holdout_pool))
+        extra_splits['test_holdout'] = {'num_formulas': n_test_holdout or n_test, 'num_samples': len(ds),
+                                        'index_pool': [holdout_pool[0], holdout_pool[-1]]}
+    if far_pool:
+        ds = generate_split(n_test_far or n_test, 'test_far', _make_generator(far_pool))
+        extra_splits['test_far'] = {'num_formulas': n_test_far or n_test, 'num_samples': len(ds),
+                                    'index_pool': [far_pool[0], far_pool[-1]]}
     
     # Save metadata
     metadata = {
-        'generator': 'basic_with_boundaries_v1',
+        'generator': 'basic_with_boundaries_v3',
+        'unique_formulas': 'within each split and across all splits',
         'vocab_path': vocab_path,
         'vocab_size': vocab.vocab_size,
         'uses_boundaries': use_boundaries,
+        'seed': seed,
+        'max_seq_len': max_seq_len,
+        'complexity_distribution': complexity_distribution,
         'config': {
             'max_depth': config.max_depth,
             'max_variables': config.max_variables,
             'max_predicates': config.max_predicates,
         },
+        'index_pools': {
+            'train': [train_pool[0], train_pool[-1]] if pooled else [0, max(max_variables, max_predicates) - 1],
+            'holdout': [holdout_pool[0], holdout_pool[-1]] if holdout_pool else None,
+            'far': [far_pool[0], far_pool[-1]] if far_pool else None,
+            'train_pool_size': len(train_pool),
+        },
         'splits': {
             'train': {'num_formulas': n_train, 'num_samples': len(train_dataset)},
             'val': {'num_formulas': n_val, 'num_samples': len(val_dataset)},
             'test': {'num_formulas': n_test, 'num_samples': len(test_dataset)},
+            **extra_splits,
         }
     }
+    for name, n_dup in redrawn.items():
+        metadata['splits'][name]['duplicates_redrawn'] = n_dup
     
     metadata_path = output_dir / 'metadata.json'
     with open(metadata_path, 'w') as f:
@@ -455,18 +562,57 @@ def generate_training_data(
 
 
 if __name__ == "__main__":
-    # Example usage
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate FOL next-symbol datasets")
+    parser.add_argument("--vocab", default="unified_vocabulary.json")
+    parser.add_argument("--out", default="datasets/fol_next_symbol")
+    parser.add_argument("--n-train", type=int, default=10000)
+    parser.add_argument("--n-val", type=int, default=1000)
+    parser.add_argument("--n-test", type=int, default=1000)
+    parser.add_argument("--max-variables", type=int, default=FormulaConfig.max_variables)
+    parser.add_argument("--max-predicates", type=int, default=FormulaConfig.max_predicates)
+    parser.add_argument("--max-depth", type=int, default=3)
+    parser.add_argument("--max-seq-len", type=int, default=128)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--no-boundaries", action="store_true", help="Do not wrap formulas in MESSAGE_START/END")
+    parser.add_argument("--index-range", default=None, metavar="LO-HI",
+                        help="Inclusive index band for variables/predicates, e.g. 0-99 (overrides --max-*)")
+    parser.add_argument("--holdout", default=None, metavar="LO-HI",
+                        help="Index band removed from training and used for a test_holdout split, e.g. 60-79")
+    parser.add_argument("--far-range", default=None, metavar="LO-HI",
+                        help="Never-trained index band used for a test_far split, e.g. 100-199")
+    parser.add_argument("--n-test-holdout", type=int, default=None)
+    parser.add_argument("--n-test-far", type=int, default=None)
+    args = parser.parse_args()
+
+    def _parse_band(text):
+        if text is None:
+            return None
+        lo, hi = text.split("-")
+        return int(lo), int(hi)
+
     generate_training_data(
-        vocab_path="unified_vocabulary.json",
-        output_dir="datasets/fol_next_symbol",
-        n_train=10000,
-        n_val=1000,
-        n_test=1000,
+        vocab_path=args.vocab,
+        output_dir=args.out,
+        n_train=args.n_train,
+        n_val=args.n_val,
+        n_test=args.n_test,
         complexity_distribution=[
             (1, 0.2),  # 20% simple
             (2, 0.4),  # 40% medium
             (3, 0.3),  # 30% complex
             (4, 0.1),  # 10% very complex
         ],
-        use_boundaries=True  # NEW: Enable MESSAGE_START/END
+        use_boundaries=not args.no_boundaries,
+        max_variables=args.max_variables,
+        max_predicates=args.max_predicates,
+        max_depth=args.max_depth,
+        max_seq_len=args.max_seq_len,
+        seed=args.seed,
+        index_range=_parse_band(args.index_range),
+        holdout=_parse_band(args.holdout),
+        far_range=_parse_band(args.far_range),
+        n_test_holdout=args.n_test_holdout,
+        n_test_far=args.n_test_far,
     )

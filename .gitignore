@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.gradio/
+.pytest_cache/
+evaluation_results.json
+benchmark_report*.json
+*.egg-info/
+.ipynb_checkpoints/
+.DS_Store
+venv/
+.venv/
+runs/

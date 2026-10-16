@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.getcwd())
 
 from utils.vocabulary import Vocabulary
-from models.transformer import create_model
+from models.transformer import load_model_from_checkpoint
 
 # 1. SETUP & LOAD MODEL (Global scope for speed)
 print("🔄 Initializing GUI...")
@@ -21,16 +21,31 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if not os.path.exists('checkpoints/best_model.pt'):
     raise FileNotFoundError("checkpoints/best_model.pt not found")
 
-checkpoint = torch.load('checkpoints/best_model.pt', map_location=device)
+model, checkpoint = load_model_from_checkpoint('checkpoints/best_model.pt', vocab.vocab_size, device)
 config = checkpoint['config']
-
-model = create_model(vocab_size=vocab.vocab_size, model_size=config['model_size'])
-model.load_state_dict(checkpoint['model_state_dict'])
-model.to(device)
-model.eval()
 print("✓ Model loaded successfully")
 
 # 2. PREDICTION FUNCTION
+def parse_tokens(sequence_text):
+    """Parse 'FORALL VAR 1' into token IDs.
+
+    Numerals must be 0-624 (anything else would index past the embedding
+    table). MESSAGE_START is prepended because every training context starts
+    with it; type it explicitly if you want to control that yourself.
+    """
+    token_ids = []
+    for t in sequence_text.strip().split():
+        if t in vocab.label_to_id:
+            token_ids.append(vocab.encode_label(t))
+        elif t.isdigit() and 0 <= int(t) <= vocab.numeral_range[1]:
+            token_ids.append(int(t))
+        else:
+            raise ValueError(f"Unknown token {t!r} (labels or numerals 0-{vocab.numeral_range[1]} only)")
+    if vocab.message_start is not None and (not token_ids or token_ids[0] != vocab.message_start):
+        token_ids = [vocab.message_start] + token_ids
+    return token_ids
+
+
 def predict_next_token(sequence_text):
     """
     Takes a string like "FORALL VAR", returns a dict of top 5 next tokens.
@@ -38,22 +53,10 @@ def predict_next_token(sequence_text):
     if not sequence_text.strip():
         return None
 
-    # Parse input string into tokens
-    tokens = sequence_text.strip().split()
-    token_ids = []
-    
-    for t in tokens:
-        if t in vocab.label_to_id:
-            token_ids.append(vocab.encode_label(t))
-        else:
-            try:
-                token_ids.append(int(t))
-            except ValueError:
-                # If user types garbage, ignore it or handle gracefully
-                continue
-    
-    if not token_ids:
-        return {"Error": 0.0}
+    try:
+        token_ids = parse_tokens(sequence_text)
+    except ValueError as exc:
+        return {str(exc): 0.0}
 
     # Prepare tensor
     x = torch.tensor([token_ids], device=device, dtype=torch.long)
@@ -80,6 +83,7 @@ def predict_next_token(sequence_text):
 description = """
 ### Symbolic Transformer Explorer
 Type a First-Order Logic formula prefix to see what the model predicts next.
+MESSAGE_START is added automatically (every training formula begins with it).
 **Examples:**
 * `FORALL` (Should predict VAR)
 * `PRED 1 LPAREN` (Should predict VAR or FUNC)

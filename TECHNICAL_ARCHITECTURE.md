@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document describes the technical architecture of a transformer-based model for First-Order Logic (FOL) reasoning using discrete symbolic representations. The key innovation is replacing high-dimensional continuous embeddings with a compact vocabulary of 663 discrete symbols encoded as visual glyphs on a 25×25 grid.
+This document describes the technical architecture of a transformer-based model for First-Order Logic (FOL) reasoning using discrete symbolic representations. The key innovation is replacing high-dimensional continuous embeddings with a compact vocabulary of 671 discrete tokens (625 numerals, 37 operator glyphs, 9 special tokens), each numeral and glyph having a 25×25 grid rendering.
 
 ---
 
@@ -24,7 +24,7 @@ Modern language models use:
 
 ### Our Approach: Discrete Symbolic Encoding
 
-- **Vocabulary**: 663 symbols (625 numerals + 38 operators)
+- **Vocabulary**: 671 tokens (625 numerals + 37 operator glyphs + 9 special tokens)
 - **Embeddings**: 256-768 dimensions (much smaller)
 - **Model size**: 500K-80M parameters (10-100× smaller)
 - **Compositionality**: Explicit in symbol sequences
@@ -61,7 +61,9 @@ Number 624: All cells filled
 
 ### 2.2 FOL Operator Symbols
 
-**Logical Connectives** (IDs 625-629):
+**Arithmetic glyphs** (IDs 625-635, painted in base-625): X, PLUS, MINUS, DIV, EQUALS, LPAREN, RPAREN, POW, DOT, SQRT, FACTORIAL. FOL reuses EQUALS (629), LPAREN (630), RPAREN (631) and DOT (633).
+
+**Logical Connectives** (IDs 636-640):
 ```
 NOT     (¬)  - Negation
 AND     (∧)  - Conjunction
@@ -70,16 +72,16 @@ IMPLIES (→)  - Implication
 IFF     (↔)  - Biconditional
 ```
 
-**Quantifiers** (IDs 630-632):
+**Quantifiers** (IDs 641-643):
 ```
 FORALL      (∀)  - Universal quantification
 EXISTS      (∃)  - Existential quantification
 EXISTS1     (∃!) - Unique existence
 ```
 
-**Relations** (IDs 633-638):
+**Relations** (IDs 644-648, plus EQUALS at 629):
 ```
-EQUALS        (=)  - Equality
+EQUALS        (=)  - Equality (ID 629)
 NOT_EQUALS    (≠)  - Inequality
 LESS_THAN     (<)
 GREATER_THAN  (>)
@@ -87,7 +89,7 @@ LESS_EQUAL    (≤)
 GREATER_EQUAL (≥)
 ```
 
-**Structural Tokens** (IDs 639-643):
+**Structural Tokens** (COMMA 649, COLON 650; LPAREN 630, RPAREN 631, DOT 633):
 ```
 LPAREN  (()  - Left parenthesis
 RPAREN  ())  - Right parenthesis
@@ -96,7 +98,7 @@ COLON   (:)  - Type annotation
 DOT     (.)  - Statement terminator
 ```
 
-**Category Tokens** (IDs 644-648) - **CRITICAL**:
+**Category Tokens** (IDs 653-657) - **CRITICAL**:
 ```
 VAR    - Variable introducer
 CONST  - Constant introducer
@@ -105,13 +107,13 @@ FUNC   - Function introducer
 SORT   - Type/sort introducer
 ```
 
-**Truth Constants** (IDs 649-650):
+**Truth Constants** (IDs 651-652):
 ```
 TRUE   (⊤)
 FALSE  (⊥)
 ```
 
-**Meta-Logic** (IDs 651-654):
+**Meta-Logic** (IDs 658-661):
 ```
 ENTAILS    (⊢)  - Syntactic entailment
 MODELS     (⊨)  - Semantic entailment
@@ -126,9 +128,14 @@ EQUIVALENT (≡)  - Logical equivalence
 **Example 1: Variables**
 ```
 Variable x₁:   [VAR, 1]
-Variable x₁₂:  [VAR, 1, 2]  (interpreted as 1×625 + 2 = 627 in base-625)
-Variable x₅₀₀: [VAR, 5, 0, 0]
+Variable x₁₂:  [VAR, 12]       (any index below 625 is a single numeral token)
+Variable x₅₀₀: [VAR, 500]
+Variable x₇₀₀: [VAR, 1, 75]    (1 × 625 + 75; digits are most-significant first)
 ```
+
+Because the base is 625, composition only appears for indices ≥ 625. The generators draw indices from
+0–99 by default, so in practice each index is learned as an atomic embedding; a configurable base is the
+planned way to make multi-digit indices common.
 
 **Example 2: Predicates**
 ```
@@ -165,7 +172,7 @@ Logits: Probability distribution over next symbol
 ### 3.2 Embedding Layer
 
 ```python
-self.symbol_embed = nn.Embedding(vocab_size=663, embedding_dim=d_model)
+self.symbol_embed = nn.Embedding(vocab_size=671, embedding_dim=d_model)
 ```
 
 **Design choices:**
@@ -174,9 +181,75 @@ self.symbol_embed = nn.Embedding(vocab_size=663, embedding_dim=d_model)
 - **Scaling**: Multiply by `√d_model` (standard practice)
 
 **Why smaller d_model?**
-- 663 discrete symbols vs. 50K continuous tokens
+- 671 discrete tokens vs. 50K continuous tokens
 - Less semantic variation to capture
 - Empirically: 256-512 dimensions sufficient
+
+### 3.2.1 Grid embeddings (`--embedding grid_linear | grid_conv`)
+
+The learned table treats numerals as unrelated symbols. The grid arms derive each grid-backed
+token's embedding from its 625-bit panel `g_t` (row-major, from `grids/grid_bank.npz`):
+
+```
+grid_linear:  e_t = LN(W g_t + b)            W: 625 × d_model, shared by all tokens
+grid_conv:    e_t = LN(MLP(Conv2d(g_t)))     4 and 8 channels, two 2× max-pools, 288 → d_model
+grid_shared:  e_t = LN((g_t Φ) A + b)        Φ: 625 × 36 fixed smooth features of each cell's
+                                             position (sin/cos of index, row, col; ramps); A: 36 × d_model
+                                             learned, so cell i's weight is Φ_i A and no parameter
+                                             belongs to one cell
+special:      e_t = F[t]                     learned fallback rows for tokens without a panel
+```
+
+`grid_linear` only trains column `W_i` from panels that fill cell `i`, so cells beyond the largest trained
+value keep their random init and the embedding of a larger value points in a random direction.
+`grid_shared` generates every cell's weight from the same `A`, so cells never filled in training get weights
+consistent with their neighbours.
+
+Measured on the magnitude task (`experiments/magnitude_*.md`): with the default smooth basis `grid_shared`
+extrapolates order past the trained range but inverts comparisons inside a held-out gap. A basis of one
+shared direction (`--shared-basis constant`) collapses: LayerNorm is scale-invariant, so `k·u` normalises to
+the same vector for every k. The basis that works is `ramp` = [1, i/625] with the per-cell residual
+(`--shared-residual`):
+
+```
+grid_ramp_res:  e_t = LN( k·a + (k²/1250)·c + b + Σ_{filled i} r_i )     a, c: d_model; r_i: 625 × d_model, zero-init
+```
+
+The direction rotates uniformly with k, so the walk through any gap and the continuation past the range are
+segments of the same curve; the residuals give trained cells distinctive increments. Without the residual
+the path is too flat to learn from; without the ramp the path cannot leave the trained range.
+
+The residual has four knobs, all used in the precision study (`experiments/magnitude_precision.md`):
+
+- `--residual-orthogonal`: `r_i` is projected off span{a, c} every forward pass, so it can give trained
+  cells texture but cannot carry magnitude; magnitude then comes only from the ramp, which unseen cells
+  share.
+- `--residual-lr-mult M --residual-wd W`: the residual gets its own AdamW group (learning rate ×M, weight
+  decay W). Its strength decides how much the comparator can lean on per-cell texture.
+- `--residual-dropout p [--residual-dropout-cell]`: with probability p a training batch is embedded with
+  the ramp alone (or each cell's residual row is dropped independently), so the comparator must keep a
+  route through the shared part. Evaluation always uses the full weights.
+- `--residual-anneal START END`: the residual is multiplied by a scale that is 1 until START × epochs,
+  falls linearly to 0 at END × epochs and stays 0, in training and evaluation alike (the scale is saved
+  with the model). The residual scaffolds early learning and is then withdrawn, so the comparator has to
+  end on the ramp alone; `best_model.pt` is chosen among the residual-free epochs only. With
+  `--residual-anneal-floor F` the scale falls geometrically from 1 to F over the window instead of linearly,
+  and `--residual-anneal-hold` keeps it at F afterwards instead of dropping it to zero.
+  `--residual-anneal-rewarm N` restarts the learning-rate schedule when the window ends (N warm-up steps
+  back to the base rate, then cosine decay), so the residual-free phase does not run on the cosine tail.
+  `--residual-anneal-stages T:S,T:S,...` is the general form: breakpoints as (fraction of training, scale),
+  geometric between them and a step where a side is zero, which expresses holds and multi-stage descents.
+  The scale stays at the last value after the last breakpoint and `best_model.pt` is chosen from that
+  epoch on, so the last breakpoint should mark the start of the final hold, not its end.
+
+For numerals `g_k` is the thermometer code (first k cells set), so `W g_k` is the cumulative sum of
+the first k columns of `W`: adjacent indices get adjacent embeddings and an index absent from training
+still lands between its neighbours. The LayerNorm gain is initialised to 0.02 so grid rows start at the
+same scale as a learned table. The full table is recomputed each forward pass (671 rows, negligible).
+
+With `--tie-weights` the output logits are `h · e_tᵀ + c_t` against the same table, which is what lets
+an unseen numeral be predicted (its row exists because its panel exists). Checkpoints store the panels
+as buffers, so `load_model_from_checkpoint` needs no bank file.
 
 ### 3.3 Positional Encoding
 
@@ -244,10 +317,10 @@ next_symbol = argmax(probs)  # or sample
 
 **Parameter calculation example (Base):**
 ```
-Embedding:  663 × 512           = 339K
+Embedding:  671 × 512           = 344K
 Attention:  6 × (4×512×512)     = 6.3M
 FFN:        6 × (2×512×2048)    = 12.6M
-Output:     512 × 663           = 339K
+Output:     512 × 671           = 344K
 Total:                          ≈ 15M
 ```
 
@@ -398,7 +471,7 @@ perplexity = exp(cross_entropy_loss)
 
 **Interpretation:**
 - Perfect model: perplexity = 1.0
-- Random guessing (663 symbols): perplexity = 663
+- Random guessing (671 tokens): perplexity = 671
 - Good model: perplexity < 20
 
 ### 5.2 Accuracy Metrics
@@ -429,7 +502,7 @@ accuracy = correct_predictions / total_predictions
 ### 5.4 Benchmark Comparisons
 
 Compare against:
-1. **Random baseline**: Uniform distribution over 663 symbols
+1. **Random baseline**: Uniform distribution over 671 tokens
 2. **N-gram model**: Statistical prediction (e.g., trigrams)
 3. **LSTM baseline**: Recurrent architecture
 4. **Standard transformer**: Same size but with continuous embeddings
@@ -598,13 +671,13 @@ Compositionality is **explicit** in symbol sequence, not **implicit** in embeddi
 Number of FOL formulas expressible with n symbols:
 ```
 Traditional: O(vocab_size^n) = O(50000^n)
-Our system:  O(vocab_size^n) = O(663^n)
+Our system:  O(vocab_size^n) = O(671^n)
 ```
 
 But with compositional structure:
 ```
-Effective vocabulary: 663 base + unlimited composites
-Real expressions: Still O(663^n) but with structured meaning
+Effective vocabulary: 671 base + unlimited composites
+Real expressions: Still O(671^n) but with structured meaning
 ```
 
 **Claim:** Compositional structure provides compression without sacrificing expressiveness.
@@ -643,7 +716,7 @@ This architecture demonstrates a novel approach to symbolic AI:
 **Key innovations:**
 1. Base-625 visual symbolic encoding
 2. Compositional symbol sequences
-3. Compact vocabulary (663 vs 50K+)
+3. Compact vocabulary (671 vs 50K+)
 4. Smaller models (15M vs 100M+ params)
 5. Explicit structure preservation
 

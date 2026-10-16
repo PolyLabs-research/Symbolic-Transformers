@@ -1,14 +1,54 @@
 """
 Symbolic Transformer Model for FOL Next-Symbol Prediction.
 
-Optimized for AMD Radeon GPU (ROCm backend).
+Embedding options (``embedding_type``):
+
+- ``learned``      a plain nn.Embedding table (the original model).
+- ``grid_linear``  every grid-backed token is embedded by one shared linear
+                   projection of its 625-bit base-625 panel. Numerals use the
+                   row-major count (thermometer) code, so panel k is a subset
+                   of panel k+1 and embeddings move along a path as k grows.
+- ``grid_conv``    a small 2D conv encoder over the 25x25 panel.
+- ``grid_shared``  like grid_linear, but each cell's weight is generated from
+                   fixed smooth features of the cell's position through one
+                   shared matrix, so no parameter belongs to a single cell:
+                   cells never filled in training still get a weight that is
+                   consistent with their neighbours (extrapolation), and
+                   adjacent cells get similar increments (precision).
+- ``sinusoid``     control arm: numerals get fixed multi-frequency sin/cos
+                   features of their value k through the same linear layer;
+                   glyphs and special tokens use learned rows. An ordinal code
+                   with no 2D structure, to tell "the grid helps" apart from
+                   "any ordinal encoding helps".
+
+Tokens without a panel (MESSAGE_START, PAD, ...) use a learned fallback row.
+With ``tie_weights`` the output logits are the dot product with the same
+embedding table, so a numeral the model never trained on can still be
+predicted from its panel.
 """
+
+from __future__ import annotations
+
+import math
+import sys
+from pathlib import Path
+from typing import Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-from typing import Optional, Tuple
+
+# Allow `python models/transformer.py` as well as `from models.transformer import ...`
+_ROOT = str(Path(__file__).resolve().parents[1])
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from utils.grid_bank import (  # noqa: E402
+    GRID_CELLS, GRID_N, DEFAULT_BANK_PATH, GridBank, cell_position_features, sinusoid_bank,
+)
+
+EMBEDDING_TYPES = ("learned", "grid_linear", "grid_conv", "grid_shared", "sinusoid", "xval")
+GRID_TYPES = ("grid_linear", "grid_conv", "grid_shared")
 
 
 class PositionalEncoding(nn.Module):
@@ -44,15 +84,262 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
+class ConvGridEncoder(nn.Module):
+    """Small 2D conv encoder: (N, 625) bits -> (N, d_model)."""
+
+    def __init__(self, d_model: int):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 4, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(4, 8, kernel_size=3, padding=1)
+        self.pool = nn.MaxPool2d(2)  # 25 -> 12 -> 6
+        self.proj = nn.Linear(8 * 6 * 6, d_model)
+
+    def forward(self, bits: torch.Tensor) -> torch.Tensor:
+        x = bits.view(-1, 1, GRID_N, GRID_N)
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        return self.proj(x.flatten(1))
+
+
+class SharedCellEncoder(nn.Module):
+    """(N, 625) panel bits -> (N, d_model) with position-generated cell weights.
+
+    W = Phi @ A where Phi (625, F) are fixed smooth features of each cell's
+    position and A (F, d_model) is learned. The embedding of a panel is
+    bits @ W + b, i.e. the sum of the generated weights of its filled cells.
+    For the thermometer code that is a cumulative sum of increments that vary
+    smoothly with the cell index.
+    """
+
+    def __init__(self, d_model: int, min_period: float = 32.0, n_index_freq: int = 8,
+                 n_axis_freq: int = 4, residual: bool = False, basis: str = "full",
+                 residual_orthogonal: bool = False, residual_dropout: float = 0.0,
+                 residual_dropout_cell: bool = False):
+        super().__init__()
+        # residual_dropout: during training, with probability p the forward pass
+        # uses the generated weights alone (whole-residual mode), so the model
+        # must keep a working magnitude route through the shared part and can
+        # use the per-cell texture only as a refinement. With
+        # residual_dropout_cell each cell's residual row is dropped
+        # independently instead (texture becomes unreliable rather than absent).
+        if not 0.0 <= residual_dropout < 1.0:
+            raise ValueError("residual_dropout must be in [0, 1)")
+        self.residual_dropout = residual_dropout
+        self.residual_dropout_cell = residual_dropout_cell
+        # With residual_orthogonal the per-cell residual is projected onto the
+        # complement of the span of the generated directions (for the ramp
+        # basis: the magnitude plane), so it can give trained cells distinctive
+        # texture but cannot carry magnitude. Magnitude then comes only from
+        # the generated part, which unseen cells share.
+        self.residual_orthogonal = residual_orthogonal
+        phi = torch.tensor(cell_position_features(n_index_freq=n_index_freq, n_axis_freq=n_axis_freq,
+                                                  index_periods=(min_period, 2 * GRID_CELLS), basis=basis),
+                           dtype=torch.float32)  # (625, F)
+        self.basis = basis
+        self.register_buffer("phi", phi)
+        self.proj = nn.Linear(phi.shape[1], d_model)
+        # Optional per-cell residual on top of the generated weight: zero at init
+        # and weight-decayed, so cells never filled in training keep only the
+        # smooth part while trained cells can sharpen their increment.
+        self.residual = nn.Parameter(torch.zeros(GRID_CELLS, d_model)) if residual else None
+        # Global multiplier on the residual (training and evaluation alike), set
+        # by the trainer's --residual-anneal schedule: 1 while the residual
+        # scaffolds learning, falling to 0 so that the comparator is left with
+        # the generated weights alone. Saved with the model so a checkpoint
+        # evaluates at the scale it was trained at.
+        if residual:
+            self.register_buffer("residual_scale", torch.ones(()))
+
+    def set_residual_scale(self, scale: float) -> None:
+        if self.residual is None:
+            raise ValueError("this encoder has no residual to scale")
+        if not 0.0 <= scale <= 1.0:
+            raise ValueError("residual scale must be in [0, 1]")
+        self.residual_scale.fill_(float(scale))
+
+    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
+        # Checkpoints written before the scale existed: full residual.
+        key = prefix + "residual_scale"
+        if self.residual is not None and key not in state_dict:
+            state_dict[key] = torch.ones(())
+        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
+
+    def effective_residual(self, unscaled: bool = False) -> Optional[torch.Tensor]:
+        """The residual as it enters the weights: projected if orthogonal, times the scale (unless ``unscaled``)."""
+        if self.residual is None:
+            return None
+        r = self.residual
+        if self.residual_orthogonal:
+            # Orthonormal basis of the generated directions (d_model, F), no gradient
+            # through the projection itself.
+            q, _ = torch.linalg.qr(self.proj.weight.detach())
+            r = r - (r @ q) @ q.t()
+        if not unscaled and float(self.residual_scale) != 1.0:
+            r = r * self.residual_scale
+        return r
+
+    def cell_weights(self) -> torch.Tensor:
+        """The (625, d_model) per-cell weight matrix: generated part plus residual."""
+        W = self.phi @ self.proj.weight.t()
+        r = self.effective_residual()
+        return W + r if r is not None else W
+
+    def training_residual(self) -> Optional[torch.Tensor]:
+        """The residual as used by this forward pass: dropped (None), masked, or intact."""
+        r = self.effective_residual()
+        if r is None or not self.training or self.residual_dropout <= 0.0:
+            return r
+        if self.residual_dropout_cell:
+            keep = (torch.rand(r.shape[0], 1, device=r.device) >= self.residual_dropout).to(r.dtype)
+            return r * keep
+        return None if torch.rand(()).item() < self.residual_dropout else r
+
+    def forward(self, bits: torch.Tensor, row_scale: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """Embed panels. ``row_scale`` (N,) replaces the global residual scale per row (evaluation probes:
+        e.g. numerals at one scale and glyph rows at the saved scale)."""
+        W = self.phi @ self.proj.weight.t()
+        if row_scale is not None:
+            r = self.effective_residual(unscaled=True)
+            if r is None:
+                raise ValueError("row_scale needs a residual")
+            return bits @ W + row_scale.to(bits.dtype).unsqueeze(1) * (bits @ r) + self.proj.bias
+        r = self.training_residual()
+        if r is not None:
+            W = W + r
+        return bits @ W + self.proj.bias
+
+
+class ScalarValueEmbedding(nn.Module):
+    """xVal-style numeral embedding (Golkar et al. 2023): numeral k -> s(k) * h.
+
+    One learned direction h is shared by every numeral and scaled by the numeral's
+    standardised value s(k) = (k - center) / scale; the defaults standardise over the
+    training range 0..499 (mean 249.5, std 144.3), so the held-out band keeps its place on
+    the line and values past the range extrapolate to |s| > 1.73. Numeral rows get no
+    LayerNorm, so the value scaling reaches the first attention layer (the transformer is
+    post-norm; there is no LayerNorm between the embedding and the first sublayer). Every
+    other token uses a learned row. With tied output the numeral output rows are s(k) * h.
+    """
+
+    def __init__(self, vocab_size: int, d_model: int, numeral_range: Tuple[int, int] = (0, GRID_CELLS - 1),
+                 center: float = 249.5, scale: float = 144.3, init_std: float = 0.02):
+        super().__init__()
+        if scale <= 0:
+            raise ValueError("xval scale must be positive")
+        lo, hi = numeral_range
+        self.center, self.scale = float(center), float(scale)
+        self.fallback = nn.Embedding(vocab_size, d_model)
+        nn.init.normal_(self.fallback.weight, mean=0.0, std=init_std)
+        self.direction = nn.Parameter(torch.randn(d_model) * init_std)
+        values = torch.zeros(vocab_size)
+        values[lo:hi + 1] = (torch.arange(lo, hi + 1, dtype=torch.float32) - self.center) / self.scale
+        is_numeral = torch.zeros(vocab_size, dtype=torch.bool)
+        is_numeral[lo:hi + 1] = True
+        self.register_buffer("values", values)
+        self.register_buffer("is_numeral", is_numeral)
+
+    @property
+    def num_embeddings(self) -> int:
+        return self.fallback.num_embeddings
+
+    def table(self) -> torch.Tensor:
+        numeral_rows = self.values.unsqueeze(1) * self.direction.unsqueeze(0)
+        return torch.where(self.is_numeral.unsqueeze(1), numeral_rows, self.fallback.weight)
+
+    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+        return F.embedding(ids, self.table())
+
+
+class GridEmbedding(nn.Module):
+    """Embed tokens from fixed per-token feature rows (base-625 panels or sinusoid features).
+
+    The full (vocab_size, d_model) table is recomputed from the features on every
+    forward pass (cheap: a few hundred rows), which keeps weight tying trivial
+    and lets ``noise_flip`` corrupt the panels at evaluation time to measure
+    robustness. Rows whose token has no feature row come from ``fallback``.
+    """
+
+    def __init__(self, grid_bank: GridBank, d_model: int, kind: str = "grid_linear", init_std: float = 0.02,
+                 shared_min_period: float = 32.0, shared_axis_freq: int = 4, shared_residual: bool = False,
+                 shared_basis: str = "full", shared_residual_orthogonal: bool = False,
+                 shared_residual_dropout: float = 0.0, shared_residual_dropout_cell: bool = False,
+                 numerals_only: bool = False, numeral_range: Tuple[int, int] = (0, GRID_CELLS - 1)):
+        super().__init__()
+        if kind not in ("grid_linear", "grid_conv", "grid_shared", "sinusoid"):
+            raise ValueError(f"Unknown grid embedding kind: {kind}")
+        if kind in ("grid_conv", "grid_shared") and grid_bank.n_features != GRID_CELLS:
+            raise ValueError(f"{kind} needs 25x25 panels")
+        self.kind = kind
+        self.d_model = d_model
+        vocab_size = grid_bank.vocab_size
+        self.register_buffer("grids", torch.tensor(grid_bank.grids, dtype=torch.float32))
+        has_grid = torch.tensor(grid_bank.has_grid, dtype=torch.bool)
+        # numerals_only: only the numeral rows go through the panel encoder; every other
+        # grid-backed token (operators, answers, other glyphs) uses its learned fallback row.
+        # Without this, a grid_shared residual also carries the operator distinction (under
+        # the ramp basis the operator panels' generated parts are nearly identical), so
+        # anything done to the residual acts on the operators as well as the numerals.
+        if numerals_only:
+            keep = torch.zeros_like(has_grid)
+            lo, hi = numeral_range
+            keep[lo:hi + 1] = has_grid[lo:hi + 1]
+            has_grid = keep
+        self.numerals_only = numerals_only
+        self.register_buffer("has_grid", has_grid)
+        if kind == "grid_conv":
+            self.encoder = ConvGridEncoder(d_model)
+        elif kind == "grid_shared":
+            self.encoder = SharedCellEncoder(d_model, min_period=shared_min_period,
+                                             n_axis_freq=shared_axis_freq, residual=shared_residual,
+                                             basis=shared_basis, residual_orthogonal=shared_residual_orthogonal,
+                                             residual_dropout=shared_residual_dropout,
+                                             residual_dropout_cell=shared_residual_dropout_cell)
+        else:
+            self.encoder = nn.Linear(grid_bank.n_features, d_model)
+        # LayerNorm keeps every panel embedding at the same scale regardless of
+        # how many cells are filled; its gain starts at init_std so grid rows
+        # match the scale of a freshly initialised learned table.
+        self.norm = nn.LayerNorm(d_model)
+        nn.init.constant_(self.norm.weight, init_std)
+        self.fallback = nn.Embedding(vocab_size, d_model)
+        nn.init.normal_(self.fallback.weight, mean=0.0, std=init_std)
+        self.noise_flip: float = 0.0  # evaluation-time bit-flip probability
+        # Evaluation-time probe: a (vocab_size,) tensor of per-row residual scales for the
+        # grid_shared encoder, or None to use the encoder's global scale for every row.
+        self.residual_row_scale: Optional[torch.Tensor] = None
+
+    @property
+    def num_embeddings(self) -> int:
+        return self.fallback.num_embeddings
+
+    def panels(self) -> torch.Tensor:
+        g = self.grids
+        if self.noise_flip > 0.0 and self.kind in GRID_TYPES:
+            flip = (torch.rand_like(g) < self.noise_flip) & self.has_grid.unsqueeze(1)
+            g = torch.where(flip, 1.0 - g, g)
+        return g
+
+    def table(self) -> torch.Tensor:
+        """Full embedding table, shape (vocab_size, d_model)."""
+        if self.residual_row_scale is not None and self.kind == "grid_shared":
+            encoded = self.norm(self.encoder(self.panels(), row_scale=self.residual_row_scale))
+        else:
+            encoded = self.norm(self.encoder(self.panels()))
+        return torch.where(self.has_grid.unsqueeze(1), encoded, self.fallback.weight)
+
+    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+        return F.embedding(ids, self.table())
+
+
 class SymbolicTransformer(nn.Module):
     """
     Transformer model for symbolic FOL reasoning.
     
     Architecture:
-    - Symbol embedding (vocab_size → d_model)
+    - Symbol embedding (vocab_size → d_model): learned table or grid encoder
     - Positional encoding
     - N transformer encoder layers
-    - Output projection (d_model → vocab_size)
+    - Output projection (d_model → vocab_size), optionally tied to the embedding
     
     Key design choices:
     - Smaller d_model than typical (256-512) since we have discrete symbols
@@ -69,7 +356,20 @@ class SymbolicTransformer(nn.Module):
         d_ff: int = 1024,
         max_seq_len: int = 512,
         dropout: float = 0.1,
-        use_causal_mask: bool = True
+        use_causal_mask: bool = True,
+        embedding_type: str = "learned",
+        tie_weights: bool = False,
+        grid_bank: Optional[GridBank] = None,
+        shared_min_period: float = 32.0,
+        shared_axis_freq: int = 4,
+        shared_residual: bool = False,
+        shared_basis: str = "full",
+        shared_residual_orthogonal: bool = False,
+        shared_residual_dropout: float = 0.0,
+        shared_residual_dropout_cell: bool = False,
+        grid_numerals_only: bool = False,
+        xval_center: float = 249.5,
+        xval_scale: float = 144.3,
     ):
         """
         Args:
@@ -81,20 +381,44 @@ class SymbolicTransformer(nn.Module):
             max_seq_len: Maximum sequence length
             dropout: Dropout probability
             use_causal_mask: Use causal attention for autoregressive generation
+            embedding_type: 'learned', 'grid_linear' or 'grid_conv'
+            tie_weights: Compute output logits against the embedding table
+            grid_bank: Panels for grid embeddings (required unless 'learned')
         """
         super().__init__()
         
+        if embedding_type not in EMBEDDING_TYPES:
+            raise ValueError(f"embedding_type must be one of {EMBEDDING_TYPES}, got {embedding_type!r}")
         self.vocab_size = vocab_size
         self.d_model = d_model
         self.n_heads = n_heads
         self.n_layers = n_layers
         self.use_causal_mask = use_causal_mask
+        self.embedding_type = embedding_type
+        self.tie_weights = tie_weights
         
         # Verify d_model is divisible by n_heads
         assert d_model % n_heads == 0, "d_model must be divisible by n_heads"
         
         # 1. Symbol embedding
-        self.symbol_embed = nn.Embedding(vocab_size, d_model)
+        if embedding_type == "learned":
+            self.symbol_embed = nn.Embedding(vocab_size, d_model)
+        elif embedding_type == "xval":
+            self.symbol_embed = ScalarValueEmbedding(vocab_size, d_model, center=xval_center, scale=xval_scale)
+        else:
+            if grid_bank is None:
+                raise ValueError("grid embeddings need a GridBank (pass grid_bank=GridBank.load())")
+            if grid_bank.vocab_size != vocab_size:
+                raise ValueError(f"grid bank has {grid_bank.vocab_size} rows, vocab has {vocab_size}")
+            self.symbol_embed = GridEmbedding(grid_bank, d_model, kind=embedding_type,
+                                              shared_min_period=shared_min_period,
+                                              shared_axis_freq=shared_axis_freq,
+                                              shared_residual=shared_residual,
+                                              shared_basis=shared_basis,
+                                              shared_residual_orthogonal=shared_residual_orthogonal,
+                                              shared_residual_dropout=shared_residual_dropout,
+                                              shared_residual_dropout_cell=shared_residual_dropout_cell,
+                                              numerals_only=grid_numerals_only)
         
         # 2. Positional encoding
         self.pos_encoder = PositionalEncoding(d_model, max_seq_len, dropout)
@@ -116,21 +440,31 @@ class SymbolicTransformer(nn.Module):
             norm=nn.LayerNorm(d_model)
         )
         
-        # 4. Output projection
-        self.output_proj = nn.Linear(d_model, vocab_size)
+        # 4. Output projection (or tied output with a per-token bias)
+        if tie_weights:
+            self.output_proj = None
+            self.output_bias = nn.Parameter(torch.zeros(vocab_size))
+        else:
+            self.output_proj = nn.Linear(d_model, vocab_size)
         
         # Initialize weights
         self._init_weights()
     
     def _init_weights(self):
         """Initialize model weights."""
-        # Xavier/Glorot initialization for embeddings
-        nn.init.normal_(self.symbol_embed.weight, mean=0.0, std=0.02)
+        if isinstance(self.symbol_embed, nn.Embedding):
+            nn.init.normal_(self.symbol_embed.weight, mean=0.0, std=0.02)
         
-        # Initialize output projection
-        nn.init.normal_(self.output_proj.weight, mean=0.0, std=0.02)
-        if self.output_proj.bias is not None:
-            nn.init.zeros_(self.output_proj.bias)
+        if self.output_proj is not None:
+            nn.init.normal_(self.output_proj.weight, mean=0.0, std=0.02)
+            if self.output_proj.bias is not None:
+                nn.init.zeros_(self.output_proj.bias)
+    
+    def embedding_table(self) -> torch.Tensor:
+        """The (vocab_size, d_model) table currently used to embed tokens."""
+        if isinstance(self.symbol_embed, nn.Embedding):
+            return self.symbol_embed.weight
+        return self.symbol_embed.table()
     
     def generate_square_subsequent_mask(self, sz: int) -> torch.Tensor:
         """
@@ -161,8 +495,9 @@ class SymbolicTransformer(nn.Module):
         Returns:
             Logits for next token [batch_size, seq_len, vocab_size]
         """
-        # 1. Embed symbols
-        x = self.symbol_embed(src) * math.sqrt(self.d_model)  # Scale embedding
+        # 1. Embed symbols (one table lookup, shared with the tied output)
+        table = self.embedding_table()
+        x = F.embedding(src, table) * math.sqrt(self.d_model)  # Scale embedding
         
         # 2. Add positional encoding
         x = self.pos_encoder(x)
@@ -176,7 +511,10 @@ class SymbolicTransformer(nn.Module):
         x = self.transformer(x, mask=src_mask)
         
         # 5. Project to vocabulary
-        logits = self.output_proj(x)
+        if self.output_proj is not None:
+            logits = self.output_proj(x)
+        else:
+            logits = x @ table.t() + self.output_bias
         
         return logits
     
@@ -228,68 +566,165 @@ class SymbolicTransformer(nn.Module):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
 
-def create_model(vocab_size: int, model_size: str = 'base') -> SymbolicTransformer:
+MODEL_CONFIGS = {
+    'tiny': {
+        'd_model': 128,
+        'n_heads': 4,
+        'n_layers': 2,
+        'd_ff': 512,
+        'dropout': 0.1
+    },
+    'small': {
+        'd_model': 256,
+        'n_heads': 4,
+        'n_layers': 4,
+        'd_ff': 1024,
+        'dropout': 0.1
+    },
+    'base': {
+        'd_model': 512,
+        'n_heads': 8,
+        'n_layers': 6,
+        'd_ff': 2048,
+        'dropout': 0.1
+    },
+    'large': {
+        'd_model': 768,
+        'n_heads': 12,
+        'n_layers': 12,
+        'd_ff': 3072,
+        'dropout': 0.1
+    }
+}
+
+
+def create_model(
+    vocab_size: int,
+    model_size: str = 'base',
+    embedding_type: str = 'learned',
+    tie_weights: bool = False,
+    grid_bank: Optional[Union[GridBank, str, Path]] = None,
+    verbose: bool = True,
+    sinusoid_min_period: float = 2.0,
+    shared_min_period: float = 32.0,
+    shared_axis_freq: int = 4,
+    shared_residual: bool = False,
+    shared_basis: str = "full",
+    shared_residual_orthogonal: bool = False,
+    shared_residual_dropout: float = 0.0,
+    shared_residual_dropout_cell: bool = False,
+    grid_numerals_only: bool = False,
+    xval_center: float = 249.5,
+    xval_scale: float = 144.3,
+) -> SymbolicTransformer:
     """
     Factory function for creating models of different sizes.
     
     Args:
         vocab_size: Vocabulary size
         model_size: 'tiny', 'small', 'base', 'large'
+        embedding_type: 'learned', 'grid_linear' or 'grid_conv'
+        tie_weights: Tie the output layer to the embedding table
+        grid_bank: GridBank, path to a bank .npz, or None to load the default
+            bank (only used for grid embeddings)
+        sinusoid_min_period: shortest period of the sinusoid features (sinusoid arm)
+        shared_min_period / shared_axis_freq / shared_residual: grid_shared basis
+            (shortest index period, number of row/col frequencies, per-cell residual)
+        shared_basis / shared_residual_orthogonal / shared_residual_dropout(_cell):
+            basis of the generated cell weights, residual projected off the
+            generated directions, residual dropped during training (whole or per cell)
         
     Returns:
         SymbolicTransformer model
     """
-    configs = {
-        'tiny': {
-            'd_model': 128,
-            'n_heads': 4,
-            'n_layers': 2,
-            'd_ff': 512,
-            'dropout': 0.1
-        },
-        'small': {
-            'd_model': 256,
-            'n_heads': 4,
-            'n_layers': 4,
-            'd_ff': 1024,
-            'dropout': 0.1
-        },
-        'base': {
-            'd_model': 512,
-            'n_heads': 8,
-            'n_layers': 6,
-            'd_ff': 2048,
-            'dropout': 0.1
-        },
-        'large': {
-            'd_model': 768,
-            'n_heads': 12,
-            'n_layers': 12,
-            'd_ff': 3072,
-            'dropout': 0.1
-        }
-    }
-    
-    if model_size not in configs:
+    if model_size not in MODEL_CONFIGS:
         raise ValueError(f"Unknown model size: {model_size}")
     
-    config = configs[model_size]
+    bank: Optional[GridBank] = None
+    if embedding_type == 'sinusoid':
+        if isinstance(grid_bank, GridBank) and grid_bank.n_features == GRID_CELLS:
+            raise ValueError("embedding_type='sinusoid' was given a 625-column panel bank; pass a sinusoid_bank() or None")
+        bank = grid_bank if isinstance(grid_bank, GridBank) else sinusoid_bank(vocab_size, min_period=sinusoid_min_period)
+    elif embedding_type not in ('learned', 'xval'):
+        if isinstance(grid_bank, GridBank):
+            bank = grid_bank
+        else:
+            bank = GridBank.load(grid_bank if grid_bank is not None else DEFAULT_BANK_PATH)
+    
+    config = MODEL_CONFIGS[model_size]
     model = SymbolicTransformer(
         vocab_size=vocab_size,
+        embedding_type=embedding_type,
+        tie_weights=tie_weights,
+        grid_bank=bank,
+        shared_min_period=shared_min_period,
+        shared_axis_freq=shared_axis_freq,
+        shared_residual=shared_residual,
+        shared_basis=shared_basis,
+        shared_residual_orthogonal=shared_residual_orthogonal,
+        shared_residual_dropout=shared_residual_dropout,
+        shared_residual_dropout_cell=shared_residual_dropout_cell,
+        grid_numerals_only=grid_numerals_only,
+        xval_center=xval_center,
+        xval_scale=xval_scale,
         **config
     )
     
-    n_params = model.count_parameters()
-    print(f"✓ Created {model_size} model with {n_params:,} parameters")
+    if verbose:
+        n_params = model.count_parameters()
+        extra = f", {embedding_type}{', tied' if tie_weights else ''}"
+        print(f"✓ Created {model_size} model with {n_params:,} parameters{extra}")
     
     return model
+
+
+def load_model_from_checkpoint(
+    checkpoint: Union[str, Path, dict],
+    vocab_size: int,
+    device: Union[str, torch.device] = 'cpu',
+    verbose: bool = True,
+) -> Tuple[SymbolicTransformer, dict]:
+    """Rebuild a model from a checkpoint written by training/train.py.
+
+    Works for checkpoints from before the grid embeddings existed (they carry
+    no ``embedding_type``/``tie_weights`` keys and default to the original
+    learned, untied model). Grid panels are restored from the checkpoint's own
+    buffers, so no grid bank file is needed at load time.
+    """
+    device = torch.device(device)
+    if not isinstance(checkpoint, dict):
+        checkpoint = torch.load(checkpoint, map_location=device)
+    config = checkpoint.get('config', {})
+    embedding_type = config.get('embedding_type', 'learned')
+    tie_weights = bool(config.get('tie_weights', False))
+    bank = None
+    if embedding_type not in ('learned', 'xval'):
+        # Feature width comes from the checkpoint (625 for panels, 2*n_freq for sinusoid).
+        n_features = int(checkpoint['model_state_dict']['symbol_embed.grids'].shape[1])
+        bank = GridBank.empty(vocab_size, n_features)
+    model = create_model(vocab_size, config.get('model_size', 'tiny'), embedding_type=embedding_type,
+                         tie_weights=tie_weights, grid_bank=bank, verbose=verbose,
+                         shared_min_period=float(config.get('shared_min_period', 32.0)),
+                         shared_axis_freq=int(config.get('shared_axis_freq', 4)),
+                         shared_residual=bool(config.get('shared_residual', False)),
+                         shared_basis=str(config.get('shared_basis', 'full')),
+                         shared_residual_orthogonal=bool(config.get('shared_residual_orthogonal', False)),
+                         shared_residual_dropout=float(config.get('shared_residual_dropout', 0.0)),
+                         shared_residual_dropout_cell=bool(config.get('shared_residual_dropout_cell', False)),
+                         grid_numerals_only=bool(config.get('grid_numerals_only', False)),
+                         xval_center=float(config.get('xval_center', 249.5)),
+                         xval_scale=float(config.get('xval_scale', 144.3)))
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.to(device)
+    model.eval()
+    return model, checkpoint
 
 
 if __name__ == "__main__":
     # Test model creation
     print("Testing Symbolic Transformer model...\n")
     
-    vocab_size = 663  # 625 numerals + 38 FOL symbols
+    vocab_size = 671  # matches unified_vocabulary.json (625 numerals + 37 symbols + 9 special)
     
     for size in ['tiny', 'small', 'base', 'large']:
         print(f"\n{size.upper()} model:")
@@ -309,5 +744,11 @@ if __name__ == "__main__":
         prompt = torch.randint(0, vocab_size, (1, 5))
         generated = model.generate(prompt, max_new_tokens=10)
         print(f"  Generation:   {prompt.shape} → {generated.shape}")
+    
+    print("\nGrid embedding variants (tiny, tied):")
+    for emb in ('grid_linear', 'grid_conv', 'grid_shared', 'sinusoid'):
+        model = create_model(vocab_size, 'tiny', embedding_type=emb, tie_weights=True)
+        logits = model(torch.randint(0, vocab_size, (2, 16)))
+        print(f"  {emb}: logits {tuple(logits.shape)}")
     
     print("\n✓ Model tests passed!")

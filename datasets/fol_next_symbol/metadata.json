@@ -1,25 +1,58 @@
 {
-  "generator": "basic_with_boundaries_v1",
+  "generator": "basic_with_boundaries_v3",
+  "unique_formulas": "within each split and across all splits",
   "vocab_path": "unified_vocabulary.json",
   "vocab_size": 671,
   "uses_boundaries": true,
+  "seed": 42,
+  "max_seq_len": 128,
+  "complexity_distribution": [
+    [
+      1,
+      0.2
+    ],
+    [
+      2,
+      0.4
+    ],
+    [
+      3,
+      0.3
+    ],
+    [
+      4,
+      0.1
+    ]
+  ],
   "config": {
     "max_depth": 3,
-    "max_variables": 5,
-    "max_predicates": 5
+    "max_variables": 100,
+    "max_predicates": 100
+  },
+  "index_pools": {
+    "train": [
+      0,
+      99
+    ],
+    "holdout": null,
+    "far": null,
+    "train_pool_size": 100
   },
   "splits": {
     "train": {
       "num_formulas": 10000,
-      "num_samples": 163614
+      "num_samples": 165378,
+      "duplicates_redrawn": 122
     },
     "val": {
       "num_formulas": 1000,
-      "num_samples": 15664
+      "num_samples": 17309,
+      "duplicates_redrawn": 19
     },
     "test": {
       "num_formulas": 1000,
-      "num_samples": 16748
+      "num_samples": 17334,
+      "duplicates_redrawn": 27
     }
   }
 }
