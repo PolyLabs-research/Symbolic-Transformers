@@ -362,3 +362,51 @@ Open after this audit: No reachable source measures the scale at which a readout
 - (adjacent only) Conformal Fusion Under Missing Modalities (2026) and modality-dropout literature — Modality dropout is used at fixed rates; this paper argues explicitly against annealing the drop rate toward the test-time rate. No annealed-to-zero auxiliary channel with removal at test time was found. https://arxiv.org/abs/2608.07183
 
 Open after this audit: No source was found that reads a numeral code with zero per-value parameters at unit resolution on both-unseen pairs, or that publishes an extrapolation decay curve per code under matched training, so the plan's two-part hypothesis is not answered by existing work. Two items could still weaken it and should be read in full (tables unreachable from this machine: aclanthology.org, arxiv.org and all mirrors fail DNS; only github.com resolves): (1) Wallace et al. 2019 Table 7 and DICE's experiments section, to confirm no fixed code already extrapolates well on an ordering probe; (2) Shultz et al. 2022, whose cascade-correlation comparison model generalises from 1-9 to 4-digit integers, to see what input code gives it that reach. The closest mechanism precedents (Orthogonalized Read scaffold blended out over the last 30% of training, PIQL teacher-annealed privileged information, SDPG decayed distillation weight) show that 'training-only component faded out' is now a recognised move in 2026 work, so the write-up should cite them and claim the readability-floor fade and the readout tracking as the specific contribution rather than the fade itself. The xVal planets-gap interpolation and the Count-to-n scalar-embedding result mean shortcut risk 2 (a scalar code may learn from scratch in a small model) is live and M2's linear arm with and without embedding LayerNorm must be run before claiming the scaffold is necessary. Links from this audit were appended to /home/user/Symbolic-Transformers/experiments/related_work.md.
+
+## Formula evaluation (checked 2026-10-16, before building Stage A)
+
+Searched for work that already answers what `plan_formula_evaluation.md` would measure. The notes come
+from search summaries and abstracts. arxiv.org, export.arxiv.org and the Semantic Scholar API are blocked
+from this machine, so no full text was read.
+
+- **Theory: formula evaluation needs serial steps.** Boolean formula evaluation is NC¹-complete
+  (Buss 1987), while fixed-depth transformers without chain of thought sit in TC⁰. So unless TC⁰ = NC¹,
+  no fixed-depth model evaluates formulas of unbounded depth; with O(n) chain-of-thought steps,
+  constant-depth transformers can (Li, Liu, Zhou & Ma, "Chain of Thought Empowers Transformers to Solve
+  Inherently Serial Problems", ICML 2023). Feng et al. 2023 ("Towards Revealing the Mystery behind Chain
+  of Thought") make the same point for arithmetic expressions. **Consequence for Stage A:** a direct
+  answer should not extrapolate to deeper formulas, while a scratchpad of local steps can.
+  https://icml.cc/virtual/2023/27237 https://arxiv.org/pdf/2305.15408
+- **Zhang, Li, Meng, Chang & Van den Broeck, "On the Paradox of Learning to Reason from Data"** (IJCAI
+  2023). BERT reaches near-perfect accuracy on its own propositional-deduction distribution
+  (SimpleLogic) and fails on others, because it learns statistical features inherent to such problems.
+  Removing those features jointly is infeasible, though BERT has the capacity to solve the task exactly.
+  **Consequence:** minimal pairs, a sampler shift and surface baselines.
+  https://arxiv.org/abs/2205.11502 https://ijcai.org/proceedings/2023/375
+- **Tong, Çakar & Pehlevan, "Boule or Baguette? A Study on Task Topology, Length Generalization, and the
+  Benefit of Reasoning Traces"** (February 2026). PITA has 23M propositional statements with proofs.
+  Models trained with reasoning traces generalise well on "broad, shallow" subsets and worse than
+  direct prediction on "narrow, deep" ones. **Consequence:** keep the trace short, one step per formula
+  level rather than one per operator. https://arxiv.org/abs/2602.14404
+- **Langedijk, Jumelet & Zuidema, "Propositional Logic for Probing Generalization in Neural Networks"**
+  (2025; later titled "Logic Satisfiability as a Probe for Inductive Biases in Neural Networks").
+  Transformers, GCNs and LSTMs generate satisfying assignments. All do well in distribution, but
+  transformers do not apply negation compositionally without added structural bias. **Consequence:**
+  the `test_negation` split. https://arxiv.org/abs/2506.08978
+- **Lazić, Fowl, György & Szepesvári, "To See the Unseen: on the Generalization Ability of Transformers
+  in Symbolic Reasoning"** (April 2026). Output vectors for tokens unseen in training collapse together,
+  which explains why variable names unseen in training fail. Remedies include an easier copy
+  mechanism, more data diversity, and resetting or freezing embeddings. **Consequence:** object names
+  are drawn from the trained range for every world, not held out. https://arxiv.org/abs/2604.21632
+- **Hahn, Schmitt, Kreber, Rabe & Finkbeiner, "Teaching Temporal Logics to Neural Networks"** (ICLR
+  2021; also "Transformers Generalize to the Semantics of Logics"). Transformers predict satisfying
+  assignments and generalise to larger formulas than trained. Tree positional encodings help: 86.1%
+  against 75.7% semantic accuracy at size 35-50. https://arxiv.org/abs/2003.04218
+- **Evans, Saxton, Amos, Kohli & Grefenstette, "Can Neural Networks Understand Logical Entailment?"**
+  (ICLR 2018). On propositional entailment, tree-structured networks beat LSTMs, which beat CNNs, and
+  PossibleWorldNets beat all of them. https://arxiv.org/abs/1802.08535
+
+Nothing found measures the plan's combination: a tiny model evaluating formulas against explicit finite
+worlds, with minimal pairs, direct answers and a level-wise scratchpad compared across depth and world
+size. The theory predicts the direct format's failure past the trained depth, so that result alone would
+confirm known theory, not be new.

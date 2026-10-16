@@ -10,3 +10,8 @@ benchmark_report*.json
 venv/
 .venv/
 runs/
+
+# Formula-evaluation data is regenerated from its seed (data/eval_generator.py); metadata.json
+# records each split's sha256.
+datasets/eval_stage_a/*.json
+!datasets/eval_stage_a/metadata.json

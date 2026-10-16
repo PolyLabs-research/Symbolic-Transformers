@@ -1,0 +1,132 @@
+{
+  "generator": "eval_stage_a_v1",
+  "seed": 0,
+  "unary_preds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "binary_preds": [
+    4
+  ],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {},
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.5,
+      "max_scratch_len": 315,
+      "sha256": "cf3d6285861ce8be4e836e61cdaea8b20d287f1fc454ca5855fb3913a6b95835",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 41402
+    },
+    "val": {
+      "sampler": {},
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.5035,
+      "max_scratch_len": 298,
+      "sha256": "176b345b8b9e128b6e92269fa8b7a590359267727cc24bd70f9b13ccfb2911a5",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 1691
+    },
+    "test_iid": {
+      "sampler": {},
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 281,
+      "sha256": "b2da273d6cfbbe15a3247a92949b2b0630b8e35b9e0af4671349db1f89d760b9",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 197,
+      "balance_rejects": 739
+    },
+    "test_deep": {
+      "sampler": {
+        "max_height": [
+          4,
+          5
+        ]
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 511,
+      "sha256": "5bc47c9af7111a541944622e4621c742e11adc03f9b4273fda2e5fe4b8a9557c",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 333,
+      "balance_rejects": 765
+    },
+    "test_large_world": {
+      "sampler": {
+        "objects": [
+          5,
+          6
+        ]
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 408,
+      "sha256": "1c933303ba4d10a8d33745077a56fa576fcfe445078dc5fd9095a2760f0f517d",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 163,
+      "balance_rejects": 823
+    },
+    "test_shift": {
+      "sampler": {
+        "rho": [
+          0.2,
+          0.8
+        ],
+        "p_not": 0.5,
+        "conn_weights": [
+          0.1,
+          0.1,
+          0.4,
+          0.4
+        ]
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 326,
+      "sha256": "7b485b36ef0bdd70b76047f9f43fcf908da01cafa3af5cabd720221ac27f25d9",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 118,
+      "balance_rejects": 750
+    },
+    "test_negation": {
+      "sampler": {
+        "not_mode": "compound"
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 287,
+      "sha256": "ab6c6d07a4075a1a5900d5de6271d3e52f60977b1d0f519c1423b6b6bb5b9474",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 285,
+      "balance_rejects": 661
+    }
+  }
+}

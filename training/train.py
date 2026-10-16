@@ -98,6 +98,8 @@ class TrainingConfig:
     xval_scale: float = 144.3
     # Warm start: model weights loaded from this checkpoint before training (optimizer and schedule fresh).
     init_from: Optional[str] = None
+    # Item datasets (data/eval_generator.py): which written format to train on.
+    seq_format: str = "direct"
     # Separate optimiser group for the grid_shared per-cell residual.
     residual_lr_mult: float = 1.0
     residual_weight_decay: Optional[float] = None
@@ -250,6 +252,87 @@ def trim_padding(input_ids: torch.Tensor, lengths: torch.Tensor) -> torch.Tensor
     return input_ids[:, :int(lengths.max())]
 
 
+class SequenceDataset(Dataset):
+    """Whole sequences with loss on a suffix: one forward pass per item.
+
+    Items come from data/eval_generator.py: ``<fmt>_seq`` is the full token sequence and
+    ``<fmt>_from`` the index of its first target token. Each item gives ``input_ids`` (the sequence
+    without its last token, right-padded) and ``labels`` (the sequence shifted left by one, with -100
+    before the target suffix and on padding), so the loss covers exactly the target tokens.
+    """
+
+    def __init__(self, data: Dict, fmt: str, pad_id: int, source: str = ""):
+        self.items = data["items"]
+        self.fmt, self.pad_id = fmt, pad_id
+        self.max_len = max(len(it[f"{fmt}_seq"]) for it in self.items) - 1
+        print(f"✓ Loaded {len(self.items)} {fmt} items from {source} (inputs padded to {self.max_len}, "
+              f"pad_id={pad_id})")
+
+    def __len__(self) -> int:
+        return len(self.items)
+
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+        it = self.items[idx]
+        seq, start = it[f"{self.fmt}_seq"], it[f"{self.fmt}_from"]
+        n = len(seq) - 1
+        labels = [-100] * (start - 1) + seq[start:]
+        pad = self.max_len - n
+        return {
+            "input_ids": torch.tensor(seq[:-1] + [self.pad_id] * pad, dtype=torch.long),
+            "labels": torch.tensor(labels + [-100] * pad, dtype=torch.long),
+            "length": torch.tensor(n, dtype=torch.long),
+        }
+
+
+class LengthBucketSampler(torch.utils.data.Sampler):
+    """Batches of similar-length items, so little of each batch is padding.
+
+    Each epoch the items are shuffled, cut into chunks of ``bucket`` batches, sorted by length within a
+    chunk and batched; the batch order is then shuffled. Without shuffling, batches follow length order.
+    """
+
+    def __init__(self, lengths: List[int], batch_size: int, shuffle: bool = True, bucket: int = 50):
+        self.lengths, self.batch_size, self.shuffle, self.bucket = lengths, batch_size, shuffle, bucket
+
+    def _batches(self) -> List[List[int]]:
+        n = len(self.lengths)
+        order = torch.randperm(n).tolist() if self.shuffle else sorted(range(n), key=self.lengths.__getitem__)
+        chunk = self.batch_size * self.bucket
+        batches = []
+        for s in range(0, n, chunk):
+            part = sorted(order[s:s + chunk], key=self.lengths.__getitem__)
+            batches += [part[i:i + self.batch_size] for i in range(0, len(part), self.batch_size)]
+        if self.shuffle:
+            batches = [batches[i] for i in torch.randperm(len(batches)).tolist()]
+        return batches
+
+    def __iter__(self):
+        return iter(self._batches())
+
+    def __len__(self) -> int:
+        n, chunk = len(self.lengths), self.batch_size * self.bucket
+        return sum(-(-min(chunk, n - s) // self.batch_size) for s in range(0, n, chunk))
+
+
+def make_loader(dataset: Dataset, batch_size: int, shuffle: bool, num_workers: int, pin_memory: bool):
+    """Item datasets are batched by length; next-symbol sample files as before."""
+    if isinstance(dataset, SequenceDataset):
+        lengths = [len(it[f"{dataset.fmt}_seq"]) for it in dataset.items]
+        return DataLoader(dataset, batch_sampler=LengthBucketSampler(lengths, batch_size, shuffle),
+                          num_workers=num_workers, pin_memory=pin_memory)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers,
+                      pin_memory=pin_memory)
+
+
+def open_dataset(path: str, max_seq_len: int, pad_id: int, seq_format: str = "direct") -> Dataset:
+    """A next-symbol sample file (FOLDataset) or an item file from data/eval_generator.py."""
+    with open(path) as f:
+        data = json.load(f)
+    if "items" in data:
+        return SequenceDataset(data, seq_format, pad_id, path)
+    return FOLDataset(path, max_seq_len, pad_id=pad_id)
+
+
 class FOLDataset(Dataset):
     """PyTorch Dataset for FOL next-symbol prediction.
 
@@ -371,6 +454,19 @@ class Trainer:
         
         self.history = {'train_loss': [], 'val_loss': [], 'learning_rate': []}
     
+    def batch_loss(self, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
+        """Cross-entropy for one batch: at the last real token (next-symbol samples) or on every
+        labelled position (SequenceDataset items)."""
+        lengths = batch['length'].to(self.device)
+        input_ids = trim_padding(batch['input_ids'].to(self.device), lengths)
+        logits = self.model(input_ids)
+        if 'labels' in batch:
+            labels = batch['labels'][:, :input_ids.size(1)].to(self.device)
+            return self.criterion(logits.reshape(-1, logits.size(-1)), labels.reshape(-1))
+        # Logits at the actual end of each context (lengths are 1-based)
+        rows = torch.arange(input_ids.size(0), device=self.device)
+        return self.criterion(logits[rows, lengths - 1, :], batch['target'].to(self.device))
+
     def train_epoch(self) -> float:
         """Train for one epoch."""
         self.model.train()
@@ -378,24 +474,7 @@ class Trainer:
         num_batches = 0
         
         for batch_idx, batch in enumerate(self.train_loader):
-            input_ids = batch['input_ids'].to(self.device)
-            targets = batch['target'].to(self.device)
-            lengths = batch['length'].to(self.device)
-            input_ids = trim_padding(input_ids, lengths)
-            
-            # Forward pass
-            logits = self.model(input_ids)
-            
-            # CRITICAL FIX: Select logits at the actual end of the sequence
-            # Create indices [0, 1, 2, ... batch_size-1]
-            batch_indices = torch.arange(input_ids.size(0), device=self.device)
-            
-            # Select [batch_i, length_i - 1, :]
-            # We subtract 1 because lengths are 1-based, indices are 0-based
-            last_token_logits = logits[batch_indices, lengths - 1, :]
-            
-            # Compute loss
-            loss = self.criterion(last_token_logits, targets)
+            loss = self.batch_loss(batch)
             
             # Backward pass
             self.optimizer.zero_grad()
@@ -429,18 +508,7 @@ class Trainer:
         
         with torch.no_grad():
             for batch in self.val_loader:
-                input_ids = batch['input_ids'].to(self.device)
-                targets = batch['target'].to(self.device)
-                lengths = batch['length'].to(self.device)
-                input_ids = trim_padding(input_ids, lengths)
-                
-                logits = self.model(input_ids)
-                
-                # CRITICAL FIX: Same logic as training
-                batch_indices = torch.arange(input_ids.size(0), device=self.device)
-                last_token_logits = logits[batch_indices, lengths - 1, :]
-                
-                loss = self.criterion(last_token_logits, targets)
+                loss = self.batch_loss(batch)
                 
                 total_loss += loss.item()
                 num_batches += 1
@@ -569,6 +637,8 @@ def main():
                         help="grid_shared: shortest period of the cell-index features")
     parser.add_argument("--shared-axis-freq", type=int, default=4,
                         help="grid_shared: number of row/col frequencies (0 = index features only)")
+    parser.add_argument("--seq-format", default="direct", choices=["direct", "scratch"],
+                        help="For item datasets (data/eval_generator.py): train on the direct answer or the scratchpad")
     parser.add_argument("--init-from", default=None, metavar="CKPT",
                         help="warm start: load model weights from CKPT (strict; optimizer, schedule and epochs start fresh)")
     parser.add_argument("--xval-center", type=float, default=249.5,
@@ -644,6 +714,7 @@ def main():
     config.xval_center = args.xval_center
     config.xval_scale = args.xval_scale
     config.init_from = args.init_from
+    config.seq_format = args.seq_format
     config.shared_basis = args.shared_basis
     config.shared_residual_orthogonal = args.residual_orthogonal
     config.shared_residual_dropout = args.residual_dropout
@@ -699,7 +770,7 @@ def main():
                     'shared_residual_orthogonal', 'shared_residual_dropout',
                     'shared_residual_dropout_cell', 'sinusoid_min_period', 'residual_anneal',
                     'residual_anneal_floor', 'residual_anneal_hold', 'residual_anneal_rewarm',
-                    'residual_anneal_stages', 'grid_numerals_only', 'xval_center', 'xval_scale'):
+                    'residual_anneal_stages', 'grid_numerals_only', 'xval_center', 'xval_scale', 'seq_format'):
             if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
@@ -708,14 +779,12 @@ def main():
 
     print("\nLoading datasets...")
     pad_id = vocab.pad_token if vocab.pad_token is not None else 0
-    train_dataset = FOLDataset(config.train_data_path, config.max_seq_len, pad_id=pad_id)
-    val_dataset = FOLDataset(config.val_data_path, config.max_seq_len, pad_id=pad_id)
+    train_dataset = open_dataset(config.train_data_path, config.max_seq_len, pad_id, config.seq_format)
+    val_dataset = open_dataset(config.val_data_path, config.max_seq_len, pad_id, config.seq_format)
     
     use_cuda = torch.cuda.is_available()
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True,
-                              num_workers=args.num_workers, pin_memory=use_cuda)
-    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False,
-                            num_workers=args.num_workers, pin_memory=use_cuda)
+    train_loader = make_loader(train_dataset, config.batch_size, True, args.num_workers, use_cuda)
+    val_loader = make_loader(val_dataset, config.batch_size, False, args.num_workers, use_cuda)
     
     print("\nCreating model...")
     bank = GridBank.load(config.grid_bank) if config.embedding_type in ('grid_linear', 'grid_conv', 'grid_shared') else None

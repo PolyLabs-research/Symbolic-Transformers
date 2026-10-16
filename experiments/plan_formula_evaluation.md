@@ -1,6 +1,6 @@
 # Plan: formula evaluation, a task with a right answer
 
-**Status: sketch for a decision; nothing built yet.**
+**Status: Stage A built and pre-registered (below); runs pending. Stage B not started.**
 
 Next-symbol prediction on generated formulas is solved: the tiny model reaches the generator's own ceiling
 (`fol_retrain.md`). It tests syntax, because the formulas mean nothing. This task gives them meaning. The
@@ -109,3 +109,65 @@ Thresholds to be fixed before any run:
 - The world encoding: an explicit domain list and listed true atoms (above), or a per-object
   description?
 - Direct answers only, or plan for the scratchpad variant from the start?
+
+## Stage A: as built, and pre-registered before any model was trained
+
+The decisions taken were: start with Stage A, use the world encoding above, and plan the scratchpad
+from the start.
+
+- **Data.** `python data/eval_generator.py` writes `datasets/eval_stage_a` in 11 seconds. The data is
+  regenerated from seed 0, and `metadata.json` records each split's sha256.
+  - Signature: unary `PRED 0-3` and binary `PRED 4`.
+  - Worlds: 2-4 objects named from 0-99, each possible atom true with p = 0.5, listed in random order.
+  - Formulas: ground atoms under `NOT` and bracketed binary connectives.
+  - Splits: 50,000 training items, with heights 1, 2 and 3 equally common. Every test split has 1,000
+    minimal pairs.
+- **Formats.** Both are written for every item: a direct answer, and a scratchpad. In the scratchpad,
+  step 0 replaces atoms by their truth values, and each later step evaluates every innermost operator,
+  so it takes one step per level.
+- **Training.** `tiny` (569K parameters), batch 64, learning rate 3e-4, 500 warm-up steps, cosine
+  schedule, 30 epochs, seed 1. The checkpoint kept is the one with the lowest validation loss. The
+  trainer's new sequence mode puts the loss on the answer (direct) or on the whole scratchpad and
+  answer.
+- **Changes after the first baseline check.** The surface baselines were fitted before any training. On
+  a first draft, where 44% of items had height 1, a small MLP on surface features scored 90% in
+  distribution. Height-1 formulas can be answered by counting how many of their atoms are true, so the
+  heights were balanced and the thresholds below are set against that baseline.
+
+**Surface baselines** (accuracy / minimal-pair accuracy, %; they read the world but do not compose):
+
+| | test_iid | test_iid height 3 | test_deep | test_large_world | test_shift | test_negation |
+|---|---|---|---|---|---|---|
+| logistic regression | 57.6 / 31.9 | 51.8 | 52.2 / 19.6 | 56.2 / 29.6 | 60.3 / 41.4 | 47.8 / 17.7 |
+| MLP | 88.2 / 80.2 | 69.4 | 53.8 / 14.9 | 86.5 / 76.9 | 91.1 / 85.7 | 84.3 / 73.7 |
+
+Any predictor that ignores the world scores 0% on pairs, because twins share their formula.
+
+**Thresholds.** A format "evaluates formulas" in Stage A if it passes T1-T3. T4-T6 are reported either way.
+
+| | test | threshold | best surface baseline |
+|---|---|---|---|
+| T1 | reads the world: test_iid pair accuracy | ≥ 90% | 80.2% |
+| T2 | composes within the trained depth: test_iid accuracy at height 3 | ≥ 90% | 69.4% |
+| T3 | composes past the trained depth: test_deep accuracy (heights 4-5) | ≥ 80% | 53.8% |
+| T4 | larger worlds (5-6 objects): test_large_world pair accuracy | ≥ 90% | 76.9% |
+| T5 | sampler shift: test_shift accuracy | within 5 points of test_iid | |
+| T6 | negation of compound formulas: test_negation accuracy | within 5 points of test_iid | |
+
+**Predictions:**
+
+- **P1.** Both formats pass T1.
+- **P2.** The direct format fails T3, scoring under 70% on test_deep. Evaluation is NC¹-complete and a
+  fixed-depth model is in TC⁰, and nothing in training goes past height 3. I am unsure whether it
+  passes T2.
+- **P3.** The scratchpad passes T1 and T2, and beats the direct format on test_deep by at least 15
+  points.
+- **P4.** Where the scratchpad fails, it fails in two places:
+  - positions past the longest training sequence: the deepest test traces reach 470 tokens, against
+    314 in training, and absolute sinusoidal positions are not trained there;
+  - step-0 lookups in larger worlds.
+
+  `scripts/assess_eval.py` separates the two: step-0 accuracy, and accuracy by sequence length.
+
+A confound to read with T3: deeper formulas are also longer sequences, so a failure on test_deep may be
+partly a length failure. Accuracy will be reported by length within test_deep.
