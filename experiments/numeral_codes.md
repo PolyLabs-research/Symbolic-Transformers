@@ -1,6 +1,6 @@
 # Numeral codes head to head: our ramp against an xVal-style code, on two tasks
 
-**Status: runs in progress (interim tables below).** Tables are regenerated with `python scripts/numeral_codes_table.py`.
+**Status: runs in progress (interim tables below).** Tables are regenerated with `python scripts/numeral_codes_table.py`; per-seed numbers are in `numeral_codes.json`.
 
 The question this answers: after `withdrawal_routes.md` reduced our numeral code to "a generated
 two-direction thermometer code, LayerNormed, with learned operator rows", is it any better than the
