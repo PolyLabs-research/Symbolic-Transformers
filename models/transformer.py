@@ -221,7 +221,8 @@ class GridEmbedding(nn.Module):
     def __init__(self, grid_bank: GridBank, d_model: int, kind: str = "grid_linear", init_std: float = 0.02,
                  shared_min_period: float = 32.0, shared_axis_freq: int = 4, shared_residual: bool = False,
                  shared_basis: str = "full", shared_residual_orthogonal: bool = False,
-                 shared_residual_dropout: float = 0.0, shared_residual_dropout_cell: bool = False):
+                 shared_residual_dropout: float = 0.0, shared_residual_dropout_cell: bool = False,
+                 numerals_only: bool = False, numeral_range: Tuple[int, int] = (0, GRID_CELLS - 1)):
         super().__init__()
         if kind not in ("grid_linear", "grid_conv", "grid_shared", "sinusoid"):
             raise ValueError(f"Unknown grid embedding kind: {kind}")
@@ -231,7 +232,19 @@ class GridEmbedding(nn.Module):
         self.d_model = d_model
         vocab_size = grid_bank.vocab_size
         self.register_buffer("grids", torch.tensor(grid_bank.grids, dtype=torch.float32))
-        self.register_buffer("has_grid", torch.tensor(grid_bank.has_grid, dtype=torch.bool))
+        has_grid = torch.tensor(grid_bank.has_grid, dtype=torch.bool)
+        # numerals_only: only the numeral rows go through the panel encoder; every other
+        # grid-backed token (operators, answers, other glyphs) uses its learned fallback row.
+        # Without this, a grid_shared residual also carries the operator distinction (under
+        # the ramp basis the operator panels' generated parts are nearly identical), so
+        # anything done to the residual acts on the operators as well as the numerals.
+        if numerals_only:
+            keep = torch.zeros_like(has_grid)
+            lo, hi = numeral_range
+            keep[lo:hi + 1] = has_grid[lo:hi + 1]
+            has_grid = keep
+        self.numerals_only = numerals_only
+        self.register_buffer("has_grid", has_grid)
         if kind == "grid_conv":
             self.encoder = ConvGridEncoder(d_model)
         elif kind == "grid_shared":
@@ -313,6 +326,7 @@ class SymbolicTransformer(nn.Module):
         shared_residual_orthogonal: bool = False,
         shared_residual_dropout: float = 0.0,
         shared_residual_dropout_cell: bool = False,
+        grid_numerals_only: bool = False,
     ):
         """
         Args:
@@ -358,7 +372,8 @@ class SymbolicTransformer(nn.Module):
                                               shared_basis=shared_basis,
                                               shared_residual_orthogonal=shared_residual_orthogonal,
                                               shared_residual_dropout=shared_residual_dropout,
-                                              shared_residual_dropout_cell=shared_residual_dropout_cell)
+                                              shared_residual_dropout_cell=shared_residual_dropout_cell,
+                                              numerals_only=grid_numerals_only)
         
         # 2. Positional encoding
         self.pos_encoder = PositionalEncoding(d_model, max_seq_len, dropout)
@@ -553,6 +568,7 @@ def create_model(
     shared_residual_orthogonal: bool = False,
     shared_residual_dropout: float = 0.0,
     shared_residual_dropout_cell: bool = False,
+    grid_numerals_only: bool = False,
 ) -> SymbolicTransformer:
     """
     Factory function for creating models of different sizes.
@@ -601,6 +617,7 @@ def create_model(
         shared_residual_orthogonal=shared_residual_orthogonal,
         shared_residual_dropout=shared_residual_dropout,
         shared_residual_dropout_cell=shared_residual_dropout_cell,
+        grid_numerals_only=grid_numerals_only,
         **config
     )
     
@@ -644,7 +661,8 @@ def load_model_from_checkpoint(
                          shared_basis=str(config.get('shared_basis', 'full')),
                          shared_residual_orthogonal=bool(config.get('shared_residual_orthogonal', False)),
                          shared_residual_dropout=float(config.get('shared_residual_dropout', 0.0)),
-                         shared_residual_dropout_cell=bool(config.get('shared_residual_dropout_cell', False)))
+                         shared_residual_dropout_cell=bool(config.get('shared_residual_dropout_cell', False)),
+                         grid_numerals_only=bool(config.get('grid_numerals_only', False)))
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     model.eval()

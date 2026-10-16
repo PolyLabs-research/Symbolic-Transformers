@@ -327,3 +327,36 @@ def test_per_row_residual_scale_touches_only_the_chosen_rows(vocab):
         set_residual_scale(model, 0.5, "numerals")           # needs the vocabulary
     with pytest.raises(ValueError):
         set_residual_scale(model, 1.5)
+
+
+def test_numerals_only_grid_rows_leave_glyphs_learned(tmp_path, vocab):
+    torch = pytest.importorskip("torch")
+    from models.transformer import create_model, load_model_from_checkpoint
+    from utils.grid_bank import GridBank
+
+    torch.manual_seed(0)
+    bank = GridBank.load(ROOT / "grids" / "grid_bank.npz")
+    model = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
+                         verbose=False, shared_basis="ramp", shared_residual=True, grid_numerals_only=True)
+    emb = model.symbol_embed
+    lo, hi = vocab.numeral_range
+    lt, gt = vocab.encode_label("LESS_THAN"), vocab.encode_label("GREATER_THAN")
+    assert emb.has_grid[lo:hi + 1].all() and not emb.has_grid[hi + 1:].any()
+    with torch.no_grad():
+        table = model.embedding_table()
+    # Glyph rows are the learned fallback rows, so the two operators are no longer near-identical.
+    assert torch.equal(table[lt], emb.fallback.weight[lt]) and torch.equal(table[gt], emb.fallback.weight[gt])
+    assert torch.nn.functional.cosine_similarity(table[lt], table[gt], dim=0).abs() < 0.5
+    assert not torch.equal(table[lo], emb.fallback.weight[lo])
+    # The option survives a checkpoint round trip through the loader.
+    torch.save({"model_state_dict": model.state_dict(),
+                "config": {"model_size": "tiny", "embedding_type": "grid_shared", "tie_weights": True,
+                           "shared_basis": "ramp", "shared_residual": True, "grid_numerals_only": True}}, tmp_path / "n.pt")
+    loaded, _ = load_model_from_checkpoint(tmp_path / "n.pt", vocab.vocab_size, "cpu", verbose=False)
+    assert loaded.symbol_embed.numerals_only and not loaded.symbol_embed.has_grid[lt]
+    with torch.no_grad():
+        assert torch.allclose(loaded.embedding_table(), table)
+    # Default behaviour is unchanged: glyphs stay grid-backed.
+    plain = create_model(vocab.vocab_size, "tiny", embedding_type="grid_shared", tie_weights=True, grid_bank=bank,
+                         verbose=False, shared_basis="ramp", shared_residual=True)
+    assert plain.symbol_embed.has_grid[lt]

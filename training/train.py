@@ -91,6 +91,8 @@ class TrainingConfig:
     shared_residual_orthogonal: bool = False
     shared_residual_dropout: float = 0.0
     shared_residual_dropout_cell: bool = False
+    # Only numeral rows go through the panel encoder; operators and other glyphs use learned rows.
+    grid_numerals_only: bool = False
     # Separate optimiser group for the grid_shared per-cell residual.
     residual_lr_mult: float = 1.0
     residual_weight_decay: Optional[float] = None
@@ -550,6 +552,8 @@ def main():
                         help="grid_shared: shortest period of the cell-index features")
     parser.add_argument("--shared-axis-freq", type=int, default=4,
                         help="grid_shared: number of row/col frequencies (0 = index features only)")
+    parser.add_argument("--grid-numerals-only", action="store_true",
+                        help="grid embeddings: only numeral tokens use panels; operators, answers and other glyphs get learned rows")
     parser.add_argument("--shared-residual", action="store_true",
                         help="grid_shared: add a zero-initialised per-cell residual weight")
     parser.add_argument("--residual-orthogonal", action="store_true",
@@ -613,6 +617,7 @@ def main():
     config.shared_min_period = args.shared_min_period
     config.shared_axis_freq = args.shared_axis_freq
     config.shared_residual = args.shared_residual
+    config.grid_numerals_only = args.grid_numerals_only
     config.shared_basis = args.shared_basis
     config.shared_residual_orthogonal = args.residual_orthogonal
     config.shared_residual_dropout = args.residual_dropout
@@ -668,7 +673,7 @@ def main():
                     'shared_residual_orthogonal', 'shared_residual_dropout',
                     'shared_residual_dropout_cell', 'sinusoid_min_period', 'residual_anneal',
                     'residual_anneal_floor', 'residual_anneal_hold', 'residual_anneal_rewarm',
-                    'residual_anneal_stages'):
+                    'residual_anneal_stages', 'grid_numerals_only'):
             if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
@@ -697,7 +702,8 @@ def main():
                          shared_basis=config.shared_basis,
                          shared_residual_orthogonal=config.shared_residual_orthogonal,
                          shared_residual_dropout=config.shared_residual_dropout,
-                         shared_residual_dropout_cell=config.shared_residual_dropout_cell)
+                         shared_residual_dropout_cell=config.shared_residual_dropout_cell,
+                         grid_numerals_only=config.grid_numerals_only)
     trainer = Trainer(model, train_loader, val_loader, config, vocab)
 
     start_epoch = 0

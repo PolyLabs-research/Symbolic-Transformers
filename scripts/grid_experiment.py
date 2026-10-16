@@ -142,6 +142,13 @@ ARMS["grid_ramp_res_orth_anneal_deep_fade8"] = _deep + ["0.2:1,0.4667:0.01,0.566
 ARMS["grid_ramp_res_orth_anneal_deep_fade20"] = _deep + ["0.2:1,0.4667:0.01,0.5667:0.01,0.7333:0.000001"]
 # A constant-angular-speed fixed code (one sin/cos pair, period 1250) trained from scratch.
 ARMS["sinusoid_dice"] = ["--embedding", "sinusoid", "--tie-weights", "--sinusoid-min-period", "1250"]
+# Numerals-only panels (--grid-numerals-only): operators and answers get learned rows, so the
+# residual and anything done to it act on the numerals alone. The confound these remove: under
+# the ramp basis the two operator panels' generated parts are nearly identical, so every
+# earlier residual arm also carried the operator distinction in its residual.
+for _name in ("grid_ramp", "grid_ramp_res_orth", "grid_ramp_res_orth_drop", "grid_ramp_res_orth_anneal_hold",
+              "grid_ramp_res_orth_anneal_deep", "grid_ramp_res_orth_anneal_geo"):
+    ARMS[_name + "_numonly"] = ARMS[_name] + ["--grid-numerals-only"]
 DEFAULT_ARMS = ["learned", "grid_linear", "grid_conv"]
 SPLITS = ("test", "test_holdout", "test_far")
 CATEGORIES = ("overall", "structure", "after_numeral", "numeral", "copy", "fresh")
