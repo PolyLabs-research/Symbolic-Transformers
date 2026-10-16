@@ -170,16 +170,32 @@ set has 5 indices, so index draws have a 20% ceiling, and 503 of its 1,000 formu
 
 ## The benchmark suite (`symbolic_benchmarks.py`)
 
-The retrained model passes 19 of 25 scored cases, against 18 for the shipped model, which really did fail
-on large indices. None of the six remaining failures is the model's error:
+On the original suite the retrained model passed 19 of 25 scored cases, against 18 for the shipped model,
+which really did fail on large indices. None of the six remaining failures was the model's error:
 
-| case | why it isn't a model failure |
+| case | why it wasn't a model failure |
 |---|---|
 | `FUNC 2` | `FUNC` never occurs in the data |
 | connective expected after a complete formula | the grammar requires `MESSAGE_END` there; the model gives it 100% |
 | `RPAREN` ≥ 55% inside a predicate's argument list | the true split is 50/50; the model gives 54.5% |
 | two cases with an unparenthesised `AND` | that syntax never occurs in the data; the model's answers fit the grammar |
 | top-5 overlap between index variants | compares tail tokens at about 0%; top-1 (`MESSAGE_END`, 100%) matches |
+
+**The suite has since been corrected.**
+
+- `tests/test_benchmarks_grammar.py` checks every scored expectation against the grammatical continuations
+  `utils/fol_grammar.py` computes for its input.
+- The wrong cases now expect what the grammar requires. `FUNC` is observational, and so are comparisons
+  that use indices outside the trained range 0-99.
+- The declared but never-checked `expected_distribution` is now scored.
+- Index-variant comparisons use total variation distance instead of top-5 overlap.
+- Two categories are new:
+  - message boundaries, merged from the demo's own copy (the demo now imports the shared definitions);
+  - variable scope.
+
+On the corrected suite the retrained model passes 31 of 32 scored cases. The one failure is the weakness
+measured above: with variables 7 and 42 in scope, only 74% of its probability goes to them, against a
+threshold of 80%.
 
 ## Model size: Base is no better
 

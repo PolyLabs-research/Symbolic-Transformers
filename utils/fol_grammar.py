@@ -120,6 +120,35 @@ class FOLGrammar:
         except FormulaSyntaxError:
             return False
 
+    # Stands for "any index numeral" in continuations().
+    NUMERAL = -1
+
+    def continuations(self, prefix: List[int]) -> set:
+        """Tokens that can follow ``prefix`` (no MESSAGE_START) in some well-formed formula.
+
+        Any index numeral is reported as ``FOLGrammar.NUMERAL``; MESSAGE_END is included when the prefix
+        is already a complete formula.
+        """
+        out = set()
+        if self._viability(list(prefix)) == "complete":
+            out.add(self.end)
+        candidates = sorted(self.quant | self.conn | {self.NOT, self.LP, self.RP, self.COMMA, self.EQ,
+                                                      self.VAR, self.PRED})
+        for tok in candidates:
+            if self._viability(list(prefix) + [tok]) is not None:
+                out.add(tok)
+        if self._viability(list(prefix) + [0]) is not None:
+            out.add(self.NUMERAL)
+        return out
+
+    def _viability(self, tokens):
+        """'complete', 'open' (a proper prefix of some formula) or None (no formula starts this way)."""
+        try:
+            self.annotate(tokens)
+            return "complete"
+        except FormulaSyntaxError as e:
+            return "open" if str(e).startswith("formula ends") else None
+
     def _tok(self, f, i):
         if i >= len(f):
             raise FormulaSyntaxError(f"formula ends at position {i}")

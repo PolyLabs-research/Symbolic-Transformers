@@ -239,7 +239,7 @@ def test_trimming_padding_leaves_last_token_logits_unchanged(vocab):
 def test_model_forward_and_benchmark_runner_end_to_end(vocab):
     torch = pytest.importorskip("torch")
     from models.transformer import create_model
-    from symbolic_benchmarks import BenchmarkRunner
+    from symbolic_benchmarks import BENCHMARKS, BenchmarkRunner
 
     model = create_model(vocab.vocab_size, "tiny")
     runner = BenchmarkRunner(model, vocab, device="cpu")
@@ -247,4 +247,5 @@ def test_model_forward_and_benchmark_runner_end_to_end(vocab):
     assert len(preds) == vocab.vocab_size
     assert abs(sum(preds.values()) - 100.0) < 1e-3
     report = runner.run_category("deterministic")
-    assert len(report["tests"]) == 5 and all("top5" in t for t in report["tests"])
+    assert len(report["tests"]) == len(BENCHMARKS["deterministic"]["tests"])
+    assert all("top5" in t and "passed" in t for t in report["tests"])

@@ -42,7 +42,7 @@ A grammar can tell you what strings are *syntactically valid* with 100% accuracy
 
 ## 🎯 Overview
 
-**Symbolic Transformers** achieve competitive performance on logical reasoning tasks using only **569K parameters** and **671 discrete tokens** — 200× more parameter-efficient than traditional language models.
+**Symbolic Transformers** learn the structure of first-order logic with a **569K-parameter** model over **671 discrete tokens**. On next-symbol prediction for generated formulas the tiny model reaches the best achievable accuracy (58.3% top-1 against a ceiling of 58.4%) and refers back to the variables in scope. Tasks that need the *meaning* of a formula, such as truth or entailment, are not tested yet.
 
 ### Key Innovation
 

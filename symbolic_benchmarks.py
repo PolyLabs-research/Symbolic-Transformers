@@ -22,13 +22,63 @@ import json
 # BENCHMARK DEFINITIONS
 # ============================================================
 
+# Every scored expectation below is checked against the generator's grammar by
+# tests/test_benchmarks_grammar.py (utils/fol_grammar.py lists the grammatical continuations of a
+# prefix). In that grammar a binary connective always sits inside its own brackets, "( A AND B )",
+# so a complete top-level formula can only be followed by MESSAGE_END. Variable and predicate
+# indices are 0-99 in the shipped data; cases using larger indices are observational, because those
+# embedding rows are never trained.
+FORMULA_STARTS = ["PRED", "VAR", "LPAREN", "FORALL", "EXISTS", "NOT"]
+CONNECTIVES = ["AND", "OR", "IMPLIES", "IFF"]
+
 BENCHMARKS = {
-    
+
     # ============================================================
-    # CATEGORY 1: DETERMINISTIC STRUCTURE
-    # These should be near 100% - the grammar requires it
+    # CATEGORY 1: MESSAGE BOUNDARIES
     # ============================================================
-    
+
+    "message_boundaries": {
+        "name": "Message Boundaries",
+        "description": "MESSAGE_END must follow a complete formula and nothing else",
+        "tests": [
+            {
+                "input": "MESSAGE_START",
+                "expected_one_of": FORMULA_STARTS,
+                "message_end_max": 5,
+                "rationale": "A message must contain a formula, so MESSAGE_END is impossible here"
+            },
+            {
+                "input": "PRED 0 LPAREN VAR 0 RPAREN",
+                "expected": "MESSAGE_END",
+                "expected_min": 90,
+                "rationale": "A complete top-level formula ends the message (connectives only appear inside brackets)"
+            },
+            {
+                "input": "FORALL VAR 0 PRED 0 LPAREN VAR 0 RPAREN",
+                "expected": "MESSAGE_END",
+                "expected_min": 90,
+                "rationale": "The quantifier's body is complete, so the whole formula is: the message ends"
+            },
+            {
+                "input": "LPAREN PRED 0 LPAREN VAR 0 RPAREN",
+                "expected_one_of": CONNECTIVES,
+                "message_end_max": 5,
+                "rationale": "An open bracket holds a left operand that needs a connective: ending now is malformed"
+            },
+            {
+                "input": "LPAREN PRED 0 LPAREN VAR 0 RPAREN AND PRED 1 LPAREN VAR 1 RPAREN RPAREN",
+                "expected": "MESSAGE_END",
+                "expected_min": 90,
+                "rationale": "Every bracket is closed and the formula is complete"
+            }
+        ]
+    },
+
+    # ============================================================
+    # CATEGORY 2: DETERMINISTIC STRUCTURE
+    # The grammar allows exactly one token - model should be ~100% confident
+    # ============================================================
+
     "deterministic": {
         "name": "Deterministic Structure",
         "description": "Hard syntactic constraints - model should be ~100% confident",
@@ -52,207 +102,242 @@ BENCHMARKS = {
                 "rationale": "Predicate with index must open argument list"
             },
             {
+                "input": "PRED 3 LPAREN",
+                "expected": "VAR",
+                "expected_min": 95,
+                "rationale": "Arguments are variables"
+            },
+            {
                 "input": "PRED 0 LPAREN VAR 0 COMMA VAR 1",
                 "expected": "RPAREN",
                 "expected_min": 90,
                 "rationale": "Binary predicate with two arguments must close"
             },
             {
-                "input": "FUNC 2",
-                "expected": "LPAREN",
+                "input": "VAR 3",
+                "expected": "EQUALS",
                 "expected_min": 90,
-                "rationale": "Function with index must open argument list"
+                "rationale": "An atomic formula that starts with a variable is an equality"
             }
         ]
     },
 
     # ============================================================
-    # CATEGORY 2: CALIBRATED UNCERTAINTY
+    # CATEGORY 3: CALIBRATED UNCERTAINTY
     # Model should show appropriate uncertainty across valid options
     # ============================================================
-    
+
     "calibrated_uncertainty": {
         "name": "Calibrated Uncertainty",
         "description": "Grammar branches here - model should distribute probability across valid continuations",
         "tests": [
             {
                 "input": "NOT",
-                "expected_one_of": ["PRED", "LPAREN", "FORALL", "EXISTS"],
+                "expected_one_of": FORMULA_STARTS,
                 "expected_max": 40,
-                "rationale": "After NOT, multiple valid continuations: predicate, grouped formula, or quantified formula"
+                "rationale": "Any formula can follow NOT (the generator's most likely start, PRED, has 31%)"
             },
             {
                 "input": "FORALL VAR 1",
-                "expected_one_of": ["LPAREN", "PRED", "FORALL", "EXISTS", "NOT"],
+                "expected_one_of": FORMULA_STARTS,
                 "expected_max": 50,
-                "rationale": "After binding a variable, can start body: predicate, group, nested quantifier, negation"
-            },
-            {
-                "input": "FORALL VAR 0 PRED 0 LPAREN VAR 0 RPAREN",
-                "expected_one_of": ["AND", "OR", "IMPLIES", "IFF"],
-                "expected_max": 40,
-                "rationale": "Complete formula can extend with any connective"
+                "rationale": "After binding a variable, any formula can start the body"
             },
             {
                 "input": "LPAREN PRED 1 LPAREN VAR 0 RPAREN",
-                "expected_one_of": ["AND", "OR", "IMPLIES", "IFF"],
+                "expected_one_of": CONNECTIVES,
                 "expected_max": 35,
-                "rationale": "After first clause in compound, need binary connective"
+                "rationale": "After the first operand, one of four connectives, each with probability 1/4"
             }
         ]
     },
 
     # ============================================================
-    # CATEGORY 3: PREDICATE ARITY
-    # Model should learn distribution of unary vs binary predicates
+    # CATEGORY 4: PREDICATE ARITY
+    # Predicates are unary or binary with equal probability
     # ============================================================
-    
+
     "predicate_arity": {
         "name": "Predicate Arity Distribution",
-        "description": "Model should learn that predicates can be unary or binary",
+        "description": "Predicates are unary or binary, 50/50, whatever the indices",
         "tests": [
             {
                 "input": "PRED 7 LPAREN VAR 2",
-                "expected_one_of": ["RPAREN", "COMMA"],
-                "expected_distribution": {"RPAREN": [50, 80], "COMMA": [20, 50]},
-                "rationale": "After first argument: close (unary) or continue (binary)"
+                "expected_distribution": {"RPAREN": [40, 60], "COMMA": [40, 60]},
+                "rationale": "After the first argument: close (unary) or continue (binary), 50/50"
             },
             {
                 "input": "PRED 0 LPAREN VAR 0",
-                "expected_one_of": ["RPAREN", "COMMA"],
-                "rationale": "Same test with different indices - should show similar distribution"
+                "expected_distribution": {"RPAREN": [40, 60], "COMMA": [40, 60]},
+                "rationale": "Same test with index 0"
             },
             {
                 "input": "PRED 99 LPAREN VAR 50",
-                "expected_one_of": ["RPAREN", "COMMA"],
-                "rationale": "Compositional test - large indices should behave same as small"
+                "expected_distribution": {"RPAREN": [40, 60], "COMMA": [40, 60]},
+                "rationale": "Same test at the top of the trained index range"
             }
         ]
     },
 
     # ============================================================
-    # CATEGORY 4: PARENTHESIS TRACKING
+    # CATEGORY 5: PARENTHESIS TRACKING
     # Critical test: does the model track structural depth?
     # ============================================================
-    
+
     "parenthesis_tracking": {
         "name": "Parenthesis Balance Tracking",
-        "description": "Model must track open/close parens across sequence - tests structural memory",
+        "description": "Model must track open brackets and operands across the sequence",
         "tests": [
             {
                 "input": "LPAREN PRED 0 LPAREN VAR 0 RPAREN AND PRED 1 LPAREN VAR 1",
-                "expected": "RPAREN",
-                "expected_min": 55,
-                "rationale": "Inside PRED 1's argument list - must close predicate paren first"
+                "expected_distribution": {"RPAREN": [40, 60], "COMMA": [40, 60]},
+                "rationale": "Inside PRED 1's argument list: unary or binary, 50/50; the outer bracket must wait"
             },
             {
                 "input": "LPAREN PRED 0 LPAREN VAR 0 RPAREN AND PRED 1 LPAREN VAR 1 RPAREN",
-                "expected_one_of": ["RPAREN", "AND", "OR", "IMPLIES", "IFF"],
-                "rparen_min": 25,
-                "rationale": "Compound complete, one outer LPAREN unclosed - can close or extend"
+                "expected": "RPAREN",
+                "expected_min": 90,
+                "rationale": "Both operands are complete, so the bracket must close (a bracket holds two operands)"
             },
             {
                 "input": "LPAREN LPAREN PRED 0 LPAREN VAR 0 RPAREN AND PRED 1 LPAREN VAR 1 RPAREN RPAREN",
-                "expected_one_of": ["RPAREN", "AND", "OR", "IMPLIES", "IFF"],
-                "rparen_min": 20,
-                "rationale": "Two levels of nesting - still one unclosed outer paren"
+                "expected_one_of": CONNECTIVES,
+                "rparen_max": 5,
+                "message_end_max": 5,
+                "rationale": "The inner compound is the left operand of the outer bracket: a connective must follow"
             },
             {
-                "input": "PRED 0 LPAREN VAR 0 RPAREN AND PRED 1 LPAREN VAR 1 RPAREN",
-                "expected_one_of": ["AND", "OR", "IMPLIES", "IFF"],
-                "rparen_max": 15,
-                "rationale": "All parens balanced - RPAREN should be LOW probability"
+                "input": "LPAREN PRED 0 LPAREN VAR 0 RPAREN AND LPAREN PRED 1 LPAREN VAR 1 RPAREN OR PRED 2 LPAREN VAR 2 RPAREN RPAREN",
+                "expected": "RPAREN",
+                "expected_min": 90,
+                "rationale": "The nested compound closed as the right operand, so the outer bracket closes next"
             }
         ]
     },
 
     # ============================================================
-    # CATEGORY 5: COMPOSITIONAL GENERALISATION
+    # CATEGORY 6: COMPOSITIONAL GENERALISATION
     # Same structure, different indices - tests true learning vs memorisation
     # ============================================================
-    
+
     "compositional_generalisation": {
         "name": "Compositional Generalisation",
-        "description": "Model should treat VAR 0 and VAR 624 identically in structural context",
+        "description": "Structural predictions should not depend on index values (scored within the trained range 0-99)",
         "tests": [
             {
                 "input": "FORALL VAR 0",
                 "compare_with": "FORALL VAR 99",
-                "rationale": "Different variable index should yield same structural predictions"
+                "rationale": "Different variable index should yield the same structural predictions"
+            },
+            {
+                "input": "PRED 0 LPAREN VAR 0",
+                "compare_with": "PRED 50 LPAREN VAR 90",
+                "rationale": "Different predicate and variable indices should yield the same arity distribution"
+            },
+            {
+                "input": "EXISTS VAR 1 PRED 1 LPAREN VAR 1 RPAREN",
+                "compare_with": "EXISTS VAR 70 PRED 40 LPAREN VAR 70 RPAREN",
+                "rationale": "Complete formulas with different indices should have the same continuation"
             },
             {
                 "input": "FORALL VAR 0",
                 "compare_with": "FORALL VAR 624",
-                "rationale": "Max single-digit base-625 index should behave identically"
-            },
-            {
-                "input": "PRED 0 LPAREN VAR 0",
-                "compare_with": "PRED 50 LPAREN VAR 100",
-                "rationale": "Different pred and var indices should yield same arity distribution"
+                "observational": True,
+                "rationale": "Index 624 is outside the trained range: its embedding row was never trained"
             },
             {
                 "input": "EXISTS VAR 1 PRED 1 LPAREN VAR 1 RPAREN",
                 "compare_with": "EXISTS VAR 500 PRED 200 LPAREN VAR 500 RPAREN",
-                "rationale": "Complete formulas with different indices should have same continuation distribution"
+                "observational": True,
+                "rationale": "Indices 200 and 500 are outside the trained range"
             }
         ]
     },
 
     # ============================================================
-    # CATEGORY 6: NESTED QUANTIFIERS
+    # CATEGORY 7: VARIABLE SCOPE
+    # The generator always refers to a bound variable when one is in scope
+    # ============================================================
+
+    "variable_scope": {
+        "name": "Variable Scope",
+        "description": "Variable references should go to the variables bound in scope",
+        "tests": [
+            {
+                "input": "FORALL VAR 7 PRED 3 LPAREN VAR",
+                "expected": "NUM_007",
+                "expected_min": 80,
+                "rationale": "The only variable in scope is 7"
+            },
+            {
+                "input": "FORALL VAR 7 EXISTS VAR 42 PRED 3 LPAREN VAR",
+                "expected_one_of": ["NUM_007", "NUM_042"],
+                "total_min": 80,
+                "expected_max": 75,
+                "rationale": "Variables 7 and 42 are in scope, 50/50; little probability should go elsewhere"
+            },
+            {
+                "input": "PRED 3 LPAREN VAR",
+                "top_max": 5,
+                "rationale": "No variable is in scope, so the index is uniform over 100 values (1% each)"
+            }
+        ]
+    },
+
+    # ============================================================
+    # CATEGORY 8: NESTED QUANTIFIERS
     # Tests understanding of scope and nesting
     # ============================================================
-    
+
     "nested_quantifiers": {
         "name": "Nested Quantifier Handling",
         "description": "Model should handle multiple levels of quantification",
         "tests": [
             {
                 "input": "FORALL VAR 0 FORALL VAR 1",
-                "expected_one_of": ["PRED", "LPAREN", "FORALL", "EXISTS", "NOT"],
+                "expected_one_of": FORMULA_STARTS,
                 "rationale": "After two quantifiers, start body - same options as after one"
             },
             {
                 "input": "FORALL VAR 0 EXISTS VAR 1",
-                "expected_one_of": ["PRED", "LPAREN", "FORALL", "EXISTS", "NOT"],
+                "expected_one_of": FORMULA_STARTS,
                 "rationale": "Mixed quantifiers should behave same as repeated"
             },
             {
                 "input": "FORALL VAR 0 EXISTS VAR 1 FORALL VAR 2",
-                "expected_one_of": ["PRED", "LPAREN", "FORALL", "EXISTS", "NOT"],
+                "expected_one_of": FORMULA_STARTS,
                 "rationale": "Triple nesting - should still understand body comes next"
             }
         ]
     },
 
     # ============================================================
-    # CATEGORY 7: IMPLICATION STRUCTURE
-    # Critical for reasoning - model must understand implies
+    # CATEGORY 9: IMPLICATION STRUCTURE
     # ============================================================
-    
+
     "implication_structure": {
         "name": "Implication Structure",
         "description": "Understanding of antecedent → consequent structure",
         "tests": [
             {
                 "input": "LPAREN PRED 0 LPAREN VAR 0 RPAREN IMPLIES",
-                "expected_one_of": ["PRED", "LPAREN", "FORALL", "EXISTS", "NOT"],
+                "expected_one_of": FORMULA_STARTS,
                 "rationale": "RHS of implication needs a formula"
             },
             {
                 "input": "FORALL VAR 0 LPAREN PRED 0 LPAREN VAR 0 RPAREN IMPLIES PRED 1 LPAREN VAR 0 RPAREN",
                 "expected": "RPAREN",
-                "expected_min": 30,
-                "rationale": "Complete implication inside quantifier scope - should close"
+                "expected_min": 90,
+                "rationale": "Both sides of the implication are complete, so its bracket must close"
             }
         ]
     },
 
     # ============================================================
-    # CATEGORY 8: ERROR RECOVERY / EDGE CASES
+    # CATEGORY 10: ERROR RECOVERY / EDGE CASES
     # What does the model do with unusual inputs?
     # ============================================================
-    
+
     "edge_cases": {
         "name": "Edge Cases",
         "description": "Unusual or malformed inputs - observational, not pass/fail",
@@ -276,10 +361,83 @@ BENCHMARKS = {
                 "input": "LPAREN RPAREN",
                 "observational": True,
                 "rationale": "Empty parens - what continuation does model expect?"
+            },
+            {
+                "input": "MESSAGE_START MESSAGE_END",
+                "observational": True,
+                "rationale": "Empty message - what does model predict?"
+            },
+            {
+                "input": "FUNC 2",
+                "observational": True,
+                "rationale": "FUNC is in the vocabulary but never occurs in the training data"
             }
         ]
     }
 }
+
+
+def total_variation(p: Dict[str, float], q: Dict[str, float]) -> float:
+    """Total variation distance between two prediction dicts given in percent (0-100)."""
+    keys = set(p) | set(q)
+    return sum(abs(p.get(k, 0.0) - q.get(k, 0.0)) for k in keys) / 2
+
+
+def score_test(test: Dict, predict: Callable[[str], Dict[str, float]]) -> Dict:
+    """Score one benchmark case; ``predict`` maps an input string to {token label: percent}."""
+    predictions = predict(test["input"])
+    top5 = sorted(predictions.items(), key=lambda x: x[1], reverse=True)[:5]
+    result = {
+        "input": test["input"],
+        "rationale": test["rationale"],
+        "top5": top5,
+        "observational": test.get("observational", False)
+    }
+
+    if "compare_with" in test:
+        predictions2 = predict(test["compare_with"])
+        tv = total_variation(predictions, predictions2)
+        result["compare_with"] = test["compare_with"]
+        result["top5_compare"] = sorted(predictions2.items(), key=lambda x: x[1], reverse=True)[:5]
+        result["passed"] = tv <= test.get("max_tv", 10)
+        result["detail"] = f"Total variation distance {tv:.1f}%"
+        if not test.get("observational"):
+            result["detail"] += f" (pass <= {test.get('max_tv', 10)}%)"
+    elif "expected" in test:
+        actual = predictions.get(test["expected"], 0)
+        result["passed"] = actual >= test["expected_min"]
+        result["detail"] = f"Expected {test['expected']} >= {test['expected_min']}%, got {actual:.1f}%"
+    elif "expected_one_of" in test:
+        probs = [predictions.get(t, 0) for t in test["expected_one_of"]]
+        total_min = test.get("total_min", 50)
+        result["passed"] = sum(probs) >= total_min
+        result["detail"] = f"Expected one of {test['expected_one_of']}, total prob: {sum(probs):.1f}% (>= {total_min}%)"
+        if "expected_max" in test:
+            result["passed"] = result["passed"] and max(probs) <= test["expected_max"]
+            result["detail"] += f" (max <= {test['expected_max']}%: {max(probs):.1f}%)"
+    elif "expected_distribution" in test:
+        result["passed"] = True
+        parts = []
+        for tok, (lo, hi) in test["expected_distribution"].items():
+            actual = predictions.get(tok, 0)
+            result["passed"] = result["passed"] and lo <= actual <= hi
+            parts.append(f"{tok} {actual:.1f}% (want {lo}-{hi})")
+        result["detail"] = ", ".join(parts)
+    elif "top_max" in test:
+        top = top5[0][1] if top5 else 0
+        result["passed"] = top <= test["top_max"]
+        result["detail"] = f"Largest single-token probability {top:.1f}% (want <= {test['top_max']}%)"
+
+    for tok, key in (("RPAREN", "rparen_max"), ("MESSAGE_END", "message_end_max")):
+        if key in test and "passed" in result:
+            actual = predictions.get(tok, 0)
+            result["passed"] = result["passed"] and actual <= test[key]
+            result["detail"] += f" ({tok} <= {test[key]}%: {actual:.1f}%)"
+
+    if result["observational"]:
+        result.pop("passed", None)
+        result["note"] = "Observational test - no pass/fail criteria"
+    return result
 
 
 # ============================================================
@@ -379,74 +537,8 @@ class BenchmarkRunner:
     
     def _run_single_test(self, test: Dict) -> Dict:
         """Run a single benchmark test."""
-        predictions = self.get_predictions(test["input"])
-        
-        # Get top 5 predictions for display
-        top5 = sorted(predictions.items(), key=lambda x: x[1], reverse=True)[:5]
-        
-        result = {
-            "input": test["input"],
-            "rationale": test["rationale"],
-            "top5": top5,
-            "observational": test.get("observational", False)
-        }
-        
-        if test.get("observational"):
-            result["note"] = "Observational test - no pass/fail criteria"
-            return result
-        
-        # Check deterministic expectation
-        if "expected" in test and "expected_min" in test:
-            expected_token = test["expected"]
-            min_prob = test["expected_min"]
-            actual_prob = predictions.get(expected_token, 0)
-            
-            result["passed"] = actual_prob >= min_prob
-            result["detail"] = f"Expected {expected_token} >= {min_prob}%, got {actual_prob:.1f}%"
-        
-        # Check distribution expectation
-        elif "expected_one_of" in test:
-            expected_tokens = test["expected_one_of"]
-            probs = [predictions.get(t, 0) for t in expected_tokens]
-            total_prob = sum(probs)
-            
-            result["passed"] = total_prob >= 50
-            result["detail"] = f"Expected one of {expected_tokens}, total prob: {total_prob:.1f}%"
-            
-            # Additional checks
-            if "expected_max" in test:
-                max_prob = max(probs)
-                result["passed"] = result["passed"] and max_prob <= test["expected_max"]
-                result["detail"] += f" (max <= {test['expected_max']}%: {max_prob:.1f}%)"
-            
-            if "rparen_min" in test:
-                rparen_prob = predictions.get("RPAREN", 0)
-                result["passed"] = result["passed"] and rparen_prob >= test["rparen_min"]
-                result["detail"] += f" (RPAREN >= {test['rparen_min']}%: {rparen_prob:.1f}%)"
-            
-            if "rparen_max" in test:
-                rparen_prob = predictions.get("RPAREN", 0)
-                result["passed"] = result["passed"] and rparen_prob <= test["rparen_max"]
-                result["detail"] += f" (RPAREN <= {test['rparen_max']}%: {rparen_prob:.1f}%)"
-        
-        # Compositional comparison
-        elif "compare_with" in test:
-            predictions2 = self.get_predictions(test["compare_with"])
-            top5_2 = sorted(predictions2.items(), key=lambda x: x[1], reverse=True)[:5]
-            
-            result["compare_with"] = test["compare_with"]
-            result["top5_compare"] = top5_2
-            
-            # Check if top-5 tokens overlap
-            top5_tokens_1 = set(t for t, _ in top5)
-            top5_tokens_2 = set(t for t, _ in top5_2)
-            overlap = len(top5_tokens_1 & top5_tokens_2)
-            
-            result["passed"] = overlap >= 4
-            result["detail"] = f"Top-5 overlap: {overlap}/5 tokens match"
-        
-        return result
-    
+        return score_test(test, self.get_predictions)
+
     def run_category(self, category_key: str) -> Dict:
         """Run benchmarks for a single category."""
         if category_key not in BENCHMARKS:
