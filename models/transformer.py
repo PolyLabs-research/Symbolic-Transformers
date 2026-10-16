@@ -47,7 +47,7 @@ from utils.grid_bank import (  # noqa: E402
     GRID_CELLS, GRID_N, DEFAULT_BANK_PATH, GridBank, cell_position_features, sinusoid_bank,
 )
 
-EMBEDDING_TYPES = ("learned", "grid_linear", "grid_conv", "grid_shared", "sinusoid")
+EMBEDDING_TYPES = ("learned", "grid_linear", "grid_conv", "grid_shared", "sinusoid", "xval")
 GRID_TYPES = ("grid_linear", "grid_conv", "grid_shared")
 
 
@@ -209,6 +209,47 @@ class SharedCellEncoder(nn.Module):
         return bits @ W + self.proj.bias
 
 
+class ScalarValueEmbedding(nn.Module):
+    """xVal-style numeral embedding (Golkar et al. 2023): numeral k -> s(k) * h.
+
+    One learned direction h is shared by every numeral and scaled by the numeral's
+    standardised value s(k) = (k - center) / scale; the defaults standardise over the
+    training range 0..499 (mean 249.5, std 144.3), so the held-out band keeps its place on
+    the line and values past the range extrapolate to |s| > 1.73. Numeral rows get no
+    LayerNorm, so the value scaling reaches the first attention layer (the transformer is
+    post-norm; there is no LayerNorm between the embedding and the first sublayer). Every
+    other token uses a learned row. With tied output the numeral output rows are s(k) * h.
+    """
+
+    def __init__(self, vocab_size: int, d_model: int, numeral_range: Tuple[int, int] = (0, GRID_CELLS - 1),
+                 center: float = 249.5, scale: float = 144.3, init_std: float = 0.02):
+        super().__init__()
+        if scale <= 0:
+            raise ValueError("xval scale must be positive")
+        lo, hi = numeral_range
+        self.center, self.scale = float(center), float(scale)
+        self.fallback = nn.Embedding(vocab_size, d_model)
+        nn.init.normal_(self.fallback.weight, mean=0.0, std=init_std)
+        self.direction = nn.Parameter(torch.randn(d_model) * init_std)
+        values = torch.zeros(vocab_size)
+        values[lo:hi + 1] = (torch.arange(lo, hi + 1, dtype=torch.float32) - self.center) / self.scale
+        is_numeral = torch.zeros(vocab_size, dtype=torch.bool)
+        is_numeral[lo:hi + 1] = True
+        self.register_buffer("values", values)
+        self.register_buffer("is_numeral", is_numeral)
+
+    @property
+    def num_embeddings(self) -> int:
+        return self.fallback.num_embeddings
+
+    def table(self) -> torch.Tensor:
+        numeral_rows = self.values.unsqueeze(1) * self.direction.unsqueeze(0)
+        return torch.where(self.is_numeral.unsqueeze(1), numeral_rows, self.fallback.weight)
+
+    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+        return F.embedding(ids, self.table())
+
+
 class GridEmbedding(nn.Module):
     """Embed tokens from fixed per-token feature rows (base-625 panels or sinusoid features).
 
@@ -327,6 +368,8 @@ class SymbolicTransformer(nn.Module):
         shared_residual_dropout: float = 0.0,
         shared_residual_dropout_cell: bool = False,
         grid_numerals_only: bool = False,
+        xval_center: float = 249.5,
+        xval_scale: float = 144.3,
     ):
         """
         Args:
@@ -360,6 +403,8 @@ class SymbolicTransformer(nn.Module):
         # 1. Symbol embedding
         if embedding_type == "learned":
             self.symbol_embed = nn.Embedding(vocab_size, d_model)
+        elif embedding_type == "xval":
+            self.symbol_embed = ScalarValueEmbedding(vocab_size, d_model, center=xval_center, scale=xval_scale)
         else:
             if grid_bank is None:
                 raise ValueError("grid embeddings need a GridBank (pass grid_bank=GridBank.load())")
@@ -569,6 +614,8 @@ def create_model(
     shared_residual_dropout: float = 0.0,
     shared_residual_dropout_cell: bool = False,
     grid_numerals_only: bool = False,
+    xval_center: float = 249.5,
+    xval_scale: float = 144.3,
 ) -> SymbolicTransformer:
     """
     Factory function for creating models of different sizes.
@@ -598,7 +645,7 @@ def create_model(
         if isinstance(grid_bank, GridBank) and grid_bank.n_features == GRID_CELLS:
             raise ValueError("embedding_type='sinusoid' was given a 625-column panel bank; pass a sinusoid_bank() or None")
         bank = grid_bank if isinstance(grid_bank, GridBank) else sinusoid_bank(vocab_size, min_period=sinusoid_min_period)
-    elif embedding_type != 'learned':
+    elif embedding_type not in ('learned', 'xval'):
         if isinstance(grid_bank, GridBank):
             bank = grid_bank
         else:
@@ -618,6 +665,8 @@ def create_model(
         shared_residual_dropout=shared_residual_dropout,
         shared_residual_dropout_cell=shared_residual_dropout_cell,
         grid_numerals_only=grid_numerals_only,
+        xval_center=xval_center,
+        xval_scale=xval_scale,
         **config
     )
     
@@ -649,7 +698,7 @@ def load_model_from_checkpoint(
     embedding_type = config.get('embedding_type', 'learned')
     tie_weights = bool(config.get('tie_weights', False))
     bank = None
-    if embedding_type != 'learned':
+    if embedding_type not in ('learned', 'xval'):
         # Feature width comes from the checkpoint (625 for panels, 2*n_freq for sinusoid).
         n_features = int(checkpoint['model_state_dict']['symbol_embed.grids'].shape[1])
         bank = GridBank.empty(vocab_size, n_features)
@@ -662,7 +711,9 @@ def load_model_from_checkpoint(
                          shared_residual_orthogonal=bool(config.get('shared_residual_orthogonal', False)),
                          shared_residual_dropout=float(config.get('shared_residual_dropout', 0.0)),
                          shared_residual_dropout_cell=bool(config.get('shared_residual_dropout_cell', False)),
-                         grid_numerals_only=bool(config.get('grid_numerals_only', False)))
+                         grid_numerals_only=bool(config.get('grid_numerals_only', False)),
+                         xval_center=float(config.get('xval_center', 249.5)),
+                         xval_scale=float(config.get('xval_scale', 144.3)))
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     model.eval()

@@ -27,7 +27,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -68,9 +68,16 @@ def signed_bin(diff: int) -> str:
     raise ValueError(diff)
 
 
+def sides(sample: Dict) -> Tuple[int, int]:
+    """The two compared quantities: (a, b) for the comparison task, (lhs, rhs) for the sum task."""
+    if "lhs" in sample:
+        return sample["lhs"], sample["rhs"]
+    return sample["a"], sample["b"]
+
+
 def signed_difference(sample: Dict) -> int:
     """Difference in the direction that makes the operator TRUE: positive means TRUE."""
-    a, b, op = sample["a"], sample["b"], sample["op"]
+    (a, b), op = sides(sample), sample["op"]
     if op in ("LESS_THAN", "LESS_EQUAL"):
         return b - a
     if op in ("GREATER_THAN", "GREATER_EQUAL"):
@@ -97,12 +104,15 @@ def evaluate_split(model, dataset: FOLDataset, vocab: Vocabulary, device: torch.
         for j, i in enumerate(idxs):
             s = dataset.samples[i]
             target = int(s["target"])
+            lhs, rhs = sides(s)
             rows.append({
-                "a": int(s["a"]), "b": int(s["b"]), "op": s.get("op"),
+                "a": int(lhs), "b": int(rhs), "op": s.get("op"),
+                **({"operands": s["operands"]} if "operands" in s else {}),
                 "correct": int(pred_full[j] == target),
                 "correct_tf": int((tf[j] >= 0.5) == (target == true_id)),
-                "gap": abs(s["a"] - s["b"]),
+                "gap": abs(lhs - rhs),
                 "n_unseen": int(s.get("n_unseen", 0)),
+                "n_operands": int(s.get("n_operands", 2)),
                 "signed": signed_difference(s),
                 "p_true": tf[j],
             })
@@ -111,22 +121,26 @@ def evaluate_split(model, dataset: FOLDataset, vocab: Vocabulary, device: torch.
         sel = list(sel)
         return {"acc": float(np.mean([r[key] for r in sel])) if sel else float("nan"), "n": len(sel)}
 
+    n_ops = max((r["n_operands"] for r in rows), default=2)
+    all_unseen = lambda r: r["n_unseen"] == r["n_operands"]
     out = {
         "overall": acc(rows),
         "overall_tf": acc(rows, "correct_tf"),
         "by_gap": {bin_label(lo, hi): acc(r for r in rows if lo <= r["gap"] <= hi) for lo, hi in GAP_BINS},
-        "by_unseen": {str(k): acc(r for r in rows if r["n_unseen"] == k) for k in (0, 1, 2)},
-        # Gap breakdown restricted to pairs where BOTH operands are unseen: the
+        "by_unseen": {str(k): acc(r for r in rows if r["n_unseen"] == k) for k in range(n_ops + 1)},
+        # Gap breakdown restricted to samples where EVERY operand is unseen: the
         # only comparison that cannot be answered by treating an unknown token
         # as "an average value" (a held-out band in the middle of the range
         # makes that guess right for most one-unseen pairs).
-        "by_gap_unseen2": {bin_label(lo, hi): acc(r for r in rows if r["n_unseen"] == 2 and lo <= r["gap"] <= hi)
-                           for lo, hi in GAP_BINS},
+        "by_gap_all_unseen": {bin_label(lo, hi): acc(r for r in rows if all_unseen(r) and lo <= r["gap"] <= hi)
+                              for lo, hi in GAP_BINS},
         "p_true_by_signed": {bin_label(lo, hi): {
             "p_true": float(np.mean([r["p_true"] for r in rows if lo <= r["signed"] <= hi]))
             if any(lo <= r["signed"] <= hi for r in rows) else float("nan"),
             "n": sum(1 for r in rows if lo <= r["signed"] <= hi)} for lo, hi in SIGNED_BINS},
     }
+    if n_ops == 2:
+        out["by_gap_unseen2"] = out["by_gap_all_unseen"]   # the comparison task's established name
     return (out, rows) if return_rows else out
 
 

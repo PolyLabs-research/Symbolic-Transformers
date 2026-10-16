@@ -93,6 +93,9 @@ class TrainingConfig:
     shared_residual_dropout_cell: bool = False
     # Only numeral rows go through the panel encoder; operators and other glyphs use learned rows.
     grid_numerals_only: bool = False
+    # xval embedding: numeral k -> ((k - xval_center) / xval_scale) * one learned direction.
+    xval_center: float = 249.5
+    xval_scale: float = 144.3
     # Separate optimiser group for the grid_shared per-cell residual.
     residual_lr_mult: float = 1.0
     residual_weight_decay: Optional[float] = None
@@ -552,6 +555,10 @@ def main():
                         help="grid_shared: shortest period of the cell-index features")
     parser.add_argument("--shared-axis-freq", type=int, default=4,
                         help="grid_shared: number of row/col frequencies (0 = index features only)")
+    parser.add_argument("--xval-center", type=float, default=249.5,
+                        help="xval embedding: numeral value standardisation centre (default: mean of 0..499)")
+    parser.add_argument("--xval-scale", type=float, default=144.3,
+                        help="xval embedding: standardisation scale (default: std of 0..499)")
     parser.add_argument("--grid-numerals-only", action="store_true",
                         help="grid embeddings: only numeral tokens use panels; operators, answers and other glyphs get learned rows")
     parser.add_argument("--shared-residual", action="store_true",
@@ -618,6 +625,8 @@ def main():
     config.shared_axis_freq = args.shared_axis_freq
     config.shared_residual = args.shared_residual
     config.grid_numerals_only = args.grid_numerals_only
+    config.xval_center = args.xval_center
+    config.xval_scale = args.xval_scale
     config.shared_basis = args.shared_basis
     config.shared_residual_orthogonal = args.residual_orthogonal
     config.shared_residual_dropout = args.residual_dropout
@@ -673,7 +682,7 @@ def main():
                     'shared_residual_orthogonal', 'shared_residual_dropout',
                     'shared_residual_dropout_cell', 'sinusoid_min_period', 'residual_anneal',
                     'residual_anneal_floor', 'residual_anneal_hold', 'residual_anneal_rewarm',
-                    'residual_anneal_stages', 'grid_numerals_only'):
+                    'residual_anneal_stages', 'grid_numerals_only', 'xval_center', 'xval_scale'):
             if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
@@ -703,7 +712,8 @@ def main():
                          shared_residual_orthogonal=config.shared_residual_orthogonal,
                          shared_residual_dropout=config.shared_residual_dropout,
                          shared_residual_dropout_cell=config.shared_residual_dropout_cell,
-                         grid_numerals_only=config.grid_numerals_only)
+                         grid_numerals_only=config.grid_numerals_only,
+                         xval_center=config.xval_center, xval_scale=config.xval_scale)
     trainer = Trainer(model, train_loader, val_loader, config, vocab)
 
     start_epoch = 0

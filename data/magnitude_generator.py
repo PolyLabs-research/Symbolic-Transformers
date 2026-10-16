@@ -27,6 +27,14 @@ Every sample records a, b, op, label and n_unseen (0/1/2 operands outside the
 training pool) so evaluate_magnitude.py can bin accuracy by |a-b| and by how
 many operands were unseen.
 
+Task "sum" (--task sum) compares two sums of two operands each:
+    MESSAGE_START  NUM_a  PLUS  NUM_b  OP  NUM_c  PLUS  NUM_d  ANSWER  ->  TRUE | FALSE
+with TRUE iff (a + b) OP (c + d). All four operands come from the same value pools
+as the comparison task, so the train / held-out / far structure is identical; in
+test_holdout and test_far half of the samples have every operand in the unseen
+band, the other half at least one. Samples record lhs, rhs, operands, n_operands
+and n_unseen (0..4).
+
 Usage:
     python data/magnitude_generator.py --out runs/magnitude/data \
         --value-range 0-499 --holdout 200-299 --far-range 500-624
@@ -94,6 +102,66 @@ class MagnitudeGenerator:
             "n_unseen": int(a not in train_pool) + int(b not in train_pool),
         }
 
+    def make_sum_sample(self, a: int, b: int, c: int, d: int, op: str, train_pool: Set[int]) -> Dict:
+        lhs, rhs = a + b, c + d
+        label = OPS[op](lhs, rhs)
+        plus = self.vocab.encode_label("PLUS")
+        return {
+            "context": [self.ms, a, plus, b, self.vocab.encode_label(op), c, plus, d, self.answer],
+            "target": self.true_id if label else self.false_id,
+            "lhs": lhs, "rhs": rhs, "operands": [a, b, c, d], "n_operands": 4,
+            "op": op, "label": "TRUE" if label else "FALSE",
+            "n_unseen": sum(int(x not in train_pool) for x in (a, b, c, d)),
+        }
+
+    def sample_quads(self, n: int, pool_first: List[int], pool_rest: List[int], train_pool: Set[int],
+                     exclude: Set[Tuple[int, int, int, int, str]], require_unseen: bool = False,
+                     all_first_frac: float = 0.0) -> List[Dict]:
+        """Draw n distinct sum-comparison samples.
+
+        One operand comes from pool_first and three from pool_rest, or (with probability
+        all_first_frac) all four from pool_first. The fourth operand is drawn to make
+        |lhs - rhs| equal 0 with probability p_equal and 1..small_gap_max with probability
+        small_gap_frac (of the rest), so close sums are oversampled as in the comparison task.
+        Operand positions are shuffled within each side and the sides are swapped at random.
+        """
+        seen: Set[Tuple[int, int, int, int, str]] = set()
+        out: List[Dict] = []
+        first_set, rest_set = set(pool_first), set(pool_rest)
+        attempts, max_attempts = 0, n * 200
+        while len(out) < n:
+            attempts += 1
+            if attempts > max_attempts:
+                raise RuntimeError(f"could not draw {n} distinct sum samples (got {len(out)}); pools too small?")
+            all_first = random.random() < all_first_frac
+            pools = [pool_first] * 4 if all_first else [pool_first, pool_rest, pool_rest, pool_rest]
+            x0, x1, x2 = (random.choice(p) for p in pools[:3])
+            tie = x0 + x1 - x2                   # the fourth operand that makes the sums equal
+            if random.random() < self.p_equal:
+                x3 = tie
+            elif random.random() < self.small_gap_frac:
+                x3 = tie + random.choice([-1, 1]) * random.randint(1, self.small_gap_max)
+            else:
+                x3 = random.choice(pools[3])
+            if x3 not in (first_set if all_first else rest_set):
+                continue
+            lhs, rhs = [x0, x1], [x2, x3]
+            random.shuffle(lhs)
+            random.shuffle(rhs)
+            if random.random() < 0.5:
+                lhs, rhs = rhs, lhs
+            (a, b), (c, d) = lhs, rhs
+            op = random.choice(self.ops)
+            key = (a, b, c, d, op)
+            if key in seen or key in exclude:
+                continue
+            sample = self.make_sum_sample(a, b, c, d, op, train_pool)
+            if require_unseen and sample["n_unseen"] == 0:
+                continue
+            seen.add(key)
+            out.append(sample)
+        return out
+
     def sample_pairs(self, n: int, pool_a: List[int], pool_b: List[int], train_pool: Set[int],
                      exclude: Set[Tuple[int, int, str]], require_unseen: bool = False) -> List[Dict]:
         """Draw n distinct (a, b, op) triples; a from pool_a, b from pool_b, order randomised."""
@@ -130,8 +198,9 @@ class MagnitudeGenerator:
 
 
 def _save(path: Path, samples: List[Dict]) -> None:
+    max_len = max((len(s["context"]) for s in samples), default=5)
     with open(path, "w") as f:
-        json.dump({"num_samples": len(samples), "max_seq_len": 5, "samples": samples}, f)
+        json.dump({"num_samples": len(samples), "max_seq_len": max_len, "samples": samples}, f)
     n_true = sum(1 for s in samples if s["label"] == "TRUE")
     print(f"✓ {path.name}: {len(samples)} samples, {n_true / max(1, len(samples)) * 100:.1f}% TRUE")
 
@@ -141,7 +210,9 @@ def generate_magnitude_data(vocab_path: str, output_dir: str, n_train: int = 200
                             holdout: Optional[Tuple[int, int]] = (200, 299),
                             far_range: Optional[Tuple[int, int]] = (500, 624),
                             ops: Sequence[str] = DEFAULT_OPS, p_equal: float = 0.02, seed: int = 42,
-                            small_gap_frac: float = 0.0, small_gap_max: int = 10) -> Dict:
+                            small_gap_frac: float = 0.0, small_gap_max: int = 10, task: str = "compare") -> Dict:
+    if task not in ("compare", "sum"):
+        raise ValueError(f"task must be 'compare' or 'sum', got {task!r}")
     random.seed(seed)
     vocab = Vocabulary(vocab_path)
     out = Path(output_dir)
@@ -167,16 +238,25 @@ def generate_magnitude_data(vocab_path: str, output_dir: str, n_train: int = 200
 
     gen = MagnitudeGenerator(vocab, ops=ops, p_equal=p_equal, small_gap_frac=small_gap_frac, small_gap_max=small_gap_max)
     print("=" * 60)
-    print("MAGNITUDE COMPARISON DATASET")
+    print("MAGNITUDE COMPARISON DATASET" if task == "compare" else "SUM COMPARISON DATASET")
     print("=" * 60)
     print(f"ops={list(ops)}  train values={value_range} minus {holdout}  far={far_range}  "
           f"small-gap pairs: {small_gap_frac:.0%} with |a-b| <= {small_gap_max}")
 
-    train = gen.sample_pairs(n_train, train_vals, train_vals, train_pool, exclude=set())
-    train_keys = {(s["a"], s["b"], s["op"]) for s in train}
-    val = gen.sample_pairs(n_val, train_vals, train_vals, train_pool, exclude=train_keys)
-    val_keys = train_keys | {(s["a"], s["b"], s["op"]) for s in val}
-    test = gen.sample_pairs(n_test, train_vals, train_vals, train_pool, exclude=val_keys)
+    if task == "compare":
+        draw = lambda n, first, rest, exclude, unseen: gen.sample_pairs(n, first, rest, train_pool, exclude=exclude,
+                                                                      require_unseen=unseen)
+        key_of = lambda s: (s["a"], s["b"], s["op"])
+    else:
+        draw = lambda n, first, rest, exclude, unseen: gen.sample_quads(n, first, rest, train_pool, exclude=exclude,
+                                                                      require_unseen=unseen,
+                                                                      all_first_frac=0.5 if unseen else 0.0)
+        key_of = lambda s: (*s["operands"], s["op"])
+    train = draw(n_train, train_vals, train_vals, set(), False)
+    train_keys = {key_of(s) for s in train}
+    val = draw(n_val, train_vals, train_vals, train_keys, False)
+    val_keys = train_keys | {key_of(s) for s in val}
+    test = draw(n_test, train_vals, train_vals, val_keys, False)
     _save(out / "train.json", train)
     _save(out / "val.json", val)
     _save(out / "test.json", test)
@@ -184,17 +264,18 @@ def generate_magnitude_data(vocab_path: str, output_dir: str, n_train: int = 200
     splits = {"train": len(train), "val": len(val), "test": len(test)}
     if holdout_vals:
         mixed = train_vals + holdout_vals
-        th = gen.sample_pairs(n_test, holdout_vals, mixed, train_pool, exclude=set(), require_unseen=True)
+        th = draw(n_test, holdout_vals, mixed, set(), True)
         _save(out / "test_holdout.json", th)
         splits["test_holdout"] = len(th)
     if far_vals:
         mixed = train_vals + far_vals
-        tf = gen.sample_pairs(n_test, far_vals, mixed, train_pool, exclude=set(), require_unseen=True)
+        tf = draw(n_test, far_vals, mixed, set(), True)
         _save(out / "test_far.json", tf)
         splits["test_far"] = len(tf)
 
     metadata = {
-        "task": "magnitude_comparison_v1",
+        "task": "magnitude_comparison_v1" if task == "compare" else "sum_comparison_v1",
+        "n_operands": 2 if task == "compare" else 4,
         "vocab_path": vocab_path,
         "vocab_size": vocab.vocab_size,
         "ops": list(ops),
@@ -209,7 +290,8 @@ def generate_magnitude_data(vocab_path: str, output_dir: str, n_train: int = 200
             "train_pool_size": len(train_vals),
         },
         "splits": splits,
-        "format": "MESSAGE_START NUM_a OP NUM_b ANSWER -> TRUE|FALSE",
+        "format": ("MESSAGE_START NUM_a OP NUM_b ANSWER -> TRUE|FALSE" if task == "compare" else
+                   "MESSAGE_START NUM_a PLUS NUM_b OP NUM_c PLUS NUM_d ANSWER -> TRUE|FALSE (a + b OP c + d)"),
     }
     with open(out / "metadata.json", "w") as f:
         json.dump(metadata, f, indent=2)
@@ -233,6 +315,8 @@ if __name__ == "__main__":
                     help="fraction of pairs drawn with |a-b| in 1..small-gap-max (oversample close values)")
     ap.add_argument("--small-gap-max", type=int, default=10)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--task", default="compare", choices=["compare", "sum"],
+                    help="compare: NUM_a OP NUM_b; sum: NUM_a PLUS NUM_b OP NUM_c PLUS NUM_d")
     args = ap.parse_args()
     generate_magnitude_data(
         args.vocab, args.out, args.n_train, args.n_val, args.n_test,
@@ -240,5 +324,5 @@ if __name__ == "__main__":
         holdout=None if args.holdout.lower() == "none" else parse_band(args.holdout),
         far_range=None if args.far_range.lower() == "none" else parse_band(args.far_range),
         ops=args.ops, p_equal=args.p_equal, seed=args.seed,
-        small_gap_frac=args.small_gap_frac, small_gap_max=args.small_gap_max,
+        small_gap_frac=args.small_gap_frac, small_gap_max=args.small_gap_max, task=args.task,
     )

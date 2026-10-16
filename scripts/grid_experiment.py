@@ -146,6 +146,9 @@ ARMS["sinusoid_dice"] = ["--embedding", "sinusoid", "--tie-weights", "--sinusoid
 # residual and anything done to it act on the numerals alone. The confound these remove: under
 # the ramp basis the two operator panels' generated parts are nearly identical, so every
 # earlier residual arm also carried the operator distinction in its residual.
+# xVal-style code: numeral k -> standardised value times one learned direction, no LayerNorm on
+# numeral rows, learned rows for every other token. The head-to-head partner of grid_ramp_numonly.
+ARMS["xval"] = ["--embedding", "xval", "--tie-weights"]
 for _name in ("grid_ramp", "grid_ramp_res_orth", "grid_ramp_res_orth_drop", "grid_ramp_res_orth_anneal_hold",
               "grid_ramp_res_orth_anneal_deep", "grid_ramp_res_orth_anneal_geo"):
     ARMS[_name + "_numonly"] = ARMS[_name] + ["--grid-numerals-only"]

@@ -38,7 +38,7 @@ def generate_data(args, data_dir: Path):
            "--n-val", str(args.n_val), "--n-test", str(args.n_test), "--value-range", args.value_range,
            "--holdout", args.holdout, "--far-range", args.far_range, "--p-equal", str(args.p_equal),
            "--small-gap-frac", str(args.small_gap_frac), "--small-gap-max", str(args.small_gap_max),
-           "--seed", str(args.data_seed), "--ops", *args.ops]
+           "--seed", str(args.data_seed), "--ops", *args.ops, "--task", args.task]
     print(f"→ generating data in {data_dir}")
     run(cmd, data_dir / "generate.log")
 
@@ -163,6 +163,8 @@ def main() -> int:
                     help="fraction of pairs drawn with |a-b| <= --small-gap-max (oversample close values)")
     ap.add_argument("--small-gap-max", type=int, default=10)
     ap.add_argument("--data-seed", type=int, default=42)
+    ap.add_argument("--task", default="compare", choices=["compare", "sum"],
+                    help="compare: NUM_a OP NUM_b; sum: NUM_a PLUS NUM_b OP NUM_c PLUS NUM_d")
     ap.add_argument("--regenerate", action="store_true")
     ap.add_argument("--model-size", default="tiny")
     ap.add_argument("--epochs", type=int, default=40)
