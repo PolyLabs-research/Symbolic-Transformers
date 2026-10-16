@@ -219,6 +219,11 @@ Reading:
   crossing, the cliff, the recovery) were the comparator being taught to read a 0.3% difference between
   two token embeddings. The numeral handover the hold arm showed is real but superfluous: a numeral-only
   ramp does not need to be handed anything.
+- **Decision curves of the ramp alone are correct but soft.** On the psychometric split (three seeds) it is
+  at 99.0-99.9% for every c, with transition widths of 21-50 values inside the held-out band and 130-152
+  past the range, against 6-30 for the deep-annealed comparator at the same c. The faded comparator reads
+  the ramp with more gain; the plain one reaches the same decisions with less confidence near the
+  threshold. (Full table in `runs/magnitude_precision_routes/psycho/curves_numonly.json`.)
 - **Open question that remains worth one run:** whether a full-scale residual on numerals only still hurts
   unseen values (a shortcut that competes with the ramp) or is simply unused; `grid_ramp_res_orth_numonly`
   is running. If it hurts, the residual is a genuine shortcut and the fade is a cure for a self-inflicted
