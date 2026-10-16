@@ -27,7 +27,7 @@ sys.path.insert(0, str(ROOT))
 
 from models.transformer import load_model_from_checkpoint  # noqa: E402
 from training.train import FOLDataset, trim_padding  # noqa: E402
-from utils.fol_grammar import ROLES, FOLGrammar, ceiling  # noqa: E402
+from utils.fol_grammar import COMPLEXITY_PRIOR, ROLES, FOLGrammar, ceiling, optimal_loss  # noqa: E402
 from utils.vocabulary import Vocabulary  # noqa: E402
 
 K = 5
@@ -37,8 +37,8 @@ def load_samples(path):
     return json.load(open(path))["samples"]
 
 
-def annotate_samples(samples, grammar, vocab):
-    """Role and bound-variable distribution of every sample's target, from its formula's parse."""
+def annotate_samples(samples, grammar, vocab, prior=COMPLEXITY_PRIOR):
+    """Role of every sample's target and, at bound_var and formula_start targets, the optimal distribution."""
     roles, dists, formulas = [None] * len(samples), [None] * len(samples), [None] * len(samples)
     # Samples of one formula are consecutive; the one whose target is MESSAGE_END holds the formula.
     start = 0
@@ -46,6 +46,7 @@ def annotate_samples(samples, grammar, vocab):
         if s["target"] == vocab.message_end:
             formula = s["context"][1:]
             r, d = grammar.annotate_with_boundaries(formula)
+            d.update({i + 1: q for i, q in grammar.formula_start_distributions(formula, prior).items()})
             for j in range(start, i + 1):
                 pos = len(samples[j]["context"])  # target position in [MS] + formula + [ME]
                 roles[j] = r[pos - 1]
@@ -182,15 +183,19 @@ def summarise(hits, roles, seen, formula_seen, targets):
     return out
 
 
-def role_ceilings(roles, dists, pool):
+def optimal_hits(roles, dists, pool):
+    """Expected top-1 / top-5 accuracy and loss of the Bayes-optimal predictor, per target."""
+    return {"hit1": [ceiling(r, d, pool, 1) for r, d in zip(roles, dists)],
+            "hit5": [ceiling(r, d, pool, K) for r, d in zip(roles, dists)],
+            "nll": [optimal_loss(r, d, pool) for r, d in zip(roles, dists)]}
+
+
+def role_ceilings(roles, best):
     res = {}
     for role in ROLES:
         ids = [i for i, r in enumerate(roles) if r == role]
-        c1 = [ceiling(role, dists[i], pool, 1) for i in ids]
-        c5 = [ceiling(role, dists[i], pool, K) for i in ids]
-        res[role] = {"share": len(ids) / len(roles),
-                     "top1": None if c1 and c1[0] is None else mean(c1),
-                     "top5": None if c5 and c5[0] is None else mean(c5)}
+        res[role] = {"share": len(ids) / len(roles), "top1": mean([best["hit1"][i] for i in ids]),
+                     "top5": mean([best["hit5"][i] for i in ids]), "loss": mean([best["nll"][i] for i in ids])}
     return res
 
 
@@ -218,7 +223,8 @@ def main():
     pool = {"var": meta["config"]["max_variables"], "pred": meta["config"]["max_predicates"]}
 
     train, test = load_samples(args.train_data), load_samples(args.test_data)
-    roles, dists, sample_formula = annotate_samples(test, grammar, vocab)
+    prior = {int(c): w for c, w in meta.get("complexity_distribution", COMPLEXITY_PRIOR.items())}
+    roles, dists, sample_formula = annotate_samples(test, grammar, vocab, prior)
     train_contexts = {tuple(s["context"]) for s in train}
     seen = [tuple(s["context"]) in train_contexts for s in test]
     train_formulas = {tuple(s["context"][1:]) for s in train if s["target"] == vocab.message_end}
@@ -247,7 +253,9 @@ def main():
 
     targets = [s["target"] for s in test]
     results = {name: summarise(h, roles, seen, formula_seen, targets) for name, h in methods.items()}
-    ceil = role_ceilings(roles, dists, pool)
+    best_hits = optimal_hits(roles, dists, pool)
+    best = summarise(best_hits, roles, seen, formula_seen, targets)
+    ceil = role_ceilings(roles, best_hits)
     n_unseen = sum(not s for s in seen)
     n_old_formula = sum(formula_seen)
     n_formulas_in_train = sum(tuple(f) in train_formulas for f in test_formulas)
@@ -258,7 +266,7 @@ def main():
     print("| method | loss | top-1 | top-5 | formulas not in training: top-1 / in training: top-1 "
           "| unseen contexts: loss / top-1 / top-5 | seen contexts: top-1 | NUM_000 targets: top-1 / top-5 |")
     print("|---|---|---|---|---|---|---|---|")
-    for name, r in results.items():
+    for name, r in [("best achievable (expected; the generator's own probabilities)", best)] + list(results.items()):
         a, u, s = r["all"], r["unseen_context"], r["seen_context"]
         fn, fo = r["formula_not_in_train"], r["formula_in_train"]
         loss = f"{a['loss']:.3f}" if "loss" in a else "n/a"
@@ -274,6 +282,13 @@ def main():
         print("| best achievable | " + " | ".join(pct(ceil[r][k]) for r in ROLES) + " |")
         for name, r in results.items():
             print(f"| {name} | " + " | ".join(pct(r["by_role"][x][k]) for x in ROLES) + " |")
+    print("\nLoss (nats per target) by the role of the target:\n")
+    print("| method | " + " | ".join(ROLES) + " |")
+    print("|---|" + "---|" * len(ROLES))
+    print("| lowest achievable | " + " | ".join(f"{ceil[r]['loss']:.3f}" for r in ROLES) + " |")
+    for name, r in results.items():
+        if "loss" in r["all"]:
+            print(f"| {name} | " + " | ".join(f"{r['by_role'][x]['loss']:.3f}" for x in ROLES) + " |")
     print("\nSampled formulas (temperature 1):\n")
     print("| source | n | ended | well-formed | bound-position variables in scope | novel | distinct | mean length |")
     print("|---|---|---|---|---|---|---|---|")
@@ -287,7 +302,8 @@ def main():
             "test_data": args.test_data, "train_data": args.train_data, "n_targets": len(test),
             "n_unseen_context": n_unseen, "n_test_formulas_in_train": n_formulas_in_train,
             "n_targets_from_train_formulas": n_old_formula, "pool": pool, "checkpoints": checkpoints,
-            "results": results, "role_ceilings": ceil, "generation": generation}, indent=2))
+            "best_achievable": best, "results": results, "role_ceilings": ceil, "generation": generation},
+            indent=2))
 
 
 if __name__ == "__main__":

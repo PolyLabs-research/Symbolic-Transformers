@@ -98,3 +98,34 @@ def test_suffix_lookup_answers_from_training_and_backs_off(vocab):
     assert set(counts.ranked([42])) == {7, 8, 5}, "unseen token falls back to unigram counts"
     bigram = SuffixCounts(train, max_order=1)
     assert bigram.ranked([1, 2, 3])[0] == 7
+
+
+def test_formula_start_distribution_hand_case(vocab, grammar):
+    lab, var, pred = vocab.encode_label, vocab.compositional_tokens["VAR"], vocab.compositional_tokens["PRED"]
+    f = [lab("FORALL"), var, 3, pred, 1, lab("LPAREN"), var, 3, lab("RPAREN")]  # FORALL x3 P1(x3)
+    d = grammar.formula_start_distributions(f)
+    assert sorted(d) == [0, 3]
+    for q in d.values():
+        assert abs(sum(q.values()) - 1) < 1e-12
+    # Depth 0 is below every complexity level: atomic 0.3 (predicate 0.7 of that), quantifier 0.35, connective 0.35.
+    assert abs(d[0][pred] - 0.21) < 1e-12 and abs(d[0][lab("FORALL")] - 0.175) < 1e-12
+    # Depth 1: level 1 (prior 0.2) forces an atomic formula; FORALL at depth 0 is equally likely at every level.
+    assert abs(d[3][pred] - (0.2 * 0.7 + 0.8 * 0.21)) < 1e-12
+
+
+def test_formula_start_distributions_are_calibrated_on_fresh_samples(vocab, grammar):
+    import math
+    from utils.fol_grammar import COMPLEXITY_PRIOR
+
+    random.seed(11)
+    gen = FOLFormulaGenerator(vocab, FormulaConfig(max_variables=100, max_predicates=100))
+    nll = ent = 0.0
+    n = 0
+    for c, w in COMPLEXITY_PRIOR.items():
+        for f in gen.generate_batch(int(20000 * w), c):
+            for i, q in grammar.formula_start_distributions(f).items():
+                nll -= math.log(q[f[i]])
+                ent -= sum(p * math.log(p) for p in q.values())
+                n += 1
+    # For the true distribution the realised loss matches its expected value (the entropy).
+    assert abs(nll / n - ent / n) < 0.01

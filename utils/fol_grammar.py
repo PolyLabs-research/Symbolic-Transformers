@@ -18,14 +18,20 @@ prefix alone determines. ``annotate`` labels each position of a formula with tha
     free_var        a variable with no usable bound variables in scope, uniform over the pool
     bound_var       a variable the generator draws from the bound variables in scope
 
-For ``bound_var`` positions it also returns the generator's distribution over values, so the best
-achievable top-k accuracy of any predictor is known per position.
+For ``bound_var`` positions it also returns the generator's distribution over values, and
+``formula_start_distributions`` gives the Bayes-optimal distribution at every formula start, so the best
+achievable top-k accuracy and loss of any predictor are known at every position.
 """
 
-from collections import Counter
+import math
+from collections import Counter, defaultdict
 from typing import Dict, List, Optional, Tuple
 
 ROLES = ["forced", "formula_start", "connective", "arity", "pred_index", "quant_var", "free_var", "bound_var"]
+
+# The dataset's default complexity mixture (generate_training_data): FOLFormulaGenerator.generate_batch
+# sets the formula's maximum depth to its complexity level.
+COMPLEXITY_PRIOR = {1: 0.2, 2: 0.4, 3: 0.3, 4: 0.1}
 
 
 class FormulaSyntaxError(ValueError):
@@ -38,6 +44,7 @@ class FOLGrammar:
         self.quant = {lab("FORALL"), lab("EXISTS")}
         self.conn = {lab("AND"), lab("OR"), lab("IMPLIES"), lab("IFF")}
         self.NOT, self.LP, self.RP = lab("NOT"), lab("LPAREN"), lab("RPAREN")
+        self.FORALL, self.EXISTS = lab("FORALL"), lab("EXISTS")
         self.COMMA, self.EQ = lab("COMMA"), lab("EQUALS")
         self.VAR, self.PRED = vocab.compositional_tokens["VAR"], vocab.compositional_tokens["PRED"]
         self.is_numeral = vocab.is_numeral
@@ -46,12 +53,55 @@ class FOLGrammar:
     # ------------------------------------------------------------------ parsing
     def annotate(self, formula: List[int]) -> Tuple[List[str], Dict[int, Dict[int, float]]]:
         """Role of every token of ``formula`` (no boundaries) and value distributions at bound_var positions."""
+        roles, dists, _ = self._parse(formula)
+        return roles, dists
+
+    def _parse(self, formula):
         roles: List[Optional[str]] = [None] * len(formula)
         dists: Dict[int, Dict[int, float]] = {}
-        end = self._formula(formula, 0, [], roles, dists)
+        depths: Dict[int, int] = {}
+        end = self._formula(formula, 0, [], roles, dists, 0, depths)
         if end != len(formula):
             raise FormulaSyntaxError(f"trailing tokens after position {end}")
-        return roles, dists
+        return roles, dists, depths
+
+    def _type_probs(self, depth: int, max_depth: int) -> Dict[int, float]:
+        """First-token distribution of a (sub)formula, mirroring FOLFormulaGenerator.generate_formula.
+
+        Below the maximum depth a formula is atomic with p 0.3, else a quantifier or a connective with
+        p 1/2 each (FORALL / EXISTS 1/2 each; NOT is 1 of the 5 connectives, the other 4 are binary and
+        start with LPAREN). At the maximum depth it is atomic. Atomic formulas are equalities (start with
+        VAR) with p 0.3, else predicates.
+        """
+        atomic = 1.0 if depth >= max_depth else 0.3
+        rest = 1.0 - atomic
+        probs = {self.PRED: 0.7 * atomic, self.VAR: 0.3 * atomic}
+        if rest:
+            probs.update({self.FORALL: rest / 4, self.EXISTS: rest / 4,
+                          self.NOT: rest / 2 * 0.2, self.LP: rest / 2 * 0.8})
+        return probs
+
+    def formula_start_distributions(self, formula: List[int],
+                                    prior: Dict[int, float] = COMPLEXITY_PRIOR) -> Dict[int, Dict[int, float]]:
+        """Bayes-optimal next-token distribution at every formula_start position of ``formula``.
+
+        The formula's maximum depth (its complexity level) is hidden, so the prediction averages the
+        generator's first-token distribution over levels, weighted by how well each level explains the
+        formula types already seen in the prefix. Index values carry no information about structure.
+        """
+        _, _, depths = self._parse(formula)
+        weights = dict(prior)
+        out = {}
+        for i in sorted(depths):
+            total = sum(weights.values())
+            post = {c: w / total for c, w in weights.items()}
+            dist = defaultdict(float)
+            for c, w in post.items():
+                for tok, p in self._type_probs(depths[i], c).items():
+                    dist[tok] += w * p
+            out[i] = dict(dist)
+            weights = {c: w * self._type_probs(depths[i], c).get(formula[i], 0.0) for c, w in weights.items()}
+        return out
 
     def annotate_with_boundaries(self, formula: List[int]):
         """Roles for the targets of [MESSAGE_START] + formula + [MESSAGE_END], i.e. positions 1..len+1."""
@@ -86,22 +136,23 @@ class FOLGrammar:
             raise FormulaSyntaxError(f"position {i}: expected an index numeral, got {f[i]}")
         return f[i]
 
-    def _formula(self, f, i, bound, roles, dists):
+    def _formula(self, f, i, bound, roles, dists, depth, depths):
         t = self._tok(f, i)
         roles[i] = "formula_start"
+        depths[i] = depth
         if t in self.quant:
             i = self._expect(f, i + 1, self.VAR, roles)
             n = self._numeral(f, i)
             roles[i] = "quant_var"
-            return self._formula(f, i + 1, bound + [n], roles, dists)
+            return self._formula(f, i + 1, bound + [n], roles, dists, depth + 1, depths)
         if t == self.NOT:
-            return self._formula(f, i + 1, bound, roles, dists)
+            return self._formula(f, i + 1, bound, roles, dists, depth + 1, depths)
         if t == self.LP:
-            j = self._formula(f, i + 1, bound, roles, dists)
+            j = self._formula(f, i + 1, bound, roles, dists, depth + 1, depths)
             if self._tok(f, j) not in self.conn:
                 raise FormulaSyntaxError(f"position {j}: expected a connective, got {f[j]}")
             roles[j] = "connective"
-            k = self._formula(f, j + 1, bound, roles, dists)
+            k = self._formula(f, j + 1, bound, roles, dists, depth + 1, depths)
             return self._expect(f, k, self.RP, roles)
         if t == self.PRED:
             self._numeral(f, i + 1)
@@ -166,6 +217,23 @@ def ceiling(role: str, dist: Optional[Dict[int, float]], pool_size: Dict[str, in
         return min(1.0, k / pool_size["pred"])
     if role in ("quant_var", "free_var"):
         return min(1.0, k / pool_size["var"])
-    if role == "bound_var":
+    if role in ("bound_var", "formula_start") and dist is not None:
         return sum(sorted(dist.values(), reverse=True)[:k])
-    return None  # formula_start: depends on the generator's depth and complexity mixture
+    return None  # formula_start without its distribution
+
+
+def optimal_loss(role: str, dist: Optional[Dict[int, float]], pool_size: Dict[str, int]) -> Optional[float]:
+    """Expected cross-entropy (nats) of the Bayes-optimal predictor at one position."""
+    if role == "forced":
+        return 0.0
+    if role == "connective":
+        return math.log(4)
+    if role == "arity":
+        return math.log(2)
+    if role == "pred_index":
+        return math.log(pool_size["pred"])
+    if role in ("quant_var", "free_var"):
+        return math.log(pool_size["var"])
+    if dist is not None:
+        return -sum(p * math.log(p) for p in dist.values() if p > 0)
+    return None
