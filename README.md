@@ -101,10 +101,12 @@ python evaluate_model.py                            # Evaluate
 
 *Projected based on scaling experiments. Base model training in progress (epoch 1: val loss 0.96).
 
-> **Note on the shipped checkpoint.** `checkpoints/best_model.pt` was trained before two fixes landed: the
-> dataset only used variable/predicate indices 0–4, and the loss ignored every `NUM_000` target. The numbers
-> above come from that run. Retrain (Colab or `python training/train.py`) after regenerating data to get
-> figures that reflect the current code.
+> **Note on the shipped checkpoint.** `checkpoints/best_model.pt` was trained before three fixes landed: the
+> dataset only used variable/predicate indices 0–4, half its test formulas (503 of 1,000) also appeared in
+> training, and the loss ignored every `NUM_000` target. The numbers above come from that run, and its test
+> accuracy is inflated by the overlap. The generator now draws every formula once across all splits, so
+> validation and test formulas are never training formulas. Retrain (Colab or `python training/train.py`)
+> on the regenerated data to get figures that reflect the current code.
 
 ### Baselines & Context
 

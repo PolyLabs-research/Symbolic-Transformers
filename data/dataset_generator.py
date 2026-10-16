@@ -383,6 +383,12 @@ def generate_training_data(
         far_range: Inclusive (lo, hi) band never seen in training, used alone
             for the extra 'test_far' split
         n_test_holdout / n_test_far: formulas in the extra splits (default n_test)
+
+    Every formula is unique within its split and appears in only one split, so
+    validation and test scores are never measured on formulas seen in training.
+    Splits are drawn in order (train, val, test, then the extra splits) and each
+    rejects formulas already drawn; collisions are mostly short formulas, so the
+    later splits are very slightly poorer in the commonest short formulas.
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -460,16 +466,33 @@ def generate_training_data(
             (4, 0.1),  # 10% very complex
         ]
     
+    seen = set()  # every formula drawn so far, across all splits
+    redrawn = {}  # split name -> duplicate draws redrawn
+
     def generate_split(n_formulas: int, split_name: str, gen: FOLFormulaGenerator = generator) -> NextSymbolDataset:
-        """Generate one data split."""
+        """Generate one data split of formulas not drawn before in this or any earlier split."""
         print(f"\nGenerating {split_name} set ({n_formulas} formulas)...")
         
         formulas = []
+        redrawn[split_name] = 0
         for complexity, weight in complexity_distribution:
             n_for_complexity = int(n_formulas * weight)
-            batch = gen.generate_batch(n_for_complexity, complexity)
+            batch, dup = [], 0
+            while len(batch) < n_for_complexity:
+                formula = gen.generate_batch(1, complexity)[0]
+                key = tuple(formula)
+                if key in seen:
+                    dup += 1
+                    if dup > 10 * n_for_complexity + 100:
+                        raise RuntimeError(
+                            f"{split_name}: could not draw {n_for_complexity} distinct complexity-{complexity} "
+                            f"formulas ({len(batch)} after {dup} duplicates); widen the index range or ask for fewer")
+                    continue
+                seen.add(key)
+                batch.append(formula)
             formulas.extend(batch)
-            print(f"  Complexity {complexity}: {n_for_complexity} formulas")
+            redrawn[split_name] += dup
+            print(f"  Complexity {complexity}: {n_for_complexity} formulas ({dup} duplicates redrawn)")
         
         dataset = NextSymbolDataset(formulas, vocab, max_seq_len=max_seq_len, use_boundaries=use_boundaries)
         
@@ -494,7 +517,8 @@ def generate_training_data(
     
     # Save metadata
     metadata = {
-        'generator': 'basic_with_boundaries_v2',
+        'generator': 'basic_with_boundaries_v3',
+        'unique_formulas': 'within each split and across all splits',
         'vocab_path': vocab_path,
         'vocab_size': vocab.vocab_size,
         'uses_boundaries': use_boundaries,
@@ -519,6 +543,8 @@ def generate_training_data(
             **extra_splits,
         }
     }
+    for name, n_dup in redrawn.items():
+        metadata['splits'][name]['duplicates_redrawn'] = n_dup
     
     metadata_path = output_dir / 'metadata.json'
     with open(metadata_path, 'w') as f:

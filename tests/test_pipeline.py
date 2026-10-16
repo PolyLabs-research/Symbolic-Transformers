@@ -14,7 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from utils.vocabulary import Vocabulary  # noqa: E402
-from data.dataset_generator import FOLFormulaGenerator, FormulaConfig, NextSymbolDataset  # noqa: E402
+from data.dataset_generator import (FOLFormulaGenerator, FormulaConfig, NextSymbolDataset,  # noqa: E402
+                                    generate_training_data)
 
 VOCAB_PATH = ROOT / "unified_vocabulary.json"
 
@@ -99,6 +100,49 @@ def test_next_symbol_dataset_contexts_start_with_message_start(vocab):
     assert all(s["context"][0] == vocab.message_start for s in ds.samples)
     assert any(s["target"] == vocab.message_end for s in ds.samples)
     assert any(s["target"] == 0 for s in ds.samples), "NUM_000 must appear as a target"
+
+
+def _split_formulas(data_dir, split, vocab):
+    """The formulas of a saved split: the context of every sample whose target is MESSAGE_END."""
+    samples = json.load(open(Path(data_dir) / f"{split}.json"))["samples"]
+    return [tuple(s["context"]) for s in samples if s["target"] == vocab.message_end]
+
+
+def _assert_no_shared_formulas(data_dir, splits, vocab):
+    seen = {}
+    for split in splits:
+        formulas = _split_formulas(data_dir, split, vocab)
+        assert len(set(formulas)) == len(formulas), f"{split} repeats a formula"
+        for f in formulas:
+            assert f not in seen, f"{split} shares a formula with {seen[f]}"
+            seen[f] = split
+
+
+def test_generated_splits_share_no_formulas(tmp_path, vocab):
+    # A three-index pool makes short formulas collide often, so the redraw path is exercised.
+    generate_training_data(str(VOCAB_PATH), str(tmp_path), n_train=200, n_val=50, n_test=50,
+                           index_range=(0, 2), holdout=(3, 4), seed=3)
+    meta = json.load(open(tmp_path / "metadata.json"))
+    assert meta["splits"]["train"]["duplicates_redrawn"] > 0
+    assert meta["splits"]["val"]["duplicates_redrawn"] > 0
+    splits = ["train", "val", "test", "test_holdout"]
+    for split in splits:
+        assert len(_split_formulas(tmp_path, split, vocab)) == meta["splits"][split]["num_formulas"]
+    _assert_no_shared_formulas(tmp_path, splits, vocab)
+
+
+def test_generator_refuses_a_split_its_index_pool_cannot_fill(tmp_path):
+    # One index admits only a few dozen distinct depth-1 formulas.
+    with pytest.raises(RuntimeError, match="distinct"):
+        generate_training_data(str(VOCAB_PATH), str(tmp_path), n_train=500, n_val=10, n_test=10,
+                               index_range=(0, 0), complexity_distribution=[(1, 1.0)], seed=1)
+
+
+def test_shipped_dataset_splits_share_no_formulas(vocab):
+    data_dir = ROOT / "datasets" / "fol_next_symbol"
+    if not (data_dir / "train.json").exists():
+        pytest.skip("shipped dataset not present")
+    _assert_no_shared_formulas(data_dir, ["train", "val", "test"], vocab)
 
 
 def test_benchmark_inputs_tokenize_without_torch_model(vocab):
