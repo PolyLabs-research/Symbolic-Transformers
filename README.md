@@ -285,8 +285,9 @@ then crosses to a residual-free comparator (92% / 99% seen, 95% held-out both un
 neighbouring unseen values from the two shared directions alone. A later review found a confound: the
 operator tokens are panels through the same residual, so every result below scale 0.01 was about telling
 the two operators apart. With the operators given learned rows (`--grid-numerals-only`) the ramp alone trains
-directly and generalises best of all: 99% on seen pairs, 96% on the held-out band, 90% past the trained range
-(`experiments/magnitude_precision.md` point 15, `experiments/withdrawal_routes.md`).
+directly with no residual and generalises as well as the faded models: 99% on seen pairs, 96% on the held-out
+band, 90% past the trained range (the 80-epoch dropout arm still leads past the range, at the cost of the
+held-out band) (`experiments/magnitude_precision.md` point 15, `experiments/withdrawal_routes.md`).
 
 Manual equivalents for the FOL experiment:
 

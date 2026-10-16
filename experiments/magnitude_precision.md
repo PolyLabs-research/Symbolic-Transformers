@@ -302,23 +302,32 @@ Arms, all `grid_shared` with the ramp basis and a per-cell residual unless named
    0.005, cosine 0.999996), so the operator distinction lives in the residual. Re-evaluating the saved
    models with only the numeral rows re-scaled (`evaluate_magnitude.py --residual-scale-rows numerals`,
    details in `withdrawal_routes.md`) shows that the hold model already reads numerals from the ramp alone
-   (98.8 / 98.3 / 88.6 with the numeral residual at zero), that the plain 40-epoch model is at chance and
-   the 80-epoch dropout model inverted (0.2% held-out) without theirs, and that everything observed between
-   scales 0.01 and 1e-6 (the crossing, the cliff at zero, the seed-dependent recovery, the re-warm-up
-   failure) concerns the comparator losing and relearning a 0.3% difference between two token embeddings.
+   in two seeds of three (98.8 / 98.3 / 88.6 and 99.6 / 100.0 / 81.9 with the numeral residual at zero;
+   the third seed keeps two points), that the plain 40-epoch model is at chance without its numeral
+   residual and the 80-epoch dropout models lose their answer-token readout (seed 1 at chance when
+   restricted to TRUE/FALSE, seed 2 partial, seed 3 chance), and that what was observed between scales
+   0.01 and 1e-6 (the crossing, the cliff at zero, the seed-dependent recovery, the re-warm-up failure)
+   mostly concerns the comparator losing and relearning a 0.3% difference between two token embeddings.
    What survives: the numeral handover to the ramp happens in the anneal from 1 to 0.01 (point 10's hold
-   arm), the dropout and full-scale comparators do depend on the numeral residual, and the baselines of
-   point 14 are confounded in the other direction (a ramp-only model has no way to tell the operators
-   apart). Re-run with `--grid-numerals-only` (operators and answers as learned rows), the ramp alone from
-   scratch learns the task directly, three seeds: 99.3 ± 0.2% on seen pairs (gap 1 at 90%), 96.0 ± 0.5% on
-   the held-out band with both-unseen pairs at 92%, and 89.8 ± 0.8% on the far band with both-unseen pairs
-   at 80%, the best far-band result of the study. The scaffold, the fade and the readability floor were
-   compensating for the operators sharing the residual; `withdrawal_routes.md` has the clean comparison.
+   arm), the dropout and full-scale comparators of the old architecture do depend on the numeral
+   residual, and the baselines of point 14 are confounded in the other direction (a ramp-only model has no
+   way to tell the operators apart). Re-run with `--grid-numerals-only` (operators and answers as learned
+   rows), the ramp alone from scratch learns the task directly, three seeds: 99.3 ± 0.2% on seen pairs
+   (gap 1 at 90%), 96.0 ± 0.5% on the held-out band with both-unseen pairs at 92%, and 89.8 ± 0.8% on the
+   far band with both-unseen pairs at 80%, the best far band of any model that also holds the held-out
+   band (the 80-epoch dropout arm of point 7 is higher there, at 96.3%, with 75.9% on the held-out band).
+   A full-scale residual on numerals only hurts unseen values while present and costs nothing once
+   switched off at test time, so in the clean architecture no fade is needed. The scaffold, the fade and
+   the readability floor were compensating for the operators sharing the residual; `withdrawal_routes.md`
+   has the clean comparison.
 
 ## Where precision stands
 
-**See point 15 before reading this section: the residual-free claims below are correct for numerals in
-the hold arm and were confounded by the operator tokens everywhere else.**
+**See point 15 before reading this section. The residual-free status of the deep and recovered models
+holds for every row; what was misread is why the fade was needed and where its floor lies (the operator
+tokens shared the residual). The recommended configuration is now the numerals-only ramp with learned
+operator rows, `--embedding grid_shared --shared-basis ramp --grid-numerals-only`, with no residual; the
+"scaffold is necessary" bullet below is withdrawn.**
 
 
 | configuration | seen gap 1 / gaps 2-5 | held-out band, both unseen (gap 1 / 2-5 / 6-20) | far band, both unseen |
