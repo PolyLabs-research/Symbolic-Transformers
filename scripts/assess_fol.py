@@ -207,10 +207,11 @@ def main():
     ap.add_argument("--vocab", default="unified_vocabulary.json")
     ap.add_argument("--n-generate", type=int, default=1000)
     ap.add_argument("--json", default=None, help="Write all numbers here")
+    ap.add_argument("--device", default=None, help="cuda or cpu (default: cuda if available)")
     args = ap.parse_args()
 
     torch.manual_seed(0)
-    device = torch.device("cpu")
+    device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     vocab = Vocabulary(args.vocab)
     grammar = FOLGrammar(vocab)
     meta = json.load(open(args.metadata))
