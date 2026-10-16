@@ -113,7 +113,7 @@ def predict_scratch(model, items, tok, device, batch=64):
     return preds, traces
 
 
-def score(items, preds, traces=None, tok=None):
+def score(items, preds, traces=None, tok=None, fmt="direct"):
     def acc(ids):
         return sum(preds[i] == items[i]["label"] for i in ids) / len(ids) if ids else float("nan")
 
@@ -129,6 +129,10 @@ def score(items, preds, traces=None, tok=None):
         for i, it in enumerate(items):
             groups[it[key]].append(i)
         res[f"by_{key}"] = {str(k): acc(v) for k, v in sorted(groups.items())}
+    groups = defaultdict(list)
+    for i, it in enumerate(items):
+        groups[50 * ((len(it[f"{fmt}_seq"]) - 1) // 50)].append(i)
+    res["by_length"] = {f"{k + 1}-{k + 50}": acc(v) for k, v in sorted(groups.items())}
     if traces is not None and traces[0] is not None:
         gold = [it["scratch_seq"][it["scratch_from"]:-2] for it in items]
         step0 = lambda t: t[:t.index(tok.SEP)] if tok.SEP in t else t
@@ -173,7 +177,7 @@ def main():
                                          "best_val_loss": ck.get("best_val_loss")}}
         for s, items in splits.items():
             preds, traces = (predict_scratch if fmt == "scratch" else predict_direct)(model, items, tok, device)
-            results[name][s] = score(items, preds, traces, tok)
+            results[name][s] = score(items, preds, traces, tok, fmt)
             print(f"  {name} {s}: accuracy {pct(results[name][s]['accuracy'])}", file=sys.stderr)
 
     names = list(results)
