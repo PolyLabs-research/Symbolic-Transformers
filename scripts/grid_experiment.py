@@ -157,6 +157,7 @@ for _name in ("grid_ramp", "grid_ramp_res_orth", "grid_ramp_res_orth_drop", "gri
 # checkpoint (same flags; pass --train-extra "--init-from <ckpt>" per seed).
 ARMS["grid_ramp_numonly_lr1e3"] = ARMS["grid_ramp_numonly"] + ["--learning-rate", "1e-3"]
 ARMS["grid_ramp_numonly_warm"] = list(ARMS["grid_ramp_numonly"])
+ARMS["xval_warm"] = list(ARMS["xval"])   # parity control for the warm start (pass --init-from per seed)
 DEFAULT_ARMS = ["learned", "grid_linear", "grid_conv"]
 SPLITS = ("test", "test_holdout", "test_far")
 CATEGORIES = ("overall", "structure", "after_numeral", "numeral", "copy", "fresh")

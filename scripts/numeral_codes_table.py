@@ -39,6 +39,7 @@ SOURCES = [
         "control: xVal-style, lr 1e-3": "runs/numeral_codes_sum/xval_lr1e3_s*/eval.json",
         "control: ramp, lr 1e-3": "runs/numeral_codes_sum/grid_ramp_numonly_lr1e3_s*/eval.json",
         "control: ramp, warm start from the comparison task": "runs/numeral_codes_sum/grid_ramp_numonly_warm_s*/eval.json",
+        "control: xVal-style, warm start from the comparison task": "runs/numeral_codes_sum/xval_warm_s*/eval.json",
     }),
 ]
 
