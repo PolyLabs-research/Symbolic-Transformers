@@ -149,9 +149,14 @@ ARMS["sinusoid_dice"] = ["--embedding", "sinusoid", "--tie-weights", "--sinusoid
 # xVal-style code: numeral k -> standardised value times one learned direction, no LayerNorm on
 # numeral rows, learned rows for every other token. The head-to-head partner of grid_ramp_numonly.
 ARMS["xval"] = ["--embedding", "xval", "--tie-weights"]
+ARMS["xval_lr1e3"] = ARMS["xval"] + ["--learning-rate", "1e-3"]
 for _name in ("grid_ramp", "grid_ramp_res_orth", "grid_ramp_res_orth_drop", "grid_ramp_res_orth_anneal_hold",
               "grid_ramp_res_orth_anneal_deep", "grid_ramp_res_orth_anneal_geo"):
     ARMS[_name + "_numonly"] = ARMS[_name] + ["--grid-numerals-only"]
+# Controls for a stall on the sum task: a hotter schedule, and a warm start from the comparison-task
+# checkpoint (same flags; pass --train-extra "--init-from <ckpt>" per seed).
+ARMS["grid_ramp_numonly_lr1e3"] = ARMS["grid_ramp_numonly"] + ["--learning-rate", "1e-3"]
+ARMS["grid_ramp_numonly_warm"] = list(ARMS["grid_ramp_numonly"])
 DEFAULT_ARMS = ["learned", "grid_linear", "grid_conv"]
 SPLITS = ("test", "test_holdout", "test_far")
 CATEGORIES = ("overall", "structure", "after_numeral", "numeral", "copy", "fresh")

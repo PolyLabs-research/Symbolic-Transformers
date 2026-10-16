@@ -78,9 +78,14 @@ def collate(results, out_dir: Path):
     by_arm = {arm: [r for k, r in results.items() if _arm_of(k) == arm] for arm in arms}
     n_seeds = {arm: len(rs) for arm, rs in by_arm.items()}
 
-    lines = ["# Magnitude comparison ablation", "",
-             "`NUM a <op> NUM b ANSWER -> TRUE/FALSE`, ops LESS_THAN / GREATER_THAN. Accuracy (%) is argmax over the",
-             "full vocabulary; mean ± std over seeds where more than one seed ran.", ""]
+    meta_path = out_dir / "data" / "metadata.json"
+    meta = json.load(open(meta_path)) if meta_path.exists() else {}
+    fmt = meta.get("format", "MESSAGE_START NUM_a OP NUM_b ANSWER -> TRUE|FALSE")
+    title = "Sum comparison ablation" if meta.get("task") == "sum_comparison_v1" else "Magnitude comparison ablation"
+    lines = [f"# {title}", "",
+             f"`{fmt}`, ops LESS_THAN / GREATER_THAN. Accuracy (%) is argmax over the",
+             "full vocabulary; mean ± std over seeds where more than one seed ran. This file is rewritten by every",
+             "driver call into this directory; `config.json` records only the last call.", ""]
     lines += ["## Accuracy per split", "", "| arm | seeds | " + " | ".join(SPLITS) + " |", "|---|---|" + "---|" * len(SPLITS)]
     for arm, rs in by_arm.items():
         cells = [_ms([r["splits"][s]["overall"]["acc"] for r in rs if s in r["splits"]]) for s in SPLITS]
@@ -90,22 +95,28 @@ def collate(results, out_dir: Path):
     for split in ("test_holdout", "test_far"):
         if not any(split in r["splits"] for r in results.values()):
             continue
+        keys = sorted({k for r in results.values() if split in r["splits"] for k in r["splits"][split]["by_unseen"]
+                       if k != "0"}, key=int)
         lines += [f"## {split}: accuracy by number of unseen operands", "",
-                  "| arm | 1 unseen | 2 unseen |", "|---|---|---|"]
+                  "| arm | " + " | ".join(f"{k} unseen" for k in keys) + " |", "|---|" + "---|" * len(keys)]
         for arm, rs in by_arm.items():
             lines.append(f"| {arm} | " + " | ".join(
-                _ms([r["splits"][split]["by_unseen"][k]["acc"] for r in rs if split in r["splits"]]) for k in ("1", "2")) + " |")
+                _ms([r["splits"][split]["by_unseen"][k]["acc"] for r in rs
+                     if split in r["splits"] and k in r["splits"][split]["by_unseen"]]) for k in keys) + " |")
         lines.append("")
 
+    def all_unseen(split_result):
+        return split_result.get("by_gap_all_unseen") or split_result.get("by_gap_unseen2")
+
     for split in ("test_holdout", "test_far"):
-        if not any(split in r["splits"] and "by_gap_unseen2" in r["splits"][split] for r in results.values()):
+        if not any(split in r["splits"] and all_unseen(r["splits"][split]) for r in results.values()):
             continue
-        lines += [f"## {split}: both operands unseen, accuracy by |a - b|", "",
+        lines += [f"## {split}: every operand unseen, accuracy by the gap between the compared quantities", "",
                   "The clean test: no seen operand to anchor on.", "",
                   "| arm | " + " | ".join(f"gap {g}" for g in GAPS) + " |", "|---|" + "---|" * len(GAPS)]
         for arm, rs in by_arm.items():
             lines.append(f"| {arm} | " + " | ".join(
-                _ms([r["splits"][split]["by_gap_unseen2"][g]["acc"] for r in rs if split in r["splits"]]) for g in GAPS) + " |")
+                _ms([all_unseen(r["splits"][split])[g]["acc"] for r in rs if split in r["splits"]]) for g in GAPS) + " |")
         lines.append("")
 
     for split in SPLITS:

@@ -96,6 +96,8 @@ class TrainingConfig:
     # xval embedding: numeral k -> ((k - xval_center) / xval_scale) * one learned direction.
     xval_center: float = 249.5
     xval_scale: float = 144.3
+    # Warm start: model weights loaded from this checkpoint before training (optimizer and schedule fresh).
+    init_from: Optional[str] = None
     # Separate optimiser group for the grid_shared per-cell residual.
     residual_lr_mult: float = 1.0
     residual_weight_decay: Optional[float] = None
@@ -555,6 +557,8 @@ def main():
                         help="grid_shared: shortest period of the cell-index features")
     parser.add_argument("--shared-axis-freq", type=int, default=4,
                         help="grid_shared: number of row/col frequencies (0 = index features only)")
+    parser.add_argument("--init-from", default=None, metavar="CKPT",
+                        help="warm start: load model weights from CKPT (strict; optimizer, schedule and epochs start fresh)")
     parser.add_argument("--xval-center", type=float, default=249.5,
                         help="xval embedding: numeral value standardisation centre (default: mean of 0..499)")
     parser.add_argument("--xval-scale", type=float, default=144.3,
@@ -627,6 +631,7 @@ def main():
     config.grid_numerals_only = args.grid_numerals_only
     config.xval_center = args.xval_center
     config.xval_scale = args.xval_scale
+    config.init_from = args.init_from
     config.shared_basis = args.shared_basis
     config.shared_residual_orthogonal = args.residual_orthogonal
     config.shared_residual_dropout = args.residual_dropout
@@ -714,6 +719,10 @@ def main():
                          shared_residual_dropout_cell=config.shared_residual_dropout_cell,
                          grid_numerals_only=config.grid_numerals_only,
                          xval_center=config.xval_center, xval_scale=config.xval_scale)
+    if config.init_from and not resume_path:
+        init_ck = torch.load(config.init_from, map_location="cpu")
+        model.load_state_dict(init_ck["model_state_dict"])
+        print(f"✓ Warm start: weights from {config.init_from} (epoch {init_ck.get('epoch')})")
     trainer = Trainer(model, train_loader, val_loader, config, vocab)
 
     start_epoch = 0

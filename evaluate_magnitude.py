@@ -106,8 +106,10 @@ def evaluate_split(model, dataset: FOLDataset, vocab: Vocabulary, device: torch.
             target = int(s["target"])
             lhs, rhs = sides(s)
             rows.append({
-                "a": int(lhs), "b": int(rhs), "op": s.get("op"),
-                **({"operands": s["operands"]} if "operands" in s else {}),
+                # comparison task: the two numerals a, b; sum task: the two sums lhs, rhs and the operands
+                **({"lhs": int(lhs), "rhs": int(rhs), "operands": s["operands"]} if "operands" in s
+                   else {"a": int(lhs), "b": int(rhs)}),
+                "op": s.get("op"),
                 "correct": int(pred_full[j] == target),
                 "correct_tf": int((tf[j] >= 0.5) == (target == true_id)),
                 "gap": abs(lhs - rhs),
@@ -309,12 +311,15 @@ def main() -> int:
             scale_note += f" ({results['residual_scale_rows']} rows; saved {results['residual_scale_saved']:g})"
     print(f"\n{tag}  epoch {results['epoch']}  val {results['best_val_loss']}{scale_note}")
     gaps = [bin_label(lo, hi) for lo, hi in GAP_BINS]
-    print("| split | acc | acc_tf | " + " | ".join(f"gap {g}" for g in gaps) + " | 1 unseen | 2 unseen |")
-    print("|" + "---|" * (len(gaps) + 5))
+    n_keys = sorted({k for r in results["splits"].values() for k in r["by_unseen"] if k != "0"}, key=int)
+    print("| split | acc | acc_tf | " + " | ".join(f"gap {g}" for g in gaps) + " | "
+          + " | ".join(f"{k} unseen" for k in n_keys) + " |")
+    print("|" + "---|" * (len(gaps) + 3 + len(n_keys)))
     for name, r in results["splits"].items():
+        cell = lambda k: (f"{r['by_unseen'][k]['acc']*100:.1f}" if k in r["by_unseen"] and r["by_unseen"][k]["n"] else "n/a")
         print(f"| {name} | {r['overall']['acc']*100:.1f} | {r['overall_tf']['acc']*100:.1f} | "
               + " | ".join(f"{r['by_gap'][g]['acc']*100:.0f}" for g in gaps)
-              + f" | {r['by_unseen']['1']['acc']*100:.1f} | {r['by_unseen']['2']['acc']*100:.1f} |")
+              + " | " + " | ".join(cell(k) for k in n_keys) + " |")
     ma = results["magnitude_axis"]
     print("\nMagnitude axis: PC1 spearman", {k: round(v, 3) for k, v in ma["pc1_spearman"].items()})
     print("Linear readout of k fitted on train values:",

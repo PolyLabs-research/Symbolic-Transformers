@@ -136,7 +136,8 @@ def test_evaluator_breakdowns_for_both_tasks(tmp_path, vocab):
     assert set(r_sum["by_unseen"]) == {"0", "1", "2", "3", "4"} and "by_gap_unseen2" not in r_sum
     assert r_sum["by_gap_all_unseen"]["101+"]["n"] + sum(v["n"] for k, v in r_sum["by_gap_all_unseen"].items() if k != "101+") \
         == r_sum["by_unseen"]["4"]["n"]
-    assert all(r["n_operands"] == 4 and len(r["operands"]) == 4 and r["gap"] == abs(r["a"] - r["b"]) for r in rows)
+    assert all(r["n_operands"] == 4 and len(r["operands"]) == 4 and r["gap"] == abs(r["lhs"] - r["rhs"])
+               and r["lhs"] == sum(r["operands"][:2]) and "a" not in r for r in rows)
     out_c, _, _ = _gen(tmp_path, "compare", n_train=300, n_test=300)
     with torch.no_grad():
         r_cmp = evaluate_split(model, FOLDataset(str(out_c / "test_holdout.json"), pad_id=vocab.pad_token or 0), vocab, device)

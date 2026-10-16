@@ -45,14 +45,18 @@ def label_for(path: Path) -> str:
 
 
 def summarize(split_result: dict) -> dict:
+    """The "unseen2" metrics mean every operand unseen (two of two on the comparison task, four of four on the
+    sum task); the names are kept for the existing sweep JSON files."""
     g = lambda d, k: float(d[k]["acc"]) if k in d else float("nan")
+    all_key = max(split_result["by_unseen"], key=int)
+    au = split_result.get("by_gap_all_unseen") or split_result["by_gap_unseen2"]
     return {
         "acc": float(split_result["overall"]["acc"]),
         "acc_tf": float(split_result["overall_tf"]["acc"]),
-        "unseen2": g(split_result["by_unseen"], "2"),
-        "unseen2_gap1": g(split_result["by_gap_unseen2"], "1"),
-        "unseen2_gap2_5": g(split_result["by_gap_unseen2"], "2-5"),
-        "unseen2_gap6_20": g(split_result["by_gap_unseen2"], "6-20"),
+        "unseen2": g(split_result["by_unseen"], all_key),
+        "unseen2_gap1": g(au, "1"),
+        "unseen2_gap2_5": g(au, "2-5"),
+        "unseen2_gap6_20": g(au, "6-20"),
         "gap1": g(split_result["by_gap"], "1"),
         "gap2_5": g(split_result["by_gap"], "2-5"),
     }

@@ -122,7 +122,10 @@ class MagnitudeGenerator:
         One operand comes from pool_first and three from pool_rest, or (with probability
         all_first_frac) all four from pool_first. The fourth operand is drawn to make
         |lhs - rhs| equal 0 with probability p_equal and 1..small_gap_max with probability
-        small_gap_frac (of the rest), so close sums are oversampled as in the comparison task.
+        small_gap_frac (of the rest), so close sums are oversampled. Draws whose fourth operand
+        falls outside its pool are rejected, and the tie and close-gap draws are rejected more
+        often than uniform ones, so the realised close-gap fraction is below small_gap_frac
+        (29.6% of training samples at 0.4, against 34.8% for the comparison task).
         Operand positions are shuffled within each side and the sides are swapped at random.
         """
         seen: Set[Tuple[int, int, int, int, str]] = set()
