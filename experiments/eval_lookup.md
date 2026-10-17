@@ -112,3 +112,37 @@ the same settings as before, on the GPU. Accuracy / minimal-pair accuracy on tes
   to be examined before anything else. `scripts/sanity_recall.py` trains the same model on minimal
   associative recall, freshly sampled every step, changing one setting at a time: post- vs
   pre-LayerNorm, dropout, and learning rate.
+
+## Sanity check: the model can learn associative recall
+
+`scripts/sanity_recall.py` trains `tiny` with the trainer's optimiser settings (AdamW, learning rate
+3e-4, 500 warm-up steps, batch 64) on minimal associative recall: `k1 v1 ... k8 v8 ANSWER q -> v(q)`.
+Keys are distinct numerals, and every batch is freshly sampled. Query accuracy is measured on fresh
+sequences, with one query each.
+
+| setup | step 1,000 | 3,000 | 4,000 | 5,000 | 6,000 |
+|---|---|---|---|---|---|
+| binary values, 1 query (default setup) | 0.61 | 0.65 | | | |
+| the same, varied: pre-LN; no dropout; learning rate 1e-3; pre-LN with 1e-3 | 0.59-0.65 | 0.64-0.65 | | | |
+| binary values, 8 queries | 0.65 | 0.64 | 0.71 | **1.00** | **1.00** |
+| numeral values (100 classes), 1 query | 0.12 | 0.15 | 0.15 | 0.16 | 0.10 |
+| numeral values, 8 queries | 0.13 | 0.16 | 0.16 | 0.16 | **0.99** |
+
+**Reading:**
+
+- **The model and training loop are not broken.**
+- **Lookup is learned as a long plateau followed by a sudden jump.** With binary values, the plateau sits
+  at about 64%, which is what answering with the majority of the listed values gives. The jump comes at
+  4,000-6,000 steps with 8 queries per sequence. With 1 query it does not come within 6,000 steps.
+- **Post- vs pre-LayerNorm, dropout and learning rate change nothing** within 3,000 steps.
+
+**The open question is why the formula-evaluation lookups never made the jump.** The full-table run with
+8 queries per item had 31K steps. Two differences from this check remain:
+
+- **The layout.** The value comes three tokens after the key, sequences are about ten times longer, and
+  the key also appears in the list of objects.
+- **The data.** Those runs cycle through a fixed 50K items for 40 epochs, which lets training loss fall
+  through memorisation instead. The 1-query full-table run did exactly that: its training loss fell
+  while validation loss rose.
+
+`--layout table` repeats this check in the exact full-table layout, on fresh data.
