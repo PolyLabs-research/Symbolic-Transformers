@@ -1,0 +1,93 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "binary_preds": [
+    4
+  ],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.49998,
+      "max_scratch_len": 296,
+      "sha256": "5b4725696d876ab7f0b759a4b0d3f798af7c5b264871d09c591c50597b5845f4",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 24944
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.5,
+      "max_scratch_len": 296,
+      "sha256": "16573680ff34fec4dae1c9cdf7449c1845b00e76c37a2ca1271bc2e52ed61bbc",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 1011
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 296,
+      "sha256": "b830939116120db2728fa319b448740e6da1858338bd251b66a50d3086e5b5de",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 434
+    },
+    "test_large_world": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          5
+        ]
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 416,
+      "sha256": "6b7b9052c0c33c4955610ab6369527b088e6bd32ad3280ed32c25ab97c908d15",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 537
+    }
+  },
+  "encoding": "full_table"
+}

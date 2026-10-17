@@ -15,3 +15,5 @@ runs/
 # records each split's sha256.
 datasets/eval_stage_a/*.json
 !datasets/eval_stage_a/metadata.json
+datasets/eval_lookup_*/*.json
+!datasets/eval_lookup_*/metadata.json

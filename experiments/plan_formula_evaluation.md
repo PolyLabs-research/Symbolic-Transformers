@@ -172,3 +172,31 @@ Any predictor that ignores the world scores 0% on pairs, because twins share the
 
 A confound to read with T3: deeper formulas are also longer sequences, so a failure on test_deep may be
 partly a length failure. Accuracy will be reported by length within test_deep.
+
+## Lookup diagnostic: pre-registered before it runs
+
+Stage A failed at looking atoms up (`eval_stage_a.md`). This diagnostic isolates that step: every formula is
+one atom (`python data/eval_generator.py --lookup --encoding ENC`). It compares two world encodings:
+
+- **`true_atoms`**: the Stage A encoding, which lists the true atoms only. A lookup means detecting
+  whether an atom is present, including when it is absent.
+- **`full_table`**: every possible atom, each followed by TRUE or FALSE. A lookup means finding the
+  matching atom and copying the next token.
+
+Each encoding is trained with `tiny` (2 layers) and `small` (4 layers, 3.5M parameters). Settings: direct
+format, batch 64, learning rate 3e-4, 500 warm-up steps, 20 epochs, seed 1. The checkpoint kept is the one
+with the lowest validation loss.
+
+- **Criterion.** Lookup counts as learned if test_iid minimal-pair accuracy is ≥ 95%.
+- **test_large_world** has 5 objects, and its sequences are longer than any training item. It is
+  reported, but it is not a criterion.
+- **Prediction.**
+  - `full_table` is learned by `tiny`.
+  - `true_atoms` is not learned by `tiny`, with pair accuracy under 80%.
+  - `small` on `true_atoms` is uncertain.
+- **Decision rule:**
+  - If only `full_table` is learned, rerun Stage A with the full-table world plus a fix for sequence
+    length.
+  - If both are learned, the Stage A failure was lookups inside formulas rather than the encoding, and
+    that needs its own diagnosis.
+  - If neither is learned, lookups need more capacity or data than these models have.

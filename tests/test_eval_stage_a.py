@@ -178,3 +178,40 @@ def test_length_bucket_sampler_covers_every_item_once():
         assert all(len(b) <= 32 for b in batches)
         spread = sum(max(lengths[i] for i in b) - min(lengths[i] for i in b) for b in batches) / len(batches)
         assert spread < 40, "batches should hold items of similar length"
+
+
+@pytest.mark.parametrize("encoding", ["true_atoms", "full_table"])
+def test_lookup_items(tmp_path, vocab, encoding):
+    from data.eval_generator import possible_atoms
+
+    generate(str(tmp_path), VOCAB, seed=4, scale=0.01, lookup=True, encoding=encoding)
+    tok = Tokens(vocab)
+    for split in ("train", "test_iid", "test_large_world"):
+        items = json.load(open(tmp_path / f"{split}.json"))["items"]
+        assert all(it["height"] == 0 for it in items)
+        assert abs(sum(it["label"] for it in items) / len(items) - 0.5) < 0.02
+        for it in items:
+            seq = it["direct_seq"]
+            models = seq.index(tok.MODELS)
+            assert seq[models + 1] == tok.PRED and seq[-2] == tok.ANSWER  # the formula is one atom
+            if encoding == "full_table":
+                sep = seq.index(tok.SEP)
+                objects = [seq[i + 1] for i in range(1, sep, 2)]
+                world = seq[sep + 1:models]
+                values = [world[i + 1] for i in range(len(world) - 1) if world[i] == tok.RP]
+                assert len(values) == len(possible_atoms(objects))
+                assert all(v in (tok.TRUE, tok.FALSE) for v in values)
+                formula = seq[models + 1:-2]
+                k = next(i for i in range(len(world)) if world[i:i + len(formula)] == formula)
+                assert world[k + len(formula)] == seq[-1], "the atom's listed value is the answer"
+        if split.startswith("test"):
+            pairs = defaultdict(list)
+            for it in items:
+                pairs[it["pair"]].append(it)
+            for a, b in pairs.values():
+                da, db = a["direct_seq"][:-1], b["direct_seq"][:-1]
+                if encoding == "full_table":
+                    assert len(da) == len(db) and sum(x != y for x, y in zip(da, db)) == 1
+                else:
+                    assert abs(len(da) - len(db)) in (6, 9)  # one unary or binary atom added or removed
+                assert a["label"] != b["label"]

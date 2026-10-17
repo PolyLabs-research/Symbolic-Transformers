@@ -1,0 +1,93 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "binary_preds": [
+    4
+  ],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.5,
+      "max_scratch_len": 219,
+      "sha256": "f0eee54fd17f055df5a43d36fa633e9cf4e3c9e65cb8e98291649a1a356b9477",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 24776
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.5005,
+      "max_scratch_len": 204,
+      "sha256": "3f41bcacfd2a42c295bcb1593e977d36ff45936c085fadfefffaeaa00b628831",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 967
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 207,
+      "sha256": "071499a8f20f254ae5621fde0dc27e10eb50f397fc691e93191e23f81b69e8d1",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 504
+    },
+    "test_large_world": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          5
+        ]
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 296,
+      "sha256": "d191a61a466d928710f77762f44be6cde94a8d4521380ae76ac3c00b45bb7a04",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 522
+    }
+  },
+  "encoding": "true_atoms"
+}

@@ -158,6 +158,9 @@ def main():
     ap.add_argument("--vocab", default="unified_vocabulary.json")
     ap.add_argument("--device", default=None)
     ap.add_argument("--json", default=None)
+    ap.add_argument("--no-baselines", action="store_true",
+                    help="Skip the surface baselines (meaningless for single-atom lookup items, whose features "
+                         "include the atom's own value)")
     args = ap.parse_args()
 
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
@@ -167,7 +170,7 @@ def main():
     splits = {s: json.load(open(data / f"{s}.json"))["items"] for s in args.splits}
     results = {}
 
-    baselines = fit_baselines(json.load(open(data / "train.json"))["items"])
+    baselines = {} if args.no_baselines else fit_baselines(json.load(open(data / "train.json"))["items"])
     for name, predict in baselines.items():
         results[name] = {s: score(items, predict(items)) for s, items in splits.items()}
 

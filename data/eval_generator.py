@@ -28,8 +28,13 @@ Design notes (experiments/plan_formula_evaluation.md):
   - object names are drawn from 0-99 per world, so no name is ever unseen in training;
   - no (world, formula) item occurs twice anywhere.
 
+Lookup diagnostic (``--lookup``): every formula is a single atom, so an item asks only whether one atom
+holds in the world. ``--encoding full_table`` lists every possible atom followed by its value instead of
+only the true atoms, which turns a lookup into "find the matching atom, copy the next token".
+
 Usage:
     python data/eval_generator.py --out datasets/eval_stage_a
+    python data/eval_generator.py --lookup --encoding full_table --out datasets/eval_lookup_full_table
 """
 
 import argparse
@@ -160,10 +165,21 @@ class Tokens:
             out += self.atom(a)
         return out
 
-    def item(self, objects, true_atoms, formula, world_set) -> Dict:
+    def table(self, objects: List[int], listing: List[Tuple]) -> List[int]:
+        """Full-table world: every possible atom, each followed by TRUE or FALSE."""
+        out = []
+        for c in objects:
+            out += [self.CONST, c]
+        out.append(self.SEP)
+        for a, value in listing:
+            out += self.atom(a) + [self.TRUE if value else self.FALSE]
+        return out
+
+    def item(self, objects, true_atoms, formula, world_set, table: Optional[List[Tuple]] = None) -> Dict:
         label = evaluate(formula, world_set)
         answer = self.TRUE if label else self.FALSE
-        body = [self.start] + self.world(objects, true_atoms) + [self.MODELS] + self.formula(formula)
+        world = self.table(objects, table) if table is not None else self.world(objects, true_atoms)
+        body = [self.start] + world + [self.MODELS] + self.formula(formula)
         direct = body + [self.ANSWER, answer]
         scratch = body + [self.QUERY]
         scratch_from = len(scratch)
@@ -174,6 +190,12 @@ class Tokens:
         scratch += [self.ANSWER, answer]
         return {"direct_seq": direct, "direct_from": len(direct) - 1,
                 "scratch_seq": scratch, "scratch_from": scratch_from, "label": int(label)}
+
+
+def possible_atoms(objects: List[int]) -> List[Tuple]:
+    """Every ground atom over the objects, in a fixed order."""
+    out = [(p, (c,)) for p in UNARY_PREDS for c in objects]
+    return out + [(p, (c, d)) for p in BINARY_PREDS for c in objects for d in objects]
 
 
 class Sampler:
@@ -192,8 +214,7 @@ class Sampler:
         m = random.choice(self.objects)
         rho = random.choice(self.rho)
         objects = random.sample(range(self.index_pool), m)
-        possible = [(p, (c,)) for p in UNARY_PREDS for c in objects]
-        possible += [(p, (c, d)) for p in BINARY_PREDS for c in objects for d in objects]
+        possible = possible_atoms(objects)
         true_atoms = [a for a in possible if random.random() < rho]
         random.shuffle(true_atoms)
         return objects, true_atoms, rho
@@ -204,6 +225,8 @@ class Sampler:
         return ("atom", (pred, tuple(random.choice(objects) for _ in range(arity))))
 
     def formula(self, objects, depth, max_depth):
+        if max_depth == 0:  # lookup items: the formula is one atom
+            return self.atom(objects)
         if depth > 0 and (depth >= max_depth or random.random() < self.p_atom):
             return self.atom(objects)
         allow_not = self.not_mode != "none"
@@ -264,8 +287,13 @@ def features(objects, true_atoms, formula, world_set) -> Dict:
             "density": len(true_atoms) / n_possible}
 
 
-def build_split(tok: Tokens, sampler: Sampler, n: int, seen: set, pairs: bool) -> Tuple[List[Dict], Dict]:
-    """n base items, labels balanced within (outer operator, height, objects); twins added if pairs."""
+def build_split(tok: Tokens, sampler: Sampler, n: int, seen: set, pairs: bool,
+                encoding: str = "true_atoms") -> Tuple[List[Dict], Dict]:
+    """n base items, labels balanced within (outer operator, height, objects); twins added if pairs.
+
+    With ``encoding="full_table"`` the world lists every possible atom (in a random order shared by the
+    twins) with its value, and a twin flips that value instead of adding or removing the atom.
+    """
     counts = defaultdict(lambda: [0, 0])
     items, stats = [], {"too_long": 0, "duplicates": 0, "no_twin": 0, "balance_rejects": 0}
     base = 0
@@ -289,7 +317,12 @@ def build_split(tok: Tokens, sampler: Sampler, n: int, seen: set, pairs: bool) -
                 twin_atoms.insert(random.randrange(len(twin_atoms) + 1), a)
             twin = (twin_atoms, set(twin_atoms))
         group = [(true_atoms, world_set)] + ([twin] if twin else [])
-        built = [tok.item(objects, ta, f, ws) for ta, ws in group]
+        if encoding == "full_table":
+            order = possible_atoms(objects)
+            random.shuffle(order)
+            built = [tok.item(objects, ta, f, ws, table=[(x, x in ws) for x in order]) for ta, ws in group]
+        else:
+            built = [tok.item(objects, ta, f, ws) for ta, ws in group]
         keys = [tuple(b["direct_seq"][:-1]) for b in built]
         if any(len(b["scratch_seq"]) > MAX_LEN for b in built):
             stats["too_long"] += 1
@@ -320,8 +353,20 @@ SPLITS = {
 }
 
 
+LOOKUP = {"max_height": (0,), "min_height": 0}
+LOOKUP_SPLITS = {
+    # Single-atom items: does the model find an atom in the world? 5 objects is the largest world whose
+    # full table fits in MAX_LEN, so both encodings are tested at 5.
+    "train": (LOOKUP, 50000, False),
+    "val": (LOOKUP, 2000, False),
+    "test_iid": (LOOKUP, 1000, True),
+    "test_large_world": ({**LOOKUP, "objects": (5,)}, 1000, True),
+}
+
+
 def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: int = 0,
-             scale: float = 1.0, train_not_mode: str = "any") -> Dict:
+             scale: float = 1.0, train_not_mode: str = "any", lookup: bool = False,
+             encoding: str = "true_atoms") -> Dict:
     random.seed(seed)
     vocab = Vocabulary(vocab_path)
     tok = Tokens(vocab)
@@ -330,12 +375,14 @@ def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: in
     seen: set = set()
     meta = {"generator": "eval_stage_a_v1", "seed": seed, "unary_preds": UNARY_PREDS,
             "binary_preds": BINARY_PREDS, "max_len": MAX_LEN, "train_not_mode": train_not_mode, "splits": {}}
-    for name, (kwargs, n, pairs) in SPLITS.items():
+    if lookup or encoding != "true_atoms":
+        meta.update({"generator": "eval_lookup_v1" if lookup else "eval_stage_a_v1", "encoding": encoding})
+    for name, (kwargs, n, pairs) in (LOOKUP_SPLITS if lookup else SPLITS).items():
         kw = dict(kwargs)
         if name in ("train", "val", "test_iid") and train_not_mode != "any":
             kw["not_mode"] = train_not_mode
         n_items = max(1, int(n * scale))
-        items, stats = build_split(tok, Sampler(**kw), n_items, seen, pairs)
+        items, stats = build_split(tok, Sampler(**kw), n_items, seen, pairs, encoding)
         text = json.dumps({"split": name, "items": items})
         (out / f"{name}.json").write_text(text)
         meta["splits"][name] = {"sampler": kw, "base_items": n_items, "items": len(items), "pairs": pairs,
@@ -355,5 +402,8 @@ if __name__ == "__main__":
     ap.add_argument("--scale", type=float, default=1.0, help="Multiply every split's size (for quick runs)")
     ap.add_argument("--train-not-mode", default="any", choices=["any", "atoms"],
                     help="'atoms': NOT only over atoms in train/val/test_iid (test_negation is then held out)")
+    ap.add_argument("--lookup", action="store_true", help="Single-atom items only (the lookup diagnostic)")
+    ap.add_argument("--encoding", default="true_atoms", choices=["true_atoms", "full_table"],
+                    help="World as the list of true atoms, or every possible atom with its value")
     args = ap.parse_args()
-    generate(args.out, args.vocab, args.seed, args.scale, args.train_not_mode)
+    generate(args.out, args.vocab, args.seed, args.scale, args.train_not_mode, args.lookup, args.encoding)
