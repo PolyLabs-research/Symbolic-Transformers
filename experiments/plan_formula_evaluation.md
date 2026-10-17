@@ -1,6 +1,7 @@
 # Plan: formula evaluation, a task with a right answer
 
-**Status: Stage A built and pre-registered (below); runs pending. Stage B not started.**
+**Status: Stage A run. Both formats failed every threshold, because the model never learned to look
+atoms up in the world (`eval_stage_a.md`). Stage B is not started.**
 
 Next-symbol prediction on generated formulas is solved: the tiny model reaches the generator's own ceiling
 (`fol_retrain.md`). It tests syntax, because the formulas mean nothing. This task gives them meaning. The
