@@ -86,30 +86,34 @@ def predict_direct(model, items, tok, device, batch=256):
 
 
 @torch.no_grad()
-def predict_scratch(model, items, tok, device, batch=64):
-    """Greedy decoding after QUERY, in groups of equal prefix length (no padding, absolute positions)."""
-    groups = defaultdict(list)
-    for i, it in enumerate(items):
-        groups[it["scratch_from"]].append(i)
+def predict_scratch(model, items, tok, device, batch=128):
+    """Greedy decoding after QUERY. Rows are right-padded and each writes its next token at its own
+    position: attention is causal, so a row never sees the padding after its last real token."""
+    order = sorted(range(len(items)), key=lambda i: items[i]["scratch_from"])
     preds, traces = [None] * len(items), [None] * len(items)
-    for plen, idx_all in groups.items():
-        for s in range(0, len(idx_all), batch):
-            idx = idx_all[s:s + batch]
-            seqs = torch.tensor([items[i]["scratch_seq"][:plen] for i in idx], device=device)
-            budget = min(MAX_LEN - plen, max(len(items[i]["scratch_seq"]) - plen for i in idx) + 16)
-            done = torch.zeros(len(idx), dtype=torch.bool, device=device)
-            for _ in range(budget):
-                nxt = model(seqs)[:, -1].argmax(-1)
-                seqs = torch.cat([seqs, nxt[:, None]], 1)
-                done |= (seqs[:, -2] == tok.ANSWER)
-                if done.all():
-                    break
-            for r, i in enumerate(idx):
-                gen = seqs[r, plen:].tolist()
-                k = gen.index(tok.ANSWER) if tok.ANSWER in gen else None
-                ans = gen[k + 1] if k is not None and k + 1 < len(gen) else None
-                preds[i] = 1 if ans == tok.TRUE else (0 if ans == tok.FALSE else -1)
-                traces[i] = gen[:k] if k is not None else gen
+    for s in range(0, len(order), batch):
+        idx = order[s:s + batch]
+        starts = [items[i]["scratch_from"] for i in idx]
+        budget = max(len(items[i]["scratch_seq"]) - items[i]["scratch_from"] for i in idx) + 16
+        width = min(MAX_LEN, max(starts) + budget)
+        buf = torch.full((len(idx), width), tok.v.pad_token, dtype=torch.long, device=device)
+        for r, i in enumerate(idx):
+            buf[r, :starts[r]] = torch.tensor(items[i]["scratch_seq"][:starts[r]])
+        pos = torch.tensor(starts, device=device)
+        rows = torch.arange(len(idx), device=device)
+        done = torch.zeros(len(idx), dtype=torch.bool, device=device)
+        while not done.all():
+            logits = model(buf[:, :int(pos.max())])[rows, pos - 1]
+            live = ~done
+            buf[rows[live], pos[live]] = logits.argmax(-1)[live]
+            pos = torch.where(live, pos + 1, pos)
+            done |= (buf[rows, pos - 2] == tok.ANSWER) | (pos >= width)
+        for r, i in enumerate(idx):
+            gen = buf[r, starts[r]:int(pos[r])].tolist()
+            k = gen.index(tok.ANSWER) if tok.ANSWER in gen else None
+            ans = gen[k + 1] if k is not None and k + 1 < len(gen) else None
+            preds[i] = 1 if ans == tok.TRUE else (0 if ans == tok.FALSE else -1)
+            traces[i] = gen[:k] if k is not None else gen
     return preds, traces
 
 
@@ -179,6 +183,8 @@ def main():
             preds, traces = (predict_scratch if fmt == "scratch" else predict_direct)(model, items, tok, device)
             results[name][s] = score(items, preds, traces, tok, fmt)
             print(f"  {name} {s}: accuracy {pct(results[name][s]['accuracy'])}", file=sys.stderr)
+            if args.json:  # keep finished splits if a long decoding run is interrupted
+                Path(args.json).write_text(json.dumps(results, indent=2))
 
     names = list(results)
     print("Accuracy / minimal-pair accuracy (%). A predictor that ignores the world gets 0 pairs right.\n")
