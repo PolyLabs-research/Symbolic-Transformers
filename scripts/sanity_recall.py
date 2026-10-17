@@ -54,7 +54,7 @@ def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs"):
     else:
         const, pred = vocab.compositional_tokens["CONST"], vocab.compositional_tokens["PRED"]
         order = torch.stack([torch.randperm(n_pairs) for _ in range(bs)])
-        domain = torch.stack([full(const)[:, 0].expand(bs, n_pairs), keys], 2).reshape(bs, 2 * n_pairs)
+        domain = torch.stack([full(const).expand(bs, n_pairs), keys], 2).reshape(bs, 2 * n_pairs)
         k, v = keys.gather(1, order), vals.gather(1, order)
         entry = [full(pred).expand(bs, n_pairs), torch.zeros(bs, n_pairs, dtype=torch.long),
                  full(lab("LPAREN")).expand(bs, n_pairs), full(const).expand(bs, n_pairs), k,
