@@ -59,3 +59,36 @@ probably the key, not membership against copying.
   1. single-token keys, a membership test among listed numerals;
   2. unary atoms only, a two-token key at fixed offsets;
   3. the full signature.
+
+## Key-complexity ladder: results
+
+The ladder is pre-registered in `plan_formula_evaluation.md`. It used the `true_atoms` encoding, `tiny`, 40
+epochs, and the same settings otherwise, run on the RTX 2000 Ada GPU. Accuracy / minimal-pair accuracy on
+test_iid (%):
+
+| rung | the key | test_iid | accuracy by number of objects | validation loss over 40 epochs |
+|---|---|---|---|---|
+| `single` | one token | 60.4 / 22.5 | 66.6 / 57.4 / 56.2 (12 / 21 / 32 objects) | flat: 0.676 to 0.658 |
+| `unary` | two tokens, fixed offsets | 59.1 / 18.1 | 61.9 / 59.1 / 56.4 (3 / 5 / 8) | rising: 0.678 to 0.710 |
+| `full` | two or three tokens | 69.2 / 38.6 | 73.1 / 70.0 / 64.9 (2 / 3 / 4) | plateau to epoch 11, falls to 0.55 by epoch 17, 0.525 at 40 |
+
+- **Criterion: no rung is learned.**
+- **Predictions:** "`single` is learned" is false. "`full` is not learned" is true. `unary` was left open,
+  and it was not learned either.
+- **Decision rule.** `single` fails, so even a one-token membership test is not learned in this setup.
+  The problem is upstream of the key structure, and a task known to be learnable has to be checked first.
+
+**Reading.**
+
+- **The ladder is not monotone in key complexity.** The rung with the hardest key did best, and it is
+  also the only one whose loss broke through a plateau. So the key's structure is not the bottleneck.
+- **Accuracy falls with the size of the world in every rung,** so how much has to be searched matters
+  more than what is searched for.
+- **`unary` fit its training items without generalising:** its validation loss rose across all 40
+  epochs.
+- **`full` broke through only after the learning rate had started its cosine decay,** so it may have been
+  cut off partway.
+
+The known-learnable task to check next is associative recall: key→value pairs, then queries. Small
+transformers learn it reliably when trained with many queries per sequence. Every item here carries one
+query and therefore one bit of supervision.

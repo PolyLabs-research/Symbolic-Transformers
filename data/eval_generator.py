@@ -198,6 +198,60 @@ def possible_atoms(objects: List[int], unary=UNARY_PREDS, binary=BINARY_PREDS) -
     return out + [(p, (c, d)) for p in binary for c in objects for d in objects]
 
 
+def multi_query_item(tok: "Tokens", objects, true_atoms, queries, table=None) -> Dict:
+    """A lookup item with several queries: MODELS q1 ANSWER v1 SEP q2 ANSWER v2 ..., loss on every v.
+
+    The first query has exactly the single-query layout, so models trained on these are tested on
+    ordinary single-query items.
+    """
+    world = tok.table(objects, table) if table is not None else tok.world(objects, true_atoms)
+    seq = [tok.start] + world + [tok.MODELS]
+    targets = []
+    for k, (a, value) in enumerate(queries):
+        if k:
+            seq.append(tok.SEP)
+        seq += tok.atom(a) + [tok.ANSWER]
+        targets.append(len(seq))
+        seq.append(tok.TRUE if value else tok.FALSE)
+    return {"direct_seq": seq, "direct_from": targets[0], "direct_targets": targets,
+            "scratch_seq": seq, "scratch_from": targets[0], "scratch_targets": targets,
+            "label": int(queries[0][1]), "queries": len(queries)}
+
+
+def build_multi_query_split(tok: "Tokens", sampler: "Sampler", n: int, seen: set, k: int,
+                            encoding: str) -> Tuple[List[Dict], Dict]:
+    """n training items with k lookup queries each, half of them true, in random order."""
+    items, stats = [], {"too_long": 0, "duplicates": 0}
+    while len(items) < n:
+        objects, true_atoms, rho = sampler.world()
+        possible = possible_atoms(objects, sampler.unary, sampler.binary)
+        true_set = set(true_atoms)
+        false_atoms = [a for a in possible if a not in true_set]
+        queries = []
+        for _ in range(k):
+            want = random.random() < 0.5
+            pool = true_atoms if (want and true_atoms) or not false_atoms else false_atoms
+            a = random.choice(pool)
+            queries.append((a, a in true_set))
+        table = None
+        if encoding == "full_table":
+            order = list(possible)
+            random.shuffle(order)
+            table = [(x, x in true_set) for x in order]
+        it = multi_query_item(tok, objects, true_atoms, queries, table)
+        key = tuple(it["direct_seq"])
+        if len(it["direct_seq"]) > MAX_LEN:
+            stats["too_long"] += 1
+            continue
+        if key in seen:
+            stats["duplicates"] += 1
+            continue
+        seen.add(key)
+        it.update({"pair": None, "outer": "ATOM", "height": 0, "objects": len(objects), "rho": rho})
+        items.append(it)
+    return items, stats
+
+
 class Sampler:
     """Worlds and formulas for one split."""
 
@@ -377,7 +431,7 @@ SIGNATURES = {
 
 def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: int = 0,
              scale: float = 1.0, train_not_mode: str = "any", lookup: bool = False,
-             encoding: str = "true_atoms", signature: str = "full") -> Dict:
+             encoding: str = "true_atoms", signature: str = "full", queries: int = 1) -> Dict:
     random.seed(seed)
     vocab = Vocabulary(vocab_path)
     tok = Tokens(vocab)
@@ -396,12 +450,19 @@ def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: in
         splits = {name: ({**LOOKUP, "objects": objects, "unary": unary, "binary": binary}, n, pairs)
                   for name, (_, n, pairs) in LOOKUP_SPLITS.items() if name != "test_large_world"}
         meta.update({"signature": signature, "unary_preds": unary, "binary_preds": binary})
+    if queries > 1:
+        if not lookup:
+            raise ValueError("several queries per item are only defined for the lookup diagnostic")
+        meta["train_queries"] = queries
     for name, (kwargs, n, pairs) in splits.items():
         kw = dict(kwargs)
         if name in ("train", "val", "test_iid") and train_not_mode != "any":
             kw["not_mode"] = train_not_mode
         n_items = max(1, int(n * scale))
-        items, stats = build_split(tok, Sampler(**kw), n_items, seen, pairs, encoding)
+        if name == "train" and queries > 1:
+            items, stats = build_multi_query_split(tok, Sampler(**kw), n_items, seen, queries, encoding)
+        else:
+            items, stats = build_split(tok, Sampler(**kw), n_items, seen, pairs, encoding)
         text = json.dumps({"split": name, "items": items})
         (out / f"{name}.json").write_text(text)
         meta["splits"][name] = {"sampler": kw, "base_items": n_items, "items": len(items), "pairs": pairs,
@@ -426,6 +487,8 @@ if __name__ == "__main__":
                     help="World as the list of true atoms, or every possible atom with its value")
     ap.add_argument("--signature", default="full", choices=list(SIGNATURES),
                     help="Lookup ladder: 'single' (one predicate), 'unary' (four unary), 'full' (Stage A)")
+    ap.add_argument("--queries", type=int, default=1,
+                    help="Lookup diagnostic: queries per training item (val and test items keep one)")
     args = ap.parse_args()
     generate(args.out, args.vocab, args.seed, args.scale, args.train_not_mode, args.lookup, args.encoding,
-             args.signature)
+             args.signature, args.queries)

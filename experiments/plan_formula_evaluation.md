@@ -232,3 +232,35 @@ The `full` rung reuses `datasets/eval_lookup_true_atoms` unchanged.
   - If `unary` passes and `full` fails, the binary atoms are the bottleneck: three-part keys at shifted
     offsets. Give every atom the same layout.
   - If all three pass, the extra epochs were what was missing. Rerun Stage A for longer.
+
+## Supervision-density check: pre-registered before it runs
+
+On the ladder, the one-token rung failed (`eval_lookup.md`). Under the ladder's decision rule, a task known
+to be learnable comes next. That task is associative recall: key→value pairs, then queries, which small
+transformers learn when trained with many queries per sequence.
+
+The check is a 2×2 on the `single` rung (one predicate, 12-32 objects; `--lookup --signature single`):
+
+| | 1 query per training item | 8 queries per training item (`--queries 8`) |
+|---|---|---|
+| `true_atoms` | already run: 22.5% pairs | `eval_lookup_single_mq8` |
+| `full_table` (associative recall) | `eval_lookup_single_table` | `eval_lookup_single_table_mq8` |
+
+- **Multi-query items.** A training item has queries `MODELS q1 ANSWER v1 SEP q2 ANSWER v2 ...`, with loss
+  on every answer. Validation and test items keep a single query, so the numbers compare directly with
+  the earlier runs.
+- **Runs.** `tiny`, 40 epochs. The other settings are as before: batch 64, learning rate 3e-4, 500
+  warm-up steps, seed 1.
+- **Criterion.** test_iid pair accuracy ≥ 95%.
+- **Predictions:**
+  - `full_table` with 8 queries is learned.
+  - `full_table` with 1 query is not learned (pairs under 80%).
+  - `true_atoms` with 8 queries is uncertain.
+- **Decision rule:**
+  - If `full_table` with 8 queries fails, the textbook-learnable case fails in this pipeline. Before
+    anything else, the training setup itself has to be examined: the learning rate, post-LayerNorm, and
+    a minimal copy task.
+  - If it passes but 1 query fails, supervision density is the bottleneck. Stage A then needs many
+    lookups per item, or a lookup pre-training stage.
+  - If `true_atoms` with 8 queries also passes, membership is learnable with dense supervision, and
+    the Stage A encoding can stay.

@@ -1,0 +1,95 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0
+  ],
+  "binary_preds": [],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          12,
+          21,
+          32
+        ],
+        "unary": [
+          0
+        ],
+        "binary": []
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.5,
+      "max_scratch_len": 301,
+      "sha256": "0d038f7eb6155e50f26eccd156f96f4c8a7cc4e5ce3d20628e0902a1b143e850",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 24789
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          12,
+          21,
+          32
+        ],
+        "unary": [
+          0
+        ],
+        "binary": []
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.4995,
+      "max_scratch_len": 301,
+      "sha256": "d2a83f9c342f5f901c09308ce7ba1cbd6e62bd93b2b5709444287b3bc32c2b09",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 1043
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          12,
+          21,
+          32
+        ],
+        "unary": [
+          0
+        ],
+        "binary": []
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 301,
+      "sha256": "40c2061f15279e226875fa39650c889e435b52cdcb92a9af787a8a2255e98e1a",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 472
+    }
+  },
+  "encoding": "full_table",
+  "signature": "single"
+}

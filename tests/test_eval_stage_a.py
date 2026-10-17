@@ -230,3 +230,33 @@ def test_lookup_ladder_signatures(tmp_path, vocab, signature, preds, objects):
             seq = it["direct_seq"]
             used = {seq[i + 1] for i in range(len(seq) - 1) if seq[i] == tok.PRED}
             assert used <= preds and tok.COMMA not in seq, "no binary atoms on this rung"
+
+
+def test_multi_query_training_items(tmp_path, vocab):
+    from training.train import SequenceDataset
+
+    generate(str(tmp_path), VOCAB, seed=7, scale=0.01, lookup=True, signature="single",
+             encoding="full_table", queries=8)
+    tok = Tokens(vocab)
+    train = json.load(open(tmp_path / "train.json"))
+    values = []
+    for it in train["items"]:
+        seq, targets = it["direct_seq"], it["direct_targets"]
+        assert len(targets) == it["queries"] == 8
+        assert all(seq[t - 1] == tok.ANSWER and seq[t] in (tok.TRUE, tok.FALSE) for t in targets)
+        values += [seq[t] == tok.TRUE for t in targets]
+        # Each answer is the value the full table lists for that query's atom.
+        models = seq.index(tok.MODELS)
+        world = seq[seq.index(tok.SEP) + 1:models]
+        for t in targets:
+            start = max(i for i in range(models, t) if seq[i] == tok.PRED)
+            atom = seq[start:t - 1]
+            k = next(i for i in range(len(world)) if world[i:i + len(atom)] == atom)
+            assert world[k + len(atom)] == seq[t]
+    assert abs(sum(values) / len(values) - 0.5) < 0.05
+    val = json.load(open(tmp_path / "val.json"))["items"]
+    assert all("direct_targets" not in it for it in val), "validation items keep a single query"
+    ds = SequenceDataset(train, "direct", vocab.pad_token)
+    it, item = ds[0], train["items"][0]
+    labelled = [j + 1 for j, x in enumerate(it["labels"].tolist()) if x != -100]
+    assert labelled == item["direct_targets"]

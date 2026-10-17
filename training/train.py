@@ -258,7 +258,8 @@ class SequenceDataset(Dataset):
     Items come from data/eval_generator.py: ``<fmt>_seq`` is the full token sequence and
     ``<fmt>_from`` the index of its first target token. Each item gives ``input_ids`` (the sequence
     without its last token, right-padded) and ``labels`` (the sequence shifted left by one, with -100
-    before the target suffix and on padding), so the loss covers exactly the target tokens.
+    before the target suffix and on padding), so the loss covers exactly the target tokens. An item may
+    instead list its target positions in ``<fmt>_targets``.
     """
 
     def __init__(self, data: Dict, fmt: str, pad_id: int, source: str = ""):
@@ -275,7 +276,12 @@ class SequenceDataset(Dataset):
         it = self.items[idx]
         seq, start = it[f"{self.fmt}_seq"], it[f"{self.fmt}_from"]
         n = len(seq) - 1
-        labels = [-100] * (start - 1) + seq[start:]
+        targets = it.get(f"{self.fmt}_targets")
+        if targets is not None:  # loss only on these positions (e.g. several answers in one item)
+            want = set(targets)
+            labels = [seq[j + 1] if j + 1 in want else -100 for j in range(n)]
+        else:
+            labels = [-100] * (start - 1) + seq[start:]
         pad = self.max_len - n
         return {
             "input_ids": torch.tensor(seq[:-1] + [self.pad_id] * pad, dtype=torch.long),
