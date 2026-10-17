@@ -92,3 +92,23 @@ test_iid (%):
 The known-learnable task to check next is associative recall: key→value pairs, then queries. Small
 transformers learn it reliably when trained with many queries per sequence. Every item here carries one
 query and therefore one bit of supervision.
+
+## Supervision-density check: results
+
+This is the 2×2 on the `single` rung, pre-registered in `plan_formula_evaluation.md`: `tiny`, 40 epochs,
+the same settings as before, on the GPU. Accuracy / minimal-pair accuracy on test_iid (%):
+
+| | 1 query per training item | 8 queries per training item |
+|---|---|---|
+| `true_atoms` | 60.4 / 22.5 (ladder) | 55.6 / 18.3. Validation loss was flat at 0.69 until epoch 21, then fell to 0.652 |
+| `full_table` (associative recall) | 59.3 / 18.6. Validation loss was flat at 0.665, then rose to 0.680 | **50.0 / 0.0. Validation loss was 0.693-0.695 for all 40 epochs** |
+
+- **Criterion: none learned.**
+- **Predictions:**
+  - "`full_table` with 8 queries is learned": false. It never left a constant answer.
+  - "`full_table` with 1 query is not learned": true.
+  - `true_atoms` with 8 queries was left open. It was not learned, but started to move late.
+- **Decision rule.** The textbook-learnable case fails in this pipeline, so the training setup itself has
+  to be examined before anything else. `scripts/sanity_recall.py` trains the same model on minimal
+  associative recall, freshly sampled every step, changing one setting at a time: post- vs
+  pre-LayerNorm, dropout, and learning rate.
