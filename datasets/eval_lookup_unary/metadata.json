@@ -1,0 +1,107 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "binary_preds": [],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          3,
+          5,
+          8
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.5,
+      "max_scratch_len": 197,
+      "sha256": "abb01d909fb7e9fa3dbac1ba963e61a8d2eab6bb19c361580abd9c8e211c6b55",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 25120
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          3,
+          5,
+          8
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.5005,
+      "max_scratch_len": 185,
+      "sha256": "877f0e9e6f0320f5ce38f9124aaed1b768bc3b30195b6240e5a6a75764b785a7",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 997
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          3,
+          5,
+          8
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 179,
+      "sha256": "52f6fac0d54a3f53d9a660af1cbc7291ad184789097ae6ef25048dd0490b40f6",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 549
+    }
+  },
+  "encoding": "true_atoms",
+  "signature": "unary"
+}

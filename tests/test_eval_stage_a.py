@@ -215,3 +215,18 @@ def test_lookup_items(tmp_path, vocab, encoding):
                 else:
                     assert abs(len(da) - len(db)) in (6, 9)  # one unary or binary atom added or removed
                 assert a["label"] != b["label"]
+
+
+@pytest.mark.parametrize("signature,preds,objects", [("single", {0}, {12, 21, 32}), ("unary", {0, 1, 2, 3}, {3, 5, 8})])
+def test_lookup_ladder_signatures(tmp_path, vocab, signature, preds, objects):
+    generate(str(tmp_path), VOCAB, seed=6, scale=0.01, lookup=True, signature=signature)
+    tok = Tokens(vocab)
+    assert not (tmp_path / "test_large_world.json").exists()
+    for split in ("train", "test_iid"):
+        items = json.load(open(tmp_path / f"{split}.json"))["items"]
+        assert {it["objects"] for it in items} <= objects
+        assert abs(sum(it["label"] for it in items) / len(items) - 0.5) < 0.03
+        for it in items:
+            seq = it["direct_seq"]
+            used = {seq[i + 1] for i in range(len(seq) - 1) if seq[i] == tok.PRED}
+            assert used <= preds and tok.COMMA not in seq, "no binary atoms on this rung"

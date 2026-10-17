@@ -201,3 +201,34 @@ with the lowest validation loss.
   - If both are learned, the Stage A failure was lookups inside formulas rather than the encoding, and
     that needs its own diagnosis.
   - If neither is learned, lookups need more capacity or data than these models have.
+
+## Lookup ladder: pre-registered before it runs
+
+The lookup diagnostic failed with both encodings (`eval_lookup.md`). Three of its four runs were flat from
+epoch 1. The fourth, `true_atoms` with `tiny`, was still falling slowly at epoch 20 (validation loss
+0.680 → 0.628).
+
+The ladder keeps the `true_atoms` encoding and changes only the key a lookup has to match
+(`--lookup --signature`). Every rung has about 12, 21 or 32 possible atoms per world:
+
+| rung | signature | the key | objects |
+|---|---|---|---|
+| `single` | `PRED 0` only | one token, the object, at a fixed offset | 12, 21, 32 |
+| `unary` | `PRED 0-3` | predicate and object, two tokens at fixed offsets | 3, 5, 8 |
+| `full` | `PRED 0-3` and binary `PRED 4` (Stage A) | two or three tokens at varying offsets | 2, 3, 4 |
+
+The `full` rung reuses `datasets/eval_lookup_true_atoms` unchanged.
+
+- **Runs.** `tiny`, direct format, 40 epochs. The other settings are as before: batch 64, learning rate
+  3e-4, 500 warm-up steps, seed 1.
+- **Criterion.** A rung's lookup is learned if test_iid minimal-pair accuracy is ≥ 95%.
+- **Predictions.** `single` is learned. `unary` is uncertain. `full` is not learned (pairs under 80%).
+- **Decision rule:**
+  - If `single` fails, even a one-token membership test is not learned in this setup. The problem is
+    upstream of the key structure. Check a task known to be learnable, such as a single-token copy,
+    before anything else.
+  - If `single` passes and `unary` fails, two-token keys are the bottleneck. Give each atom one token
+    in the world encoding.
+  - If `unary` passes and `full` fails, the binary atoms are the bottleneck: three-part keys at shifted
+    offsets. Give every atom the same layout.
+  - If all three pass, the extra epochs were what was missing. Rerun Stage A for longer.

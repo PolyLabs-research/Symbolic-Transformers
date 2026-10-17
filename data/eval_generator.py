@@ -192,17 +192,19 @@ class Tokens:
                 "scratch_seq": scratch, "scratch_from": scratch_from, "label": int(label)}
 
 
-def possible_atoms(objects: List[int]) -> List[Tuple]:
+def possible_atoms(objects: List[int], unary=UNARY_PREDS, binary=BINARY_PREDS) -> List[Tuple]:
     """Every ground atom over the objects, in a fixed order."""
-    out = [(p, (c,)) for p in UNARY_PREDS for c in objects]
-    return out + [(p, (c, d)) for p in BINARY_PREDS for c in objects for d in objects]
+    out = [(p, (c,)) for p in unary for c in objects]
+    return out + [(p, (c, d)) for p in binary for c in objects for d in objects]
 
 
 class Sampler:
     """Worlds and formulas for one split."""
 
     def __init__(self, objects=(2, 3, 4), rho=(0.5,), max_height=(1, 2, 3), height_weights=None,
-                 p_atom=0.3, p_not=0.25, conn_weights=None, not_mode="any", min_height=1, index_pool=100):
+                 p_atom=0.3, p_not=0.25, conn_weights=None, not_mode="any", min_height=1, index_pool=100,
+                 unary=UNARY_PREDS, binary=BINARY_PREDS):
+        self.unary, self.binary = list(unary), list(binary)
         self.objects, self.rho = list(objects), list(rho)
         self.max_height = list(max_height)
         self.height_weights = height_weights or [1.0] * len(self.max_height)
@@ -214,14 +216,14 @@ class Sampler:
         m = random.choice(self.objects)
         rho = random.choice(self.rho)
         objects = random.sample(range(self.index_pool), m)
-        possible = possible_atoms(objects)
+        possible = possible_atoms(objects, self.unary, self.binary)
         true_atoms = [a for a in possible if random.random() < rho]
         random.shuffle(true_atoms)
         return objects, true_atoms, rho
 
     def atom(self, objects):
-        pred = random.choice(UNARY_PREDS + BINARY_PREDS)
-        arity = 2 if pred in BINARY_PREDS else 1
+        pred = random.choice(self.unary + self.binary)
+        arity = 2 if pred in self.binary else 1
         return ("atom", (pred, tuple(random.choice(objects) for _ in range(arity))))
 
     def formula(self, objects, depth, max_depth):
@@ -266,10 +268,10 @@ def outer(node) -> str:
     return node[1] if node[0] == "bin" else node[0].upper()
 
 
-def features(objects, true_atoms, formula, world_set) -> Dict:
+def features(objects, true_atoms, formula, world_set, unary=UNARY_PREDS, binary=BINARY_PREDS) -> Dict:
     """Surface features for the shallow baseline: what a predictor could use without composing."""
     atoms = atoms_of(formula)
-    n_possible = len(UNARY_PREDS) * len(objects) + len(BINARY_PREDS) * len(objects) ** 2
+    n_possible = len(possible_atoms(objects, unary, binary))
     toks = []
 
     def walk(n):
@@ -318,7 +320,7 @@ def build_split(tok: Tokens, sampler: Sampler, n: int, seen: set, pairs: bool,
             twin = (twin_atoms, set(twin_atoms))
         group = [(true_atoms, world_set)] + ([twin] if twin else [])
         if encoding == "full_table":
-            order = possible_atoms(objects)
+            order = possible_atoms(objects, sampler.unary, sampler.binary)
             random.shuffle(order)
             built = [tok.item(objects, ta, f, ws, table=[(x, x in ws) for x in order]) for ta, ws in group]
         else:
@@ -336,7 +338,7 @@ def build_split(tok: Tokens, sampler: Sampler, n: int, seen: set, pairs: bool,
         for b, k, (ta, ws) in zip(built, keys, group):
             seen.add(k)
             b.update({"pair": pair_id, "outer": stratum[0], "height": stratum[1], "objects": stratum[2],
-                      "rho": rho, **features(objects, ta, f, ws)})
+                      "rho": rho, **features(objects, ta, f, ws, sampler.unary, sampler.binary)})
             items.append(b)
     return items, stats
 
@@ -364,9 +366,18 @@ LOOKUP_SPLITS = {
 }
 
 
+# Key-complexity ladder for lookups. Each rung keeps the number of possible atoms per world at about
+# 12, 21 or 32 (the full signature's counts for 2, 3, 4 objects), so only the key's structure changes.
+SIGNATURES = {
+    "single": ([0], [], (12, 21, 32)),        # one predicate: the key is the object token alone
+    "unary": ([0, 1, 2, 3], [], (3, 5, 8)),   # (predicate, object) at fixed offsets
+    "full": (UNARY_PREDS, BINARY_PREDS, (2, 3, 4)),  # Stage A: unary and binary atoms
+}
+
+
 def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: int = 0,
              scale: float = 1.0, train_not_mode: str = "any", lookup: bool = False,
-             encoding: str = "true_atoms") -> Dict:
+             encoding: str = "true_atoms", signature: str = "full") -> Dict:
     random.seed(seed)
     vocab = Vocabulary(vocab_path)
     tok = Tokens(vocab)
@@ -377,7 +388,15 @@ def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: in
             "binary_preds": BINARY_PREDS, "max_len": MAX_LEN, "train_not_mode": train_not_mode, "splits": {}}
     if lookup or encoding != "true_atoms":
         meta.update({"generator": "eval_lookup_v1" if lookup else "eval_stage_a_v1", "encoding": encoding})
-    for name, (kwargs, n, pairs) in (LOOKUP_SPLITS if lookup else SPLITS).items():
+    splits = LOOKUP_SPLITS if lookup else SPLITS
+    if signature != "full":
+        if not lookup:
+            raise ValueError("a reduced signature is only defined for the lookup diagnostic")
+        unary, binary, objects = SIGNATURES[signature]
+        splits = {name: ({**LOOKUP, "objects": objects, "unary": unary, "binary": binary}, n, pairs)
+                  for name, (_, n, pairs) in LOOKUP_SPLITS.items() if name != "test_large_world"}
+        meta.update({"signature": signature, "unary_preds": unary, "binary_preds": binary})
+    for name, (kwargs, n, pairs) in splits.items():
         kw = dict(kwargs)
         if name in ("train", "val", "test_iid") and train_not_mode != "any":
             kw["not_mode"] = train_not_mode
@@ -405,5 +424,8 @@ if __name__ == "__main__":
     ap.add_argument("--lookup", action="store_true", help="Single-atom items only (the lookup diagnostic)")
     ap.add_argument("--encoding", default="true_atoms", choices=["true_atoms", "full_table"],
                     help="World as the list of true atoms, or every possible atom with its value")
+    ap.add_argument("--signature", default="full", choices=list(SIGNATURES),
+                    help="Lookup ladder: 'single' (one predicate), 'unary' (four unary), 'full' (Stage A)")
     args = ap.parse_args()
-    generate(args.out, args.vocab, args.seed, args.scale, args.train_not_mode, args.lookup, args.encoding)
+    generate(args.out, args.vocab, args.seed, args.scale, args.train_not_mode, args.lookup, args.encoding,
+             args.signature)
