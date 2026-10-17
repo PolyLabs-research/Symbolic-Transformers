@@ -146,3 +146,50 @@ sequences, with one query each.
   while validation loss rose.
 
 `--layout table` repeats this check in the exact full-table layout, on fresh data.
+
+## Sanity check in the table layout: one filler token blocks the jump
+
+The same check was run in four layouts, on the RTX 2000 Ada GPU. Setup: `tiny`, the default setup (post-LN,
+dropout 0.1, learning rate 3e-4), 8 entries, binary values, 8 queries per training sequence, and seed 0.
+Query accuracy is measured on 512 fresh one-query sequences.
+
+| layout | sequence | steps | query accuracy |
+|---|---|---|---|
+| `pairs` | `k v ... ANSWER q -> v` | 10,000 | 0.60-0.66 to step 4,000, then **1.000** from step 5,000 (loss 0.003) |
+| `pairs_offset2` | `k ) v ... ANSWER q ) -> v` | 10,000 | 0.61-0.66 throughout |
+| `table_nodomain` | `SEP PRED 0 ( CONST k ) v ... MODELS PRED 0 ( CONST q ) ANSWER -> v` | 10,000 | 0.59-0.65 throughout |
+| `table` | the same, after the list of objects `CONST k1 ... CONST kn` | 40,000 | 0.60-0.67 throughout |
+
+On the GPU, `pairs` makes the jump at the same point as on the CPU (between steps 4,000 and 5,000). None of
+the other three leaves the plateau.
+
+**Reading:**
+
+- **Fixed data is not the cause.** The table layout had 40,000 fresh steps, eight times what `pairs`
+  needed, and never left the plateau. So the formula-evaluation lookups would have failed without
+  memorisation.
+- **The list of objects is not the cause either.** `table_nodomain` fails as well.
+- **One filler token is enough to block learning.** `pairs_offset2` differs from `pairs` only by a `)`
+  between each key and its value, and between the query key and the answer. It does not jump within
+  10,000 steps, twice what `pairs` needed.
+- **Why this is plausible.** `pairs` is the pattern an induction head handles (Olsson et al. 2022). The
+  value comes right after its key, and the answer is predicted at the query key. The circuit has two
+  parts:
+  - A first-layer head copies each token's predecessor into it, so each value position carries its key.
+  - A second-layer head at the query key attends to the position whose predecessor matches the current
+    token, and copies that position's token.
+
+  A filler breaks both parts:
+  - In the facts, the first layer must look two tokens back.
+  - In the query, the key is no longer the current token, so the match must also use something the first
+    layer computed.
+
+  The table layout has both breaks. Each value sits two tokens after its key, and the answer is predicted
+  two tokens after the query key.
+- **Limits.** Each layout ran with one seed, and a jump's timing varies between seeds. The result is
+  "not within twice the steps `pairs` needed", not "never". A model with more layers might find a
+  different circuit.
+
+`pairs_offset2` changes the facts and the query together, so which of the two blocks the jump is still
+open. The next check separates them, and tests a table layout with each value moved right after its key.
+It is pre-registered in `plan_formula_evaluation.md`.

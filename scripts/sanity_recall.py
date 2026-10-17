@@ -7,6 +7,9 @@ Each sequence lists n key-value pairs, then a query key, and the target is that 
 
     MESSAGE_START k1 v1 k2 v2 ... kn vn ANSWER q   ->   v(q)
 
+``--layout`` changes where the key and the value sit, and ``--queries`` sets how many queries each training
+sequence carries (see LAYOUTS).
+
 Keys are distinct numerals from 0-99; values are TRUE/FALSE (``--values binary``) or numerals 100-199
 (``--values numerals``). Every batch is freshly sampled, so the model cannot memorise. Small transformers
 learn this task reliably; if this model does not, the problem is in the model or the training setup,
@@ -37,12 +40,21 @@ VARIANTS = {
 }
 
 
+# k: a key, v: its value, q: the queried key. The answer is predicted at the token before "->".
+LAYOUTS = {
+    "pairs": "k1 v1 ... kn vn ANSWER q -> v",
+    "pairs_offset2": "k ) v ... ANSWER q ) -> v",          # a filler token in the facts and in the query
+    "pairs_gap_context": "k ) v ... ANSWER q -> v",        # the filler in the facts only
+    "pairs_gap_query": "k v ... ANSWER q ) -> v",          # the filler in the query only
+    "table": "CONST k1 ... CONST kn SEP PRED 0 ( CONST k ) v ... MODELS PRED 0 ( CONST q ) ANSWER -> v",
+    "table_nodomain": "SEP PRED 0 ( CONST k ) v ... MODELS PRED 0 ( CONST q ) ANSWER -> v",
+    "table_keylast": "CONST k1 ... CONST kn SEP PRED 0 ( CONST k v ) ... MODELS PRED 0 ( CONST q -> v )",
+}
+
+
 def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs"):
-    """``pairs``: k1 v1 ... kn vn ANSWER q -> v (the answer is predicted at the key token).
-    ``pairs_offset2``: k1 ) v1 ... ANSWER q ) -> v (one filler token between key and value).
-    ``table``: the formula-evaluation full-table layout, CONST k1 ... CONST kn SEP PRED 0 ( CONST k ) v ...
-    MODELS PRED 0 ( CONST q ) ANSWER -> v, queries separated by SEP. ``table_nodomain``: the same
-    without the list of objects, so each key appears once before the queries."""
+    """A batch of ``layout`` (see LAYOUTS). The table layouts list the facts in a random order, and
+    separate queries with SEP. Returns the sequences and the positions of the answers."""
     lab = vocab.encode_label
     true_false = torch.tensor([lab("TRUE"), lab("FALSE")])
     keys = torch.stack([torch.randperm(100)[:n_pairs] for _ in range(bs)])
@@ -50,37 +62,39 @@ def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs"):
         vals = true_false[torch.randint(0, 2, (bs, n_pairs))]
     else:
         vals = torch.randint(100, 200, (bs, n_pairs))
-    full = lambda tok: torch.full((bs, 1), tok)
-    gap = full(lab("RPAREN")).expand(bs, n_pairs)
-    if layout == "pairs":
-        seq = [full(vocab.message_start), torch.stack([keys, vals], 2).reshape(bs, 2 * n_pairs)]
-    elif layout == "pairs_offset2":  # k ) v: one filler between key and value, and before the answer
-        seq = [full(vocab.message_start), torch.stack([keys, gap, vals], 2).reshape(bs, 3 * n_pairs)]
+    full = lambda tok, n=1: torch.full((bs, n), tok)
+    interleave = lambda parts: torch.stack(parts, 2).reshape(bs, len(parts) * n_pairs)
+    const, pred = vocab.compositional_tokens["CONST"], vocab.compositional_tokens["PRED"]
+    lp, rp = lab("LPAREN"), lab("RPAREN")
+    seq = [full(vocab.message_start)]
+    if layout.startswith("pairs"):
+        gap = layout in ("pairs_offset2", "pairs_gap_context")
+        seq.append(interleave([keys, full(rp, n_pairs), vals] if gap else [keys, vals]))
     else:
-        const, pred = vocab.compositional_tokens["CONST"], vocab.compositional_tokens["PRED"]
+        if layout != "table_nodomain":
+            seq.append(interleave([full(const, n_pairs), keys]))
         order = torch.stack([torch.randperm(n_pairs) for _ in range(bs)])
-        domain = torch.stack([full(const).expand(bs, n_pairs), keys], 2).reshape(bs, 2 * n_pairs)
         k, v = keys.gather(1, order), vals.gather(1, order)
-        entry = [full(pred).expand(bs, n_pairs), torch.zeros(bs, n_pairs, dtype=torch.long),
-                 full(lab("LPAREN")).expand(bs, n_pairs), full(const).expand(bs, n_pairs), k,
-                 full(lab("RPAREN")).expand(bs, n_pairs), v]
-        seq = [full(vocab.message_start)] + ([domain] if layout == "table" else []) + [full(lab("SEP")),
-               torch.stack(entry, 2).reshape(bs, 7 * n_pairs), full(lab("MODELS"))]
+        entry = [full(pred, n_pairs), full(0, n_pairs), full(lp, n_pairs), full(const, n_pairs), k]
+        entry += [v, full(rp, n_pairs)] if layout == "table_keylast" else [full(rp, n_pairs), v]
+        seq += [full(lab("SEP")), interleave(entry), full(lab("MODELS"))]
     targets = []
     for i in range(queries):
         qi = torch.randint(0, n_pairs, (bs,))
-        q = keys[torch.arange(bs), qi]
-        v = vals[torch.arange(bs), qi]
-        if layout == "pairs":
-            seq += [full(lab("ANSWER")), q[:, None], v[:, None]]
-        elif layout == "pairs_offset2":
-            seq += [full(lab("ANSWER")), q[:, None], full(lab("RPAREN")), v[:, None]]
+        q = keys[torch.arange(bs), qi][:, None]
+        v = vals[torch.arange(bs), qi][:, None]
+        if layout in ("pairs", "pairs_gap_context"):
+            seq += [full(lab("ANSWER")), q]
+        elif layout in ("pairs_offset2", "pairs_gap_query"):
+            seq += [full(lab("ANSWER")), q, full(rp)]
         else:
-            const, pred = vocab.compositional_tokens["CONST"], vocab.compositional_tokens["PRED"]
-            seq += ([full(lab("SEP"))] if i else []) + [full(pred), full(0), full(lab("LPAREN")), full(const),
-                                                       q[:, None], full(lab("RPAREN")), full(lab("ANSWER")),
-                                                       v[:, None]]
+            seq += ([full(lab("SEP"))] if i else []) + [full(pred), full(0), full(lp), full(const), q]
+            if layout != "table_keylast":
+                seq += [full(rp), full(lab("ANSWER"))]
+        seq.append(v)
         targets.append(sum(s.size(1) for s in seq) - 1)
+        if layout == "table_keylast":
+            seq.append(full(rp))
     seq = torch.cat(seq, 1).to(device)
     return seq, targets
 
@@ -135,7 +149,7 @@ def main():
     ap.add_argument("--pairs", type=int, default=8)
     ap.add_argument("--values", default="binary", choices=["binary", "numerals"])
     ap.add_argument("--queries", type=int, default=1)
-    ap.add_argument("--layout", default="pairs", choices=["pairs", "pairs_offset2", "table", "table_nodomain"])
+    ap.add_argument("--layout", default="pairs", choices=list(LAYOUTS))
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--log-every", type=int, default=500)
     ap.add_argument("--device", default=None)

@@ -264,3 +264,48 @@ The check is a 2×2 on the `single` rung (one predicate, 12-32 objects; `--looku
     lookups per item, or a lookup pre-training stage.
   - If `true_atoms` with 8 queries also passes, membership is learnable with dense supervision, and
     the Stage A encoding can stay.
+
+## Where the filler blocks the jump: pre-registered before it runs
+
+In the recall sanity check, one filler token between key and value (`pairs_offset2`) stopped the jump that
+plain `pairs` makes at about 5,000 steps (`eval_lookup.md`). That layout puts the filler in two places, the
+facts and the query. Two new layouts put it in one place each. A third keeps the table layout but moves
+each value right after its key, and predicts the answer at the query key (`scripts/sanity_recall.py
+--layout`):
+
+| layout | facts | query | the change from `pairs` |
+|---|---|---|---|
+| `pairs_gap_context` | `k ) v` | `ANSWER q -> v` | a filler in the facts only |
+| `pairs_gap_query` | `k v` | `ANSWER q ) -> v` | a filler in the query only |
+| `table_keylast` | `CONST k1 ... CONST kn SEP PRED 0 ( CONST k v ) ...` | `MODELS PRED 0 ( CONST q -> v )` | the table layout with the value right after the key and the answer predicted at the query key |
+
+- **Runs.** `tiny`, the default setup, 8 entries, binary values, 8 queries per training sequence, seed 0.
+  The two `pairs` layouts run 10,000 steps, the same as `pairs_offset2`. `table_keylast` runs 20,000
+  steps, because its sequences are about 140 tokens against 41 for `pairs`.
+- **Criterion.** A layout is learned if query accuracy is ≥ 0.95 at its last logged step.
+- **Predictions.**
+  - `pairs_gap_context` is learned. When the answer is predicted at the key token, the second-layer
+    head can match on the current token. Only the facts side then needs a first-layer head, looking two
+    tokens back instead of one.
+  - `pairs_gap_query` is not learned. Both sides of the match then depend on the first layer before the
+    match gives any training signal.
+  - `table_keylast` is learned.
+  - I am not confident in the first two. These predictions are recorded so the result can contradict
+    them.
+- **Decision rule:**
+  - **If `table_keylast` is learned:**
+    1. Add a world encoding to the lookup data that puts each value right after its key's last token:
+       `PRED p ( CONST a v )`.
+    2. Rerun the 8-query `single` cell of the density check with it, on fixed data.
+    3. Then run the `unary` and `full` rungs. There the key's last token alone no longer identifies the
+       atom.
+  - **If `table_keylast` is not learned but `pairs_gap_context` is,** something else in the table layout
+    also blocks: the length, the list of objects, or the repeated `PRED 0 ( CONST` frame. Next, run
+    `table_keylast` without the list of objects, then with shorter frames.
+  - **The `pairs` layout that fails shows which side the encoding has to fix:**
+    - **Facts.** The world encoding must put each value right after its key. This fix applies to both the
+      direct format and the scratchpad.
+    - **Query.** Lookups must happen at the key token. In the scratchpad, the lookup step should write
+      each value right after the atom's last key token. In the direct format the lookup is internal, so
+      the model can already make it at the atom's own tokens.
+    - **Both fail:** each filler blocks on its own, and both fixes are needed. `table_keylast` has both.
