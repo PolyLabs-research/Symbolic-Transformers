@@ -1,7 +1,8 @@
 # Plan: formula evaluation, a task with a right answer
 
 **Status: Stage A run. Both formats failed every threshold, because the model never learned to look
-atoms up in the world (`eval_stage_a.md`). Stage B is not started.**
+atoms up in the world (`eval_stage_a.md`). The lookup diagnostic then showed that neither world encoding
+teaches lookups to a tiny or small model (`eval_lookup.md`). Stage B is not started.**
 
 Next-symbol prediction on generated formulas is solved: the tiny model reaches the generator's own ceiling
 (`fol_retrain.md`). It tests syntax, because the formulas mean nothing. This task gives them meaning. The
