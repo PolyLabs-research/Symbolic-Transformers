@@ -38,9 +38,11 @@ VARIANTS = {
 
 
 def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs"):
-    """``pairs``: k1 v1 ... kn vn ANSWER q -> v. ``table``: the formula-evaluation full-table layout,
-    CONST k1 ... CONST kn SEP PRED 0 ( CONST k ) v ... MODELS PRED 0 ( CONST q ) ANSWER -> v, with
-    queries separated by SEP."""
+    """``pairs``: k1 v1 ... kn vn ANSWER q -> v (the answer is predicted at the key token).
+    ``pairs_offset2``: k1 ) v1 ... ANSWER q ) -> v (one filler token between key and value).
+    ``table``: the formula-evaluation full-table layout, CONST k1 ... CONST kn SEP PRED 0 ( CONST k ) v ...
+    MODELS PRED 0 ( CONST q ) ANSWER -> v, queries separated by SEP. ``table_nodomain``: the same
+    without the list of objects, so each key appears once before the queries."""
     lab = vocab.encode_label
     true_false = torch.tensor([lab("TRUE"), lab("FALSE")])
     keys = torch.stack([torch.randperm(100)[:n_pairs] for _ in range(bs)])
@@ -49,8 +51,11 @@ def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs"):
     else:
         vals = torch.randint(100, 200, (bs, n_pairs))
     full = lambda tok: torch.full((bs, 1), tok)
+    gap = full(lab("RPAREN")).expand(bs, n_pairs)
     if layout == "pairs":
         seq = [full(vocab.message_start), torch.stack([keys, vals], 2).reshape(bs, 2 * n_pairs)]
+    elif layout == "pairs_offset2":  # k ) v: one filler between key and value, and before the answer
+        seq = [full(vocab.message_start), torch.stack([keys, gap, vals], 2).reshape(bs, 3 * n_pairs)]
     else:
         const, pred = vocab.compositional_tokens["CONST"], vocab.compositional_tokens["PRED"]
         order = torch.stack([torch.randperm(n_pairs) for _ in range(bs)])
@@ -59,7 +64,7 @@ def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs"):
         entry = [full(pred).expand(bs, n_pairs), torch.zeros(bs, n_pairs, dtype=torch.long),
                  full(lab("LPAREN")).expand(bs, n_pairs), full(const).expand(bs, n_pairs), k,
                  full(lab("RPAREN")).expand(bs, n_pairs), v]
-        seq = [full(vocab.message_start), domain, full(lab("SEP")),
+        seq = [full(vocab.message_start)] + ([domain] if layout == "table" else []) + [full(lab("SEP")),
                torch.stack(entry, 2).reshape(bs, 7 * n_pairs), full(lab("MODELS"))]
     targets = []
     for i in range(queries):
@@ -68,6 +73,8 @@ def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs"):
         v = vals[torch.arange(bs), qi]
         if layout == "pairs":
             seq += [full(lab("ANSWER")), q[:, None], v[:, None]]
+        elif layout == "pairs_offset2":
+            seq += [full(lab("ANSWER")), q[:, None], full(lab("RPAREN")), v[:, None]]
         else:
             const, pred = vocab.compositional_tokens["CONST"], vocab.compositional_tokens["PRED"]
             seq += ([full(lab("SEP"))] if i else []) + [full(pred), full(0), full(lab("LPAREN")), full(const),
@@ -128,7 +135,7 @@ def main():
     ap.add_argument("--pairs", type=int, default=8)
     ap.add_argument("--values", default="binary", choices=["binary", "numerals"])
     ap.add_argument("--queries", type=int, default=1)
-    ap.add_argument("--layout", default="pairs", choices=["pairs", "table"])
+    ap.add_argument("--layout", default="pairs", choices=["pairs", "pairs_offset2", "table", "table_nodomain"])
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--log-every", type=int, default=500)
     ap.add_argument("--device", default=None)
