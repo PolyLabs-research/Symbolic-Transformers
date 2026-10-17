@@ -1,6 +1,6 @@
 # Identity against magnitude: can one numeral code both look up and compare?
 
-**Status: pre-registered, not yet run.**
+**Status: pre-registered. One cell run on CPU as a pipeline check (below); the GPU runs are pending.**
 
 ## Why
 
@@ -105,3 +105,20 @@ code adds xVal's value direction on top.
 - **Limits.** One seed and 10,000 steps per run. A run that is still on the plateau at 10,000 steps may
   be slow, not unable; the jump in the sanity check took 5,000 steps. The logs every 1,000 steps show
   whether a run was still moving.
+
+## Pipeline check (CPU, before the GPU runs)
+
+`--task recall --code learned` was run on CPU to check the script before the GPU runs. It is the same
+seed, but dropout draws differ on GPU, so the GPU run is the record.
+
+| step | 1,000-4,000 | 5,000 | 6,000-10,000 |
+|---|---|---|---|
+| `seen` | 0.63-0.66 | 0.982 | 1.000 |
+| `seen_adjacent` | 0.63-0.66 | 1.000 | 1.000 |
+| `heldout` | 0.62-0.64 | 0.686 | 0.66-0.73 |
+| `far` | 0.62-0.65 | 0.729 | 0.67-0.74 |
+
+- **The pipeline works.** The jump comes at step 5,000, as in the sanity check.
+- **Learned rows handle adjacent keys without difficulty**, as predicted.
+- **Untrained rows give a little, not lookup.** The held-out and far keys never had their rows trained.
+  They sit just above the plateau of about 0.64, and stay there through step 10,000.
