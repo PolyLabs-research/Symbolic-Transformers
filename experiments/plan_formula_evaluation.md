@@ -309,3 +309,62 @@ each value right after its key, and predicts the answer at the query key (`scrip
       each value right after the atom's last key token. In the direct format the lookup is internal, so
       the model can already make it at the atom's own tokens.
     - **Both fail:** each filler blocks on its own, and both fixes are needed. `table_keylast` has both.
+
+## One token per symbol, on the key-last ladder: pre-registered before it runs
+
+Two changes are tested together on the lookup ladder: the world encoding and the tokenization.
+
+- **The world encoding (`--encoding keylast`).** The recall check found that lookups are learned once
+  each value comes right after its key and the answer is predicted at the query key (`eval_lookup.md`,
+  `table_keylast`). The lookup data now has that encoding. Facts are `PRED p ( CONST a v )` and queries
+  are `MODELS PRED p ( CONST q -> v`, with 8 queries per training item. Every rung is generated with seed
+  0 and has the same worlds and queries as its full-table version; only the layout differs.
+- **The tokenization (`--fuse-symbols`).**
+  - **The change.** Each symbol is one token (`utils/fused.py`): `CONST 5` is read and predicted as
+    `CONST_5`.
+  - **The embedding.** A fused token is embedded as its category row plus its numeral row.
+  - **The output.** It is P(category) × P(index | category). P(index | category) reads the numeral output
+    rows through a per-category d×d map that starts at the identity. That adds 82K parameters to `tiny`.
+  - **What fusion shortens.** It removes one token per symbol, so these sequences are about 30% shorter. It also
+    separates identities that the split form shares: `CONST 0` and `PRED 0` no longer use the same numeral
+    token.
+  - **What it leaves.** The parenthesis in `PRED_0 ( CONST_k ) v` stays, and so does the gap that
+    blocked the jump.
+
+**Runs,** in this order. `tiny`, direct format, 40 epochs, batch 64, learning rate 3e-4, 500 warm-up steps,
+seed 1:
+
+| # | rung | encoding | tokens | data |
+|---|---|---|---|---|
+| 1 | `single` | key-last | split | `eval_lookup_single_keylast_mq8` |
+| 2 | `single` | key-last | fused | the same |
+| 3 | `single` | table | fused | `eval_lookup_single_table_mq8` (split: 50.0 / 0.0 in the density check) |
+| 4 | `unary` | key-last | split | `eval_lookup_unary_keylast_mq8` |
+| 5 | `unary` | key-last | fused | the same |
+| 6 | `full` | key-last | split | `eval_lookup_full_keylast_mq8` |
+| 7 | `full` | key-last | fused | the same |
+
+The `unary` and `full` table layouts are not run. The table layout fails for one-token keys on both
+fresh and fixed data, and nothing in fusion removes its gap.
+
+- **Criterion.** test_iid minimal-pair accuracy ≥ 95%. For the `full` rung, test_large_world (5 objects,
+  longer than training) is reported but is not a criterion.
+- **Predictions:**
+  - Runs 1 and 2 are learned. Recall in this layout was learned on fresh data, and 8 queries per item
+    over 50K random worlds is close to fresh data.
+  - Run 3 is not learned (pairs under 80%). The gap is still there.
+  - Runs 4 and 5 are uncertain. A unary key is two tokens, and the predicate sits 3 tokens (fused) or 4
+    (split) before the value: the same kind of gap, on the key's other part. Fused and split are within
+    10 points of each other.
+  - Runs 6 and 7 are not learned. A binary key is three tokens.
+  - Overall I expect fusion to change little here. Its likely gains are shorter sequences and
+    identities that are distinct by category, not the gap.
+- **Decision rule:**
+  - **Runs 1-2 learned:** key-last becomes the world encoding for the Stage A rerun.
+  - **Fused beats split** by 10 or more points of pair accuracy on a rung, or passes the criterion where
+    split fails: the Stage A rerun is fused as well.
+  - **Run 3 learned** (contrary to the prediction): fusion alone fixes the table layout. Then the gap
+    account of the recall check does not carry over to these items, and needs revisiting.
+  - **`unary` fails with key-last:** multi-part keys are the next obstacle. Two options are worth
+    comparing: `small` (4 layers) on run 4, and a fact layout that places every part of the key next to
+    the value.

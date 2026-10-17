@@ -1,0 +1,92 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "binary_preds": [
+    4
+  ],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.50168,
+      "max_scratch_len": 369,
+      "sha256": "803b9da3f66381741686d4dc9be2bd3b3e795892e6e9c7912b5c8f927e6b76eb",
+      "too_long": 0,
+      "duplicates": 0
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.5,
+      "max_scratch_len": 292,
+      "sha256": "62d36edc115a9eb21e90af3174bd67d9e1a4feebcb42cf03ef240c26c652c2ed",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 960
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 292,
+      "sha256": "4437e63260ab83ade66d849c6f156ff928f6226e4dc9ab286ec4240e15fd649b",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 468
+    },
+    "test_large_world": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          5
+        ]
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 412,
+      "sha256": "704821721de53e40e2a265b8308f41042ea72ea95d9d7769459730683d14d4e8",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 470
+    }
+  },
+  "encoding": "keylast",
+  "train_queries": 8
+}

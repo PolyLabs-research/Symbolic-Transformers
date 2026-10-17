@@ -1,0 +1,94 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0
+  ],
+  "binary_preds": [],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          12,
+          21,
+          32
+        ],
+        "unary": [
+          0
+        ],
+        "binary": []
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.4978,
+      "max_scratch_len": 353,
+      "sha256": "2a834d692462c8a07cae0d23b0ac21b94b48145ca9bdbba77614ac1622c9095f",
+      "too_long": 0,
+      "duplicates": 0
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          12,
+          21,
+          32
+        ],
+        "unary": [
+          0
+        ],
+        "binary": []
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.4995,
+      "max_scratch_len": 297,
+      "sha256": "37281b04f70200c4b44b627c1be45bc8f5b209263056dbc16766f4c4ab2846af",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 1023
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          12,
+          21,
+          32
+        ],
+        "unary": [
+          0
+        ],
+        "binary": []
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 297,
+      "sha256": "30a64117c4b59b77a6764d91a56e1ab7d0a06b1fb18d79232a3b9f9f0c7d7563",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 474
+    }
+  },
+  "encoding": "keylast",
+  "signature": "single",
+  "train_queries": 8
+}

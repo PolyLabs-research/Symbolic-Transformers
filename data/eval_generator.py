@@ -138,13 +138,17 @@ class Tokens:
         self.start = vocab.message_start
 
     def atom(self, a) -> List[int]:
+        return self.atom_open(a) + [self.RP]
+
+    def atom_open(self, a) -> List[int]:
+        """The atom without its closing parenthesis, so it ends with the last token of its key."""
         pred, args = a
         out = [self.PRED, pred, self.LP]
         for i, c in enumerate(args):
             if i:
                 out.append(self.COMMA)
             out += [self.CONST, c]
-        return out + [self.RP]
+        return out
 
     def formula(self, node) -> List[int]:
         kind = node[0]
@@ -165,19 +169,32 @@ class Tokens:
             out += self.atom(a)
         return out
 
-    def table(self, objects: List[int], listing: List[Tuple]) -> List[int]:
-        """Full-table world: every possible atom, each followed by TRUE or FALSE."""
+    def table(self, objects: List[int], listing: List[Tuple], keylast: bool = False) -> List[int]:
+        """Full-table world: every possible atom, each followed by TRUE or FALSE. With ``keylast`` the value
+        comes right after the atom's last key token, inside the parenthesis: PRED p ( CONST a v )."""
         out = []
         for c in objects:
             out += [self.CONST, c]
         out.append(self.SEP)
         for a, value in listing:
-            out += self.atom(a) + [self.TRUE if value else self.FALSE]
+            v = self.TRUE if value else self.FALSE
+            out += self.atom_open(a) + [v, self.RP] if keylast else self.atom(a) + [v]
         return out
 
-    def item(self, objects, true_atoms, formula, world_set, table: Optional[List[Tuple]] = None) -> Dict:
+    def item(self, objects, true_atoms, formula, world_set, table: Optional[List[Tuple]] = None,
+             keylast: bool = False) -> Dict:
+        """With ``keylast`` (lookup items only) the world is a key-last table and the query is the atom
+        without its closing parenthesis, so the answer is predicted at the query's last key token:
+        MODELS PRED p ( CONST q -> v. Both formats are then that one sequence."""
         label = evaluate(formula, world_set)
         answer = self.TRUE if label else self.FALSE
+        if keylast:
+            if formula[0] != "atom" or table is None:
+                raise ValueError("the key-last encoding is defined for single-atom items with a full table")
+            seq = [self.start] + self.table(objects, table, keylast=True) + [self.MODELS] + \
+                self.atom_open(formula[1]) + [answer]
+            return {"direct_seq": seq, "direct_from": len(seq) - 1, "scratch_seq": seq,
+                    "scratch_from": len(seq) - 1, "label": int(label)}
         world = self.table(objects, table) if table is not None else self.world(objects, true_atoms)
         body = [self.start] + world + [self.MODELS] + self.formula(formula)
         direct = body + [self.ANSWER, answer]
@@ -198,19 +215,20 @@ def possible_atoms(objects: List[int], unary=UNARY_PREDS, binary=BINARY_PREDS) -
     return out + [(p, (c, d)) for p in binary for c in objects for d in objects]
 
 
-def multi_query_item(tok: "Tokens", objects, true_atoms, queries, table=None) -> Dict:
+def multi_query_item(tok: "Tokens", objects, true_atoms, queries, table=None, keylast: bool = False) -> Dict:
     """A lookup item with several queries: MODELS q1 ANSWER v1 SEP q2 ANSWER v2 ..., loss on every v.
+    With ``keylast``: MODELS PRED p ( CONST q1 v1 ) SEP PRED p ( CONST q2 v2 ...
 
     The first query has exactly the single-query layout, so models trained on these are tested on
     ordinary single-query items.
     """
-    world = tok.table(objects, table) if table is not None else tok.world(objects, true_atoms)
+    world = tok.table(objects, table, keylast) if table is not None else tok.world(objects, true_atoms)
     seq = [tok.start] + world + [tok.MODELS]
     targets = []
     for k, (a, value) in enumerate(queries):
         if k:
-            seq.append(tok.SEP)
-        seq += tok.atom(a) + [tok.ANSWER]
+            seq += [tok.RP, tok.SEP] if keylast else [tok.SEP]
+        seq += tok.atom_open(a) if keylast else tok.atom(a) + [tok.ANSWER]
         targets.append(len(seq))
         seq.append(tok.TRUE if value else tok.FALSE)
     return {"direct_seq": seq, "direct_from": targets[0], "direct_targets": targets,
@@ -234,11 +252,11 @@ def build_multi_query_split(tok: "Tokens", sampler: "Sampler", n: int, seen: set
             a = random.choice(pool)
             queries.append((a, a in true_set))
         table = None
-        if encoding == "full_table":
+        if encoding in ("full_table", "keylast"):
             order = list(possible)
             random.shuffle(order)
             table = [(x, x in true_set) for x in order]
-        it = multi_query_item(tok, objects, true_atoms, queries, table)
+        it = multi_query_item(tok, objects, true_atoms, queries, table, keylast=encoding == "keylast")
         key = tuple(it["direct_seq"])
         if len(it["direct_seq"]) > MAX_LEN:
             stats["too_long"] += 1
@@ -349,6 +367,7 @@ def build_split(tok: Tokens, sampler: Sampler, n: int, seen: set, pairs: bool,
 
     With ``encoding="full_table"`` the world lists every possible atom (in a random order shared by the
     twins) with its value, and a twin flips that value instead of adding or removing the atom.
+    ``encoding="keylast"`` is the same table with each value right after its atom's last key token.
     """
     counts = defaultdict(lambda: [0, 0])
     items, stats = [], {"too_long": 0, "duplicates": 0, "no_twin": 0, "balance_rejects": 0}
@@ -373,10 +392,11 @@ def build_split(tok: Tokens, sampler: Sampler, n: int, seen: set, pairs: bool,
                 twin_atoms.insert(random.randrange(len(twin_atoms) + 1), a)
             twin = (twin_atoms, set(twin_atoms))
         group = [(true_atoms, world_set)] + ([twin] if twin else [])
-        if encoding == "full_table":
+        if encoding in ("full_table", "keylast"):
             order = possible_atoms(objects, sampler.unary, sampler.binary)
             random.shuffle(order)
-            built = [tok.item(objects, ta, f, ws, table=[(x, x in ws) for x in order]) for ta, ws in group]
+            built = [tok.item(objects, ta, f, ws, table=[(x, x in ws) for x in order],
+                              keylast=encoding == "keylast") for ta, ws in group]
         else:
             built = [tok.item(objects, ta, f, ws) for ta, ws in group]
         keys = [tuple(b["direct_seq"][:-1]) for b in built]
@@ -450,6 +470,8 @@ def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: in
         splits = {name: ({**LOOKUP, "objects": objects, "unary": unary, "binary": binary}, n, pairs)
                   for name, (_, n, pairs) in LOOKUP_SPLITS.items() if name != "test_large_world"}
         meta.update({"signature": signature, "unary_preds": unary, "binary_preds": binary})
+    if encoding == "keylast" and not lookup:
+        raise ValueError("the key-last encoding is only defined for the lookup diagnostic")
     if queries > 1:
         if not lookup:
             raise ValueError("several queries per item are only defined for the lookup diagnostic")
@@ -483,8 +505,10 @@ if __name__ == "__main__":
     ap.add_argument("--train-not-mode", default="any", choices=["any", "atoms"],
                     help="'atoms': NOT only over atoms in train/val/test_iid (test_negation is then held out)")
     ap.add_argument("--lookup", action="store_true", help="Single-atom items only (the lookup diagnostic)")
-    ap.add_argument("--encoding", default="true_atoms", choices=["true_atoms", "full_table"],
-                    help="World as the list of true atoms, or every possible atom with its value")
+    ap.add_argument("--encoding", default="true_atoms", choices=["true_atoms", "full_table", "keylast"],
+                    help="World as the list of true atoms, or every possible atom with its value; 'keylast' "
+                         "(lookup only): each value right after its atom's last key token, and the answer "
+                         "predicted at the query's last key token")
     ap.add_argument("--signature", default="full", choices=list(SIGNATURES),
                     help="Lookup ladder: 'single' (one predicate), 'unary' (four unary), 'full' (Stage A)")
     ap.add_argument("--queries", type=int, default=1,

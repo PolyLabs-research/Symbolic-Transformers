@@ -44,3 +44,17 @@ def test_each_answer_is_the_value_of_the_queried_key(vocab, layout, values):
         assert len(facts) == 8
         for t in targets:
             assert row[t] == facts[row[t - query_gap]]
+
+
+@pytest.mark.parametrize("layout", ["table", "table_keylast", "pairs"])
+def test_fused_batches_unfuse_to_the_split_batches(vocab, layout):
+    from sanity_recall import fuse_batch
+    from utils.fused import SymbolFuser
+    fuser = SymbolFuser(vocab)
+    torch.manual_seed(1)
+    seq, targets = batch(vocab, 8, 4, "binary", 3, "cpu", layout)
+    fused, ftargets = fuse_batch(fuser, seq, targets)
+    for row, frow in zip(seq.tolist(), fused.tolist()):
+        assert fuser.unfuse(frow) == row
+        assert [frow[t] for t in ftargets] == [row[t] for t in targets]
+    assert fused.size(1) == seq.size(1) - (0 if layout == "pairs" else sum(t in fuser.cat_index for t in seq[0].tolist()))

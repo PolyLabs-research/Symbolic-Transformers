@@ -26,6 +26,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from models.transformer import EMBEDDING_TYPES, create_model
 from utils.grid_bank import DEFAULT_BANK_PATH, GridBank
+from utils.fused import SymbolFuser
 from utils.vocabulary import Vocabulary
 
 
@@ -100,6 +101,8 @@ class TrainingConfig:
     init_from: Optional[str] = None
     # Item datasets (data/eval_generator.py): which written format to train on.
     seq_format: str = "direct"
+    # One token per symbol (utils/fused.py): CONST 5 is read and predicted as one token.
+    fuse_symbols: bool = False
     # Separate optimiser group for the grid_shared per-cell residual.
     residual_lr_mult: float = 1.0
     residual_weight_decay: Optional[float] = None
@@ -259,11 +262,14 @@ class SequenceDataset(Dataset):
     ``<fmt>_from`` the index of its first target token. Each item gives ``input_ids`` (the sequence
     without its last token, right-padded) and ``labels`` (the sequence shifted left by one, with -100
     before the target suffix and on padding), so the loss covers exactly the target tokens. An item may
-    instead list its target positions in ``<fmt>_targets``.
+    instead list its target positions in ``<fmt>_targets``. With a ``fuser`` the items are read one token
+    per symbol, and their target positions move with them.
     """
 
-    def __init__(self, data: Dict, fmt: str, pad_id: int, source: str = ""):
+    def __init__(self, data: Dict, fmt: str, pad_id: int, source: str = "", fuser: Optional[SymbolFuser] = None):
         self.items = data["items"]
+        if fuser is not None:
+            self.items = [fuser.fuse_item(it, (fmt,)) for it in self.items]
         self.fmt, self.pad_id = fmt, pad_id
         self.max_len = max(len(it[f"{fmt}_seq"]) for it in self.items) - 1
         print(f"✓ Loaded {len(self.items)} {fmt} items from {source} (inputs padded to {self.max_len}, "
@@ -330,13 +336,14 @@ def make_loader(dataset: Dataset, batch_size: int, shuffle: bool, num_workers: i
                       pin_memory=pin_memory)
 
 
-def open_dataset(path: str, max_seq_len: int, pad_id: int, seq_format: str = "direct") -> Dataset:
+def open_dataset(path: str, max_seq_len: int, pad_id: int, seq_format: str = "direct",
+                 fuser: Optional[SymbolFuser] = None) -> Dataset:
     """A next-symbol sample file (FOLDataset) or an item file from data/eval_generator.py."""
     with open(path) as f:
         data = json.load(f)
     if "items" in data:
-        return SequenceDataset(data, seq_format, pad_id, path)
-    return FOLDataset(path, max_seq_len, pad_id=pad_id)
+        return SequenceDataset(data, seq_format, pad_id, path, fuser)
+    return FOLDataset(path, max_seq_len, pad_id=pad_id, fuser=fuser)
 
 
 class FOLDataset(Dataset):
@@ -350,11 +357,12 @@ class FOLDataset(Dataset):
     end of the context.
     """
     
-    def __init__(self, data_path: str, max_seq_len: int = 512, pad_id: int = 0):
+    def __init__(self, data_path: str, max_seq_len: int = 512, pad_id: int = 0,
+                 fuser: Optional[SymbolFuser] = None):
         with open(data_path, 'r') as f:
             data = json.load(f)
         
-        self.samples = data['samples']
+        self.samples = data['samples'] if fuser is None else fuser.fuse_samples(data['samples'])
         self.pad_id = pad_id
         longest = max((len(_sample_context(s)) for s in self.samples), default=1)
         self.max_seq_len = max(1, min(max_seq_len, longest))
@@ -645,6 +653,8 @@ def main():
                         help="grid_shared: number of row/col frequencies (0 = index features only)")
     parser.add_argument("--seq-format", default="direct", choices=["direct", "scratch"],
                         help="For item datasets (data/eval_generator.py): train on the direct answer or the scratchpad")
+    parser.add_argument("--fuse-symbols", action="store_true",
+                        help="One token per symbol: read and predict CONST 5, VAR 7, ... as single tokens (utils/fused.py)")
     parser.add_argument("--init-from", default=None, metavar="CKPT",
                         help="warm start: load model weights from CKPT (strict; optimizer, schedule and epochs start fresh)")
     parser.add_argument("--xval-center", type=float, default=249.5,
@@ -721,6 +731,7 @@ def main():
     config.xval_scale = args.xval_scale
     config.init_from = args.init_from
     config.seq_format = args.seq_format
+    config.fuse_symbols = args.fuse_symbols
     config.shared_basis = args.shared_basis
     config.shared_residual_orthogonal = args.residual_orthogonal
     config.shared_residual_dropout = args.residual_dropout
@@ -776,7 +787,8 @@ def main():
                     'shared_residual_orthogonal', 'shared_residual_dropout',
                     'shared_residual_dropout_cell', 'sinusoid_min_period', 'residual_anneal',
                     'residual_anneal_floor', 'residual_anneal_hold', 'residual_anneal_rewarm',
-                    'residual_anneal_stages', 'grid_numerals_only', 'xval_center', 'xval_scale', 'seq_format'):
+                    'residual_anneal_stages', 'grid_numerals_only', 'xval_center', 'xval_scale', 'seq_format',
+                    'fuse_symbols'):
             if key in ckpt_config: setattr(config, key, ckpt_config[key])
         if ckpt_config.get('num_epochs') and args.num_epochs is None: config.num_epochs = ckpt_config['num_epochs']
 
@@ -785,8 +797,9 @@ def main():
 
     print("\nLoading datasets...")
     pad_id = vocab.pad_token if vocab.pad_token is not None else 0
-    train_dataset = open_dataset(config.train_data_path, config.max_seq_len, pad_id, config.seq_format)
-    val_dataset = open_dataset(config.val_data_path, config.max_seq_len, pad_id, config.seq_format)
+    fuser = SymbolFuser(vocab) if config.fuse_symbols else None
+    train_dataset = open_dataset(config.train_data_path, config.max_seq_len, pad_id, config.seq_format, fuser)
+    val_dataset = open_dataset(config.val_data_path, config.max_seq_len, pad_id, config.seq_format, fuser)
     
     use_cuda = torch.cuda.is_available()
     train_loader = make_loader(train_dataset, config.batch_size, True, args.num_workers, use_cuda)
@@ -805,7 +818,8 @@ def main():
                          shared_residual_dropout=config.shared_residual_dropout,
                          shared_residual_dropout_cell=config.shared_residual_dropout_cell,
                          grid_numerals_only=config.grid_numerals_only,
-                         xval_center=config.xval_center, xval_scale=config.xval_scale)
+                         xval_center=config.xval_center, xval_scale=config.xval_scale,
+                         fused_categories=fuser.categories if fuser is not None else None)
     if config.init_from and not resume_path:
         init_ck = torch.load(config.init_from, map_location="cpu")
         model.load_state_dict(init_ck["model_state_dict"])

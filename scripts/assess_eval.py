@@ -30,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from data.eval_generator import CONNECTIVES, MAX_LEN, Tokens  # noqa: E402
+from utils.fused import SymbolFuser  # noqa: E402
 from utils.vocabulary import Vocabulary  # noqa: E402
 
 TEST_SPLITS = ["test_iid", "test_deep", "test_large_world", "test_shift", "test_negation"]
@@ -180,9 +181,12 @@ def main():
         path, fmt = rest.rsplit(":", 1)
         model, ck = load_model_from_checkpoint(path, vocab.vocab_size, device)
         model.eval()
+        fused = ck.get("config", {}).get("fuse_symbols", False)
         results[name] = {"_checkpoint": {"path": path, "format": fmt, "epoch": ck.get("epoch"),
-                                         "best_val_loss": ck.get("best_val_loss")}}
+                                         "best_val_loss": ck.get("best_val_loss"), "fuse_symbols": fused}}
         for s, items in splits.items():
+            if fused:  # read one token per symbol, as in training; lengths below are then fused lengths
+                items = [SymbolFuser(vocab).fuse_item(it) for it in items]
             preds, traces = (predict_scratch if fmt == "scratch" else predict_direct)(model, items, tok, device)
             results[name][s] = score(items, preds, traces, tok, fmt)
             print(f"  {name} {s}: accuracy {pct(results[name][s]['accuracy'])}", file=sys.stderr)

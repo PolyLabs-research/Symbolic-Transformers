@@ -29,6 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from models.transformer import create_model  # noqa: E402
+from utils.fused import N_INDEX, SymbolFuser  # noqa: E402
 from utils.vocabulary import Vocabulary  # noqa: E402
 
 VARIANTS = {
@@ -99,11 +100,27 @@ def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs"):
     return seq, targets
 
 
-def run(variant, steps, n_pairs, values, queries, seed, device, log_every, layout="pairs"):
+def fuse_batch(fuser, seq, targets):
+    """One token per symbol. Every row of a batch has its category tokens at the same positions."""
+    first = seq[0].tolist()
+    cats = [j for j, t in enumerate(first) if t in fuser.cat_index]
+    seq = seq.clone()
+    for j in cats:
+        seq[:, j] = fuser.base + fuser.cat_index[first[j]] * N_INDEX + seq[:, j + 1]
+    numerals = {j + 1 for j in cats}
+    _, where = fuser.fuse(first)
+    return seq[:, [j for j in range(seq.size(1)) if j not in numerals]], [where[t] for t in targets]
+
+
+def run(variant, steps, n_pairs, values, queries, seed, device, log_every, layout="pairs", fuse=False):
     torch.manual_seed(seed)
     cfg = VARIANTS[variant]
     vocab = Vocabulary(str(ROOT / "unified_vocabulary.json"))
-    model = create_model(vocab.vocab_size, "tiny", verbose=False)
+    fuser = SymbolFuser(vocab) if fuse else None
+    make = lambda bs, q: (lambda b: fuse_batch(fuser, *b) if fuse else b)(
+        batch(vocab, n_pairs, bs, values, q, device, layout))
+    model = create_model(vocab.vocab_size, "tiny", verbose=False,
+                         fused_categories=fuser.categories if fuse else None)
     if "norm_first" in cfg or "dropout" in cfg:
         for layer in model.transformer.layers:
             if "norm_first" in cfg:
@@ -122,7 +139,7 @@ def run(variant, steps, n_pairs, values, queries, seed, device, log_every, layou
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / warm))
     history = []
     for step in range(1, steps + 1):
-        seq, targets = batch(vocab, n_pairs, 64, values, queries, device, layout)
+        seq, targets = make(64, queries)
         logits = model(seq[:, :-1])
         pos = torch.tensor(targets) - 1
         loss = F.cross_entropy(logits[:, pos].reshape(-1, logits.size(-1)), seq[:, targets].reshape(-1))
@@ -134,7 +151,7 @@ def run(variant, steps, n_pairs, values, queries, seed, device, log_every, layou
         if step % log_every == 0 or step == steps:
             model.eval()
             with torch.no_grad():
-                s, t = batch(vocab, n_pairs, 512, values, 1, device, layout)
+                s, t = make(512, 1)
                 acc = (model(s[:, :-1])[:, t[0] - 1].argmax(-1) == s[:, t[0]]).float().mean().item()
             model.train()
             history.append((step, round(loss.item(), 3), round(acc, 3)))
@@ -150,13 +167,14 @@ def main():
     ap.add_argument("--values", default="binary", choices=["binary", "numerals"])
     ap.add_argument("--queries", type=int, default=1)
     ap.add_argument("--layout", default="pairs", choices=list(LAYOUTS))
+    ap.add_argument("--fuse", action="store_true", help="One token per symbol: CONST k as a single token")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--log-every", type=int, default=500)
     ap.add_argument("--device", default=None)
     args = ap.parse_args()
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     run(args.variant, args.steps, args.pairs, args.values, args.queries, args.seed, device, args.log_every,
-        args.layout)
+        args.layout, args.fuse)
 
 
 if __name__ == "__main__":

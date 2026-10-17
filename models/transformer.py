@@ -32,7 +32,7 @@ from __future__ import annotations
 import math
 import sys
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -46,6 +46,8 @@ if _ROOT not in sys.path:
 from utils.grid_bank import (  # noqa: E402
     GRID_CELLS, GRID_N, DEFAULT_BANK_PATH, GridBank, cell_position_features, sinusoid_bank,
 )
+
+from utils.fused import N_INDEX as FUSED_INDEX  # noqa: E402
 
 EMBEDDING_TYPES = ("learned", "grid_linear", "grid_conv", "grid_shared", "sinusoid", "xval")
 GRID_TYPES = ("grid_linear", "grid_conv", "grid_shared")
@@ -370,6 +372,7 @@ class SymbolicTransformer(nn.Module):
         grid_numerals_only: bool = False,
         xval_center: float = 249.5,
         xval_scale: float = 144.3,
+        fused_categories: Optional[Sequence[int]] = None,
     ):
         """
         Args:
@@ -384,6 +387,12 @@ class SymbolicTransformer(nn.Module):
             embedding_type: 'learned', 'grid_linear' or 'grid_conv'
             tie_weights: Compute output logits against the embedding table
             grid_bank: Panels for grid embeddings (required unless 'learned')
+            fused_categories: token ids of the compositional categories (VAR, CONST, ...). With them, ids
+                from vocab_size on are fused symbols (utils/fused.py): category c with base-625 index n is
+                vocab_size + c * 625 + n, embedded as the category row plus the numeral row. The output
+                gives such a token probability P(category) * P(n | category); P(n | category) reads the
+                numeral output rows through a per-category map that starts at the identity. A category
+                token on its own then gets no probability.
         """
         super().__init__()
         
@@ -446,6 +455,15 @@ class SymbolicTransformer(nn.Module):
             self.output_bias = nn.Parameter(torch.zeros(vocab_size))
         else:
             self.output_proj = nn.Linear(d_model, vocab_size)
+
+        # 5. Fused symbols: one token per (category, index)
+        self.output_size = vocab_size
+        if fused_categories is not None:
+            self.register_buffer("fused_categories", torch.tensor(list(fused_categories), dtype=torch.long))
+            self.index_maps = nn.Parameter(torch.zeros(len(fused_categories), d_model, d_model))
+            self.output_size = vocab_size + len(fused_categories) * FUSED_INDEX
+        else:
+            self.fused_categories = None
         
         # Initialize weights
         self._init_weights()
@@ -465,6 +483,25 @@ class SymbolicTransformer(nn.Module):
         if isinstance(self.symbol_embed, nn.Embedding):
             return self.symbol_embed.weight
         return self.symbol_embed.table()
+
+    def input_table(self, table: torch.Tensor) -> torch.Tensor:
+        """The base table, followed by the fused symbols' rows (category row + numeral row) if any."""
+        if self.fused_categories is None:
+            return table
+        fused = table[self.fused_categories][:, None, :] + table[None, :FUSED_INDEX, :]
+        return torch.cat([table, fused.reshape(-1, table.size(1))])
+
+    def fused_logits(self, x: torch.Tensor, logits: torch.Tensor, table: torch.Tensor) -> torch.Tensor:
+        """Base logits (category tokens masked) followed by log P(category) + log P(index | category)."""
+        if self.output_proj is not None:
+            rows, bias = self.output_proj.weight[:FUSED_INDEX], self.output_proj.bias[:FUSED_INDEX]
+        else:
+            rows, bias = table[:FUSED_INDEX], self.output_bias[:FUSED_INDEX]
+        per_cat = x.unsqueeze(-2) + torch.einsum("bld,cde->blce", x, self.index_maps)
+        index_logp = F.log_softmax(per_cat @ rows.t() + bias, dim=-1)
+        fused = logits[..., self.fused_categories].unsqueeze(-1) + index_logp
+        base = logits.index_fill(-1, self.fused_categories, float("-inf"))
+        return torch.cat([base, fused.flatten(-2)], dim=-1)
     
     def generate_square_subsequent_mask(self, sz: int) -> torch.Tensor:
         """
@@ -497,7 +534,7 @@ class SymbolicTransformer(nn.Module):
         """
         # 1. Embed symbols (one table lookup, shared with the tied output)
         table = self.embedding_table()
-        x = F.embedding(src, table) * math.sqrt(self.d_model)  # Scale embedding
+        x = F.embedding(src, self.input_table(table)) * math.sqrt(self.d_model)  # Scale embedding
         
         # 2. Add positional encoding
         x = self.pos_encoder(x)
@@ -515,6 +552,8 @@ class SymbolicTransformer(nn.Module):
             logits = self.output_proj(x)
         else:
             logits = x @ table.t() + self.output_bias
+        if self.fused_categories is not None:
+            logits = self.fused_logits(x, logits, table)
         
         return logits
     
@@ -616,6 +655,7 @@ def create_model(
     grid_numerals_only: bool = False,
     xval_center: float = 249.5,
     xval_scale: float = 144.3,
+    fused_categories: Optional[Sequence[int]] = None,
 ) -> SymbolicTransformer:
     """
     Factory function for creating models of different sizes.
@@ -633,6 +673,7 @@ def create_model(
         shared_basis / shared_residual_orthogonal / shared_residual_dropout(_cell):
             basis of the generated cell weights, residual projected off the
             generated directions, residual dropped during training (whole or per cell)
+        fused_categories: category token ids for one token per symbol (see SymbolicTransformer)
         
     Returns:
         SymbolicTransformer model
@@ -667,12 +708,13 @@ def create_model(
         grid_numerals_only=grid_numerals_only,
         xval_center=xval_center,
         xval_scale=xval_scale,
+        fused_categories=fused_categories,
         **config
     )
     
     if verbose:
         n_params = model.count_parameters()
-        extra = f", {embedding_type}{', tied' if tie_weights else ''}"
+        extra = f", {embedding_type}{', tied' if tie_weights else ''}{', fused symbols' if fused_categories else ''}"
         print(f"✓ Created {model_size} model with {n_params:,} parameters{extra}")
     
     return model
@@ -702,6 +744,7 @@ def load_model_from_checkpoint(
         # Feature width comes from the checkpoint (625 for panels, 2*n_freq for sinusoid).
         n_features = int(checkpoint['model_state_dict']['symbol_embed.grids'].shape[1])
         bank = GridBank.empty(vocab_size, n_features)
+    fused = checkpoint['model_state_dict'].get('fused_categories')
     model = create_model(vocab_size, config.get('model_size', 'tiny'), embedding_type=embedding_type,
                          tie_weights=tie_weights, grid_bank=bank, verbose=verbose,
                          shared_min_period=float(config.get('shared_min_period', 32.0)),
@@ -713,7 +756,8 @@ def load_model_from_checkpoint(
                          shared_residual_dropout_cell=bool(config.get('shared_residual_dropout_cell', False)),
                          grid_numerals_only=bool(config.get('grid_numerals_only', False)),
                          xval_center=float(config.get('xval_center', 249.5)),
-                         xval_scale=float(config.get('xval_scale', 144.3)))
+                         xval_scale=float(config.get('xval_scale', 144.3)),
+                         fused_categories=fused.tolist() if fused is not None else None)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(device)
     model.eval()

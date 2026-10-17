@@ -180,6 +180,12 @@ generators draw indices from 0–99, so the model currently learns indices as at
 base configurable (for example base 25, so `VAR 42 → [VAR, 1, 17]`) is the planned way to exercise
 composition in ordinary training data.
 
+**One token per symbol (`--fuse-symbols`).** The trainer can also read each symbol as one token. `CONST 5`
+becomes `CONST_5` (`utils/fused.py`), embedded as the `CONST` row plus the numeral-5 row, so the index is
+still a base-625 numeral. The model predicts such a token as P(category) × P(index | category). Datasets
+are fused when they are loaded, so the same files serve both tokenizations. Indices must be single
+digits (0–624).
+
 ### Model Configurations
 
 | Config | d_model | Layers | Heads | FF dim | Parameters |

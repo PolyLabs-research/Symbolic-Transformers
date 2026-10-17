@@ -1,0 +1,106 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "binary_preds": [],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          3,
+          5,
+          8
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.49992,
+      "max_scratch_len": 305,
+      "sha256": "21b4ae0b84e86a731f24d6209bfdda75047f582a5f69ae2d0683fd3ef44eda37",
+      "too_long": 0,
+      "duplicates": 0
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          3,
+          5,
+          8
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.4995,
+      "max_scratch_len": 249,
+      "sha256": "d47148d0ed55159377ae0e3b7f51eb84a8fda395959c6079fab58d64d4bc3d9c",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 1027
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          3,
+          5,
+          8
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 249,
+      "sha256": "109d14b79f1eecc6172450b8c34cc47057eef25fa407ab639e7da825b5470bca",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 502
+    }
+  },
+  "encoding": "keylast",
+  "signature": "unary",
+  "train_queries": 8
+}
