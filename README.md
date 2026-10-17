@@ -312,6 +312,12 @@ a constant answer. Warm-started from the comparison task, the ramp interpolates 
 (85% against 79%, three seeds, overlapping) while xVal extrapolates past the trained range far better (72%
 against 51%) (`experiments/numeral_codes.md`).
 
+Numerals are also identities: `CONST 41` must be told apart from `CONST 42` when a fact is looked up. A
+value code of rank one, like xVal, may not support that. `--embedding grid_cell` embeds numeral *k* by its
+cell on the grid instead: a learned vector for its row (*k* // 25) plus one for its column (*k* % 25).
+`grid_cell_xval` adds the xVal direction on top. `scripts/identity_magnitude.py` tests every code on
+recall and on comparison (`experiments/identity_magnitude.md`).
+
 Manual equivalents for the FOL experiment:
 
 ```bash
