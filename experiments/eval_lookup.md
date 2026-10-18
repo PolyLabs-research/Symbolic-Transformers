@@ -201,13 +201,16 @@ Pre-registered in `plan_formula_evaluation.md`. Same setup as the previous secti
 | layout | steps | query accuracy |
 |---|---|---|
 | `table_keylast` (`... PRED 0 ( CONST k v ) ... MODELS PRED 0 ( CONST q -> v )`) | 20,000 | 0.65-0.70 to step 6,000, then **1.000** from step 8,000 (loss 0.003) |
-| `pairs_gap_context` | 10,000 | not yet run |
-| `pairs_gap_query` | 10,000 | not yet run |
+| `pairs_gap_context` (`k ) v ... ANSWER q -> v`) | 10,000 | 0.60-0.65 to step 5,000, 0.994 at 6,000, then **1.000** |
+| `pairs_gap_query` (`k v ... ANSWER q ) -> v`) | 10,000 | 0.60-0.66 through step 6,000; the run is still going |
 
 - **`table_keylast` is learned, as predicted.** It is the same table layout that sat on the plateau for
   40,000 steps, with two changes: each value moved right after its key, and the answer predicted at the
   query key. With those changes it jumps between steps 6,000 and 8,000. `pairs` jumped at 5,000, and these
   sequences are more than three times longer.
 - **Decision rule.** `table_keylast` is learned, so the lookup data gets a world encoding with each value
-  right after its atom's last key token (`--encoding keylast`). The 8-query ladder then runs on it. Which
-  side of the gap matters is still open until the two `pairs` layouts are run.
+  right after its atom's last key token (`--encoding keylast`). The 8-query ladder then runs on it.
+- **A gap in the facts alone does not block the jump, as predicted.** `pairs_gap_context` learns, one
+  thousand steps after `pairs`. When the answer is predicted at the query key, a value two tokens after
+  its key is still found. Whether the gap in the query alone blocks it awaits the end of
+  `pairs_gap_query`.

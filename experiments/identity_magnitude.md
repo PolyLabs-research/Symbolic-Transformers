@@ -1,6 +1,6 @@
 # Identity against magnitude: can one numeral code both look up and compare?
 
-**Status: pre-registered. One cell run on CPU as a pipeline check (below); the GPU runs are pending.**
+**Status: complete (12 GPU runs, RTX 2000 Ada).** Results follow the pre-registration.
 
 ## Why
 
@@ -122,3 +122,96 @@ seed, but dropout draws differ on GPU, so the GPU run is the record.
 - **Learned rows handle adjacent keys without difficulty**, as predicted.
 - **Untrained rows give a little, not lookup.** The held-out and far keys never had their rows trained.
   They sit just above the plateau of about 0.64, and stay there through step 10,000.
+
+## Results (GPU)
+
+All 12 runs used the same seed. The Python RNG that draws the data is seeded identically, so every code
+saw the same training and evaluation batches. A model that gives one constant answer therefore scores
+exactly the same as another constant model, and that is why several rows below repeat to the last digit.
+
+### Recall: query accuracy at step 10,000
+
+| code | `seen` | `seen_adjacent` | `heldout` | `far` | jump |
+|---|---|---|---|---|---|
+| `learned` | **1.000** | **1.000** | 0.758 | 0.744 | step 5,000 |
+| `xval` | 0.922 | 0.650 | 0.902 | 0.656 | partial, from step 3,000 (`seen` 0.87-0.95 after) |
+| `ramp` | 0.660 | 0.672 | 0.652 | 0.662 | none |
+| `grid_linear` | 0.660 | 0.672 | 0.654 | 0.662 | none |
+| `grid_cell` | **1.000** | **1.000** | **1.000** | **0.955** | step 4,000 |
+| `grid_cell_xval` | **1.000** | **1.000** | **1.000** | **0.973** | step 3,000 |
+
+### Compare: accuracy at step 10,000
+
+| code | `seen` | `heldout` | `heldout` by gap: 1 / 2-5 / 6-20 / >20 | `far` | `far` by gap: 1 / 2-5 / 6-20 / >20 | left chance |
+|---|---|---|---|---|---|---|
+| `learned` | 0.484 | 0.506 | constant answer | 0.475 | constant answer | never |
+| `xval` | 0.939 | **0.928** | 0.58 / 0.83 / 0.90 / 1.00 | 0.717 | 0.54 / 0.54 / 0.50 / 0.99 | step 2,000 |
+| `ramp` | 0.484 | 0.506 | constant answer | 0.475 | constant answer | never |
+| `grid_linear` | 0.484 | 0.506 | constant answer | 0.475 | constant answer | never |
+| `grid_cell` | 0.998 | **0.992** | 1.00 / 1.00 / 0.98 / 0.99 | 0.693 | 0.86 / 0.89 / 0.63 / 0.62 | step 6,000 |
+| `grid_cell_xval` | 1.000 | **1.000** | 1.00 / 1.00 / 1.00 / 1.00 | 0.730 | 1.00 / 0.89 / 0.72 / 0.63 | step 3,000 |
+
+`xval` fluctuates from step 3,000 on: `heldout` between 0.93 and 0.99, and `far` between 0.70 and 0.91.
+
+### Against the pre-registration
+
+- **The headline came true, together with its stated alternative.** Both `grid_cell_xval` and
+  `grid_cell` meet both criteria: `seen_adjacent` 1.000, and compare `heldout` 1.000 and 0.992. No other
+  code meets either criterion on both tasks.
+- **Recall predictions:**
+  - **Right.**
+    - `learned`, `grid_cell` and `grid_cell_xval` learn `seen` and `seen_adjacent`.
+    - `xval` (0.650) and `ramp` (0.672) stay below 0.80 on `seen_adjacent`.
+    - `grid_cell` and `grid_cell_xval` learn `heldout`.
+  - **Wrong.**
+    - "`grid_linear` learns `seen`": it never left the plateau.
+    - "`grid_cell` and `grid_cell_xval` stay below 0.80 on `far`": they reached 0.955 and 0.973.
+      The column vectors are trained even for 500-624. The untrained row vectors are random, but still
+      distinct enough to separate keys that share a column.
+  - **Open, now settled.**
+    - `xval` on `seen`: 0.922, partly learned; its keys are about 50 apart.
+    - `ramp` on `seen`: plateau.
+    - `learned` on `heldout`: 0.758. Untrained rows give a little, not lookup.
+- **Compare predictions:**
+  - **Right.**
+    - `xval` and `grid_cell_xval` pass `heldout`.
+    - `learned` is at or below 0.60.
+  - **Wrong.**
+    - "`ramp` passes `heldout`": it never left chance in 10,000 steps. In `numeral_codes.md` the ramp
+      needed 6-9 epochs to leave chance, so this budget may simply be too short for it.
+    - "`xval` passes `far`": 0.717 at step 10,000, and 0.70-0.91 over the run.
+    - "`grid_cell` at or below 0.60 on `far`": it reached 0.693.
+  - **Open, now settled.**
+    - `grid_cell` on `heldout`: 0.992.
+    - `grid_linear` on `heldout`: chance.
+    - `grid_cell_xval` on `far`: 0.730.
+- **Decision rule.** Both the first and the third clause apply:
+  - **First clause.** The grid-cell code becomes the numeral code wherever numerals are also
+    identities. xVal alone is not a safe default there: it cannot separate adjacent keys.
+  - **Third clause.** For trained rows, the cell code carries magnitude by itself, so the value channel
+    could matter only past the trained range.
+
+## Reading
+
+- **xVal's limit with exact keys is real.** It learns lookups among keys about 50 apart, and generalises
+  them to held-out keys (0.90). With 8 consecutive numbers it stays on the plateau: one scaled direction
+  cannot single out k among k ± 1.
+- **The grid cell is the base-625 code that does both.** Writing k as its two base-25 digits, the row
+  and column of its cell, gives exact identity and ordering at once. It compares held-out numbers at gap
+  1 perfectly (1.000), where xVal gets 0.58. It also left chance first on both tasks (with the value
+  channel added: step 3,000 for each).
+- **A caveat on that held-out result.** The held-out set is scattered, so every held-out number's row
+  and column were trained. The cell code generalises by putting seen digits together in new ways, not
+  by placing a number between seen numbers. A held-out band of whole rows would behave like `far`.
+  For that reason the 1.000 is not comparable with the held-out band (350-449, whole rows 14-17) of
+  `numeral_codes.md`.
+- **Past the trained range, the combined code loses xVal's strength.** On `far` pairs with gaps above
+  20, xVal alone reaches 0.99. `grid_cell_xval` reaches 0.63: it relies on the cell channel, whose rows
+  20-24 were never trained. Small far gaps mostly share a row, so the trained columns decide them (gap
+  1: 1.00).
+  - **A natural follow-up.** Drop the cell channel at random during comparison training, so that the
+    value channel has to carry magnitude on its own. The residual-dropout studies did the same for the
+    per-cell residual.
+- **The ramp and `grid_linear` panels learned neither task within 10,000 steps.** On comparison this
+  contradicts their earlier results. Those runs used fixed datasets and more steps, so read this as
+  "slow to start here", not "unable".
