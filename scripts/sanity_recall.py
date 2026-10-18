@@ -29,6 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from models.transformer import create_model  # noqa: E402
+from training.train import make_lr_lambda  # noqa: E402
 from utils.fused import N_INDEX, SymbolFuser  # noqa: E402
 from utils.vocabulary import Vocabulary  # noqa: E402
 
@@ -112,7 +113,11 @@ def fuse_batch(fuser, seq, targets):
     return seq[:, [j for j in range(seq.size(1)) if j not in numerals]], [where[t] for t in targets]
 
 
-def run(variant, steps, n_pairs, values, queries, seed, device, log_every, layout="pairs", fuse=False):
+def run(variant, steps, n_pairs, values, queries, seed, device, log_every, layout="pairs", fuse=False,
+        fixed=0, schedule="constant"):
+    """``fixed``: train on a pool of that many sequences, drawn once (evaluation stays fresh), as the
+    trainer does with a dataset. ``schedule="cosine"``: the trainer's learning-rate schedule, warm-up
+    then cosine decay to 10% of the rate over ``steps``; the default holds the rate after warm-up."""
     torch.manual_seed(seed)
     cfg = VARIANTS[variant]
     vocab = Vocabulary(str(ROOT / "unified_vocabulary.json"))
@@ -136,10 +141,16 @@ def run(variant, steps, n_pairs, values, queries, seed, device, log_every, layou
     lr = cfg.get("lr", 3e-4)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
     warm = 500
-    sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / warm))
+    lr_lambda = make_lr_lambda(steps, warm) if schedule == "cosine" else (lambda s: min(1.0, (s + 1) / warm))
+    sched = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda)
+    if fixed:
+        pool, targets = make(fixed, queries)
     history = []
     for step in range(1, steps + 1):
-        seq, targets = make(64, queries)
+        if fixed:
+            seq = pool[torch.randint(0, fixed, (64,), device=pool.device)]
+        else:
+            seq, targets = make(64, queries)
         logits = model(seq[:, :-1])
         pos = torch.tensor(targets) - 1
         loss = F.cross_entropy(logits[:, pos].reshape(-1, logits.size(-1)), seq[:, targets].reshape(-1))
@@ -168,13 +179,17 @@ def main():
     ap.add_argument("--queries", type=int, default=1)
     ap.add_argument("--layout", default="pairs", choices=list(LAYOUTS))
     ap.add_argument("--fuse", action="store_true", help="One token per symbol: CONST k as a single token")
+    ap.add_argument("--fixed", type=int, default=0, metavar="N",
+                    help="Train on a fixed pool of N sequences instead of fresh batches (evaluation stays fresh)")
+    ap.add_argument("--schedule", default="constant", choices=["constant", "cosine"],
+                    help="cosine: the trainer's warm-up then cosine decay to 10%% over --steps")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--log-every", type=int, default=500)
     ap.add_argument("--device", default=None)
     args = ap.parse_args()
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     run(args.variant, args.steps, args.pairs, args.values, args.queries, args.seed, device, args.log_every,
-        args.layout, args.fuse)
+        args.layout, args.fuse, args.fixed, args.schedule)
 
 
 if __name__ == "__main__":

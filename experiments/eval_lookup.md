@@ -214,3 +214,51 @@ Pre-registered in `plan_formula_evaluation.md`. Same setup as the previous secti
   thousand steps after `pairs`. When the answer is predicted at the query key, a value two tokens after
   its key is still found. Whether the gap in the query alone blocks it awaits the end of
   `pairs_gap_query`.
+
+## One token per symbol, on the key-last ladder: results
+
+This is the 7-run ladder pre-registered in `plan_formula_evaluation.md`. Setup: `tiny`, 40 epochs, 8
+queries per training item, on the RTX 2000 Ada GPU. Columns: test_iid accuracy / minimal-pair accuracy
+(%), and the validation loss over the 40 epochs.
+
+| # | rung | encoding | tokens | test_iid | validation loss |
+|---|---|---|---|---|---|
+| 1 | `single` | key-last | split | 50.0 / 0.0 | flat, 0.693-0.697 |
+| 2 | `single` | key-last | fused | 59.9 / 19.8 (by objects: 63.1 / 59.4 / 57.4) | rising to 0.702 by epoch 35, then 0.696, 0.693, 0.688, 0.675, 0.656 in epochs 36-40 |
+| 3 | `single` | table | fused | 50.0 / 0.0 | flat, 0.693-0.696 |
+| 4 | `unary` | key-last | split | 50.0 / 0.0 | rising, 0.693 to 0.710 |
+| 5 | `unary` | key-last | fused | 50.0 / 0.0 | rising, 0.693 to 0.714 |
+| 6 | `full` | key-last | split | not yet reported | |
+| 7 | `full` | key-last | fused | 50.0 / 0.3 (test_large_world 50.2 / 0.6) | rising, 0.693 to 0.701 |
+
+**Against the pre-registration:**
+
+- **Predictions:**
+  - "Runs 1 and 2 are learned": false. Run 1 never left chance. Run 2 started to fall in its last 5
+    epochs, when the learning rate was at its 10% floor, and ended at 19.8% pairs.
+  - "Run 3 is not learned": true.
+  - Runs 4 and 5 were left open. Neither was learned, and "fused and split within 10 points" holds
+    (0 and 0).
+  - "Runs 6 and 7 are not learned": true for run 7; run 6 is not yet reported.
+- **Decision rule:**
+  - The first clause needed runs 1 and 2 to learn, and they did not.
+  - "Fused beats split by 10 or more points on a rung" is met to the letter on `single` (19.8 against
+    0.0). The evidence is one seed, and a jump caught as it began. The timing of a jump varies between
+    seeds, so this is not acted on until the factor check below repeats the comparison on fresh data.
+  - The `unary` clause assumed `single` would be learned. It was not, so the obstacle comes before
+    multi-part keys.
+
+**Reading:**
+
+- **The key-last layout that learned in the recall check does not learn here, even with one-token keys.**
+  Three things differ between the two setups:
+  - **Table size.** These tables hold 12-32 facts; the check's held 8.
+  - **Data.** Here the model cycles through a fixed set of 50K items for 40 epochs. The check drew a
+    fresh batch every step.
+  - **Learning rate.** The trainer decays it with a cosine to 10%, and holds it there for the last 20% of
+    training. The check kept it constant after warm-up.
+- **The fixed data shows in the curves.** Validation loss rises above chance in five of the six runs,
+  while training loss dips below it (run 7: training 0.681, validation 0.700 at epoch 40). The models fit
+  the training items some other way instead of learning the lookup.
+- **Next.** The factor check in `plan_formula_evaluation.md` adds each difference, one at a time, to the
+  layout that learned.

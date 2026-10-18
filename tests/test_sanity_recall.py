@@ -58,3 +58,11 @@ def test_fused_batches_unfuse_to_the_split_batches(vocab, layout):
         assert fuser.unfuse(frow) == row
         assert [frow[t] for t in ftargets] == [row[t] for t in targets]
     assert fused.size(1) == seq.size(1) - (0 if layout == "pairs" else sum(t in fuser.cat_index for t in seq[0].tolist()))
+
+
+def test_fixed_pool_and_cosine_schedule_run():
+    from sanity_recall import run
+    history = run("default", 4, 8, "binary", 2, 0, "cpu", 2, "table_keylast", fixed=16, schedule="cosine")
+    assert [h[0] for h in history] == [2, 4]
+    history = run("default", 2, 8, "binary", 2, 0, "cpu", 2, "table_keylast", fuse=True, fixed=16)
+    assert len(history) == 1

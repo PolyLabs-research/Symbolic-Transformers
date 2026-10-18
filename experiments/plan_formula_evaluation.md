@@ -368,3 +368,39 @@ fresh and fixed data, and nothing in fusion removes its gap.
   - **`unary` fails with key-last:** multi-part keys are the next obstacle. Two options are worth
     comparing: `small` (4 layers) on run 4, and a fact layout that places every part of the key next to
     the value.
+
+## Why key-last fails on the ladder: one factor at a time, pre-registered before it runs
+
+The key-last layout learned recall in `sanity_recall.py` (`table_keylast`: 8 facts, fresh batches,
+constant learning rate, jump between steps 6,000 and 8,000). On the ladder it failed. Each run below
+starts from that layout and adds one of the ladder's conditions (`--pairs`, `--fixed`, `--schedule`,
+`--fuse`); run E adds all of them at once.
+
+| run | change from `table_keylast` | steps |
+|---|---|---|
+| A | 21 facts (`--pairs 21`, the middle of the `single` rung's 12-32) | 20,000 |
+| B | a fixed pool of 50,000 training sequences (`--fixed 50000`) | 20,000 |
+| C | the trainer's schedule: warm-up, then cosine decay to 10% (`--schedule cosine`) | 20,000 |
+| D | one token per symbol (`--fuse`) | 20,000 |
+| E | the ladder's conditions together: `--pairs 21 --fixed 50000 --schedule cosine` | 31,000, the ladder's step count |
+
+- **Shared settings.** 8 queries per training sequence, seed 0, evaluation on fresh sequences.
+- **Criterion.** Query accuracy ≥ 0.95 at the last logged step.
+- **Predictions:**
+  - A is learned, with a jump later than step 8,000.
+  - B is uncertain.
+  - C is learned. The jump came at 6,000-8,000 steps, when the cosine schedule is still at 70-85% of
+    its peak.
+  - D is learned.
+  - E is not learned; it reproduces the ladder.
+- **Decision rule:**
+  - **A fails:** the jump comes later as tables grow. The ladder needs smaller tables or longer training
+    at a constant rate.
+  - **B fails:** fixed data is the obstacle. The ladder needs training items generated on the fly, or
+    many more of them.
+  - **C fails:** the schedule is the obstacle. The ladder keeps the rate constant after warm-up.
+  - **D fails:** fusion slows lookups. The Stage A rerun stays split.
+  - **A-D all learn but E fails:** the conditions interact. Rerun the ladder with the cheapest fixes
+    together: a constant rate and data generated on the fly.
+  - **E learns:** this script does not reproduce the ladder. The difference lies in the trainer or the
+    generated items, so the check moves there.
