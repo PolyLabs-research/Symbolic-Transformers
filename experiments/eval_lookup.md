@@ -257,8 +257,9 @@ queries per training item, on the RTX 2000 Ada GPU. Columns: test_iid accuracy /
     fresh batch every step.
   - **Learning rate.** The trainer decays it with a cosine to 10%, and holds it there for the last 20% of
     training. The check kept it constant after warm-up.
-- **The fixed data shows in the curves.** Validation loss rises above chance in five of the six runs,
-  while training loss dips below it (run 7: training 0.681, validation 0.700 at epoch 40). The models fit
-  the training items some other way instead of learning the lookup.
+- **The fixed data shows in the curves.** Validation loss rises clearly above chance in runs 4, 5 and 7
+  (to 0.70-0.71), and in run 2 before its late fall. Training loss dips below chance at the same time
+  (run 7: training 0.681, validation 0.700 at epoch 40). Those models fit the training items some other
+  way instead of learning the lookup. Runs 1 and 3 stay within 0.004 of chance throughout.
 - **Next.** The factor check in `plan_formula_evaluation.md` adds each difference, one at a time, to the
   layout that learned.
