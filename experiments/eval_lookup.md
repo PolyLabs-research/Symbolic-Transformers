@@ -280,9 +280,10 @@ starts from `table_keylast` (8 facts, fresh batches, constant learning rate), wh
 
 Reading:
 
-- **Table size blocks the jump.** At 21 facts, about the middle of the `single` rung's 12-32, no jump
-  comes in 20,000 steps. With 8 facts it came by step 8,000. The prediction ("learned, later than 8,000")
-  was wrong.
+- **Table size delays the jump.** On fresh data at 21 facts, about the middle of the `single` rung's
+  12-32, no jump comes in 20,000 steps; with 8 facts it came by step 8,000. The prediction ("learned,
+  later than 8,000") was wrong within this budget. Run E below jumps at 21 facts by step 15,500, so the
+  delay is not a block.
 - **Fixed data does not block it.** Run B jumped earlier than fresh data (by step 4,000). A training loss
   of 0.000 is the expected optimum here: every answer is determined by its sequence. Accuracy on fresh
   sequences is 1.000, so the model is doing the lookup rather than memorising. The rising validation
