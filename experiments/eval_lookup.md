@@ -263,3 +263,28 @@ queries per training item, on the RTX 2000 Ada GPU. Columns: test_iid accuracy /
   way instead of learning the lookup. Runs 1 and 3 stay within 0.004 of chance throughout.
 - **Next.** The factor check in `plan_formula_evaluation.md` adds each difference, one at a time, to the
   layout that learned.
+
+## Factor check: results
+
+This is the check pre-registered in `plan_formula_evaluation.md`, run on the RTX 2000 Ada GPU. Each run
+starts from `table_keylast` (8 facts, fresh batches, constant learning rate), which jumped between steps
+6,000 and 8,000. Query accuracy is measured on fresh sequences.
+
+| run | change | query accuracy |
+|---|---|---|
+| A | 21 facts | 0.56-0.64 for all 20,000 steps: no jump |
+| B | fixed pool of 50,000 sequences | 0.641 at step 2,000, **1.000** from step 4,000 (training loss 0.000 from step 8,000) |
+| C | cosine schedule | in progress |
+| D | fused tokens | in progress |
+| E | 21 facts, fixed pool, cosine | in progress |
+
+So far:
+
+- **Table size blocks the jump.** At 21 facts, about the middle of the `single` rung's 12-32, no jump
+  comes in 20,000 steps. With 8 facts it came by step 8,000. The prediction ("learned, later than 8,000")
+  was wrong.
+- **Fixed data does not block it.** Run B jumped earlier than fresh data (by step 4,000). A training loss
+  of 0.000 is the expected optimum here: every answer is determined by its sequence. Accuracy on fresh
+  sequences is 1.000, so the model is doing the lookup rather than memorising. The rising validation
+  loss in the ladder runs is what happens while a model sits on a long plateau. It is not, by itself,
+  why the jump never came.
