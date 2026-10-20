@@ -316,3 +316,45 @@ Reading:
       to learn which one to pick.
 - **Next.** The check that follows is pre-registered in `plan_formula_evaluation.md`. It runs the
   trainer on run E's exact pool, adds balanced queries to run E, and repeats run E with a second seed.
+
+## Trainer, balanced queries or seed: results
+
+This is the check pre-registered in `plan_formula_evaluation.md`. Every run has run E's conditions: 21
+facts, a fixed pool of 50,000, the cosine schedule and 31,000 steps.
+
+| run | training queries | seed | result |
+|---|---|---|---|
+| E (factor check) | uniform | 0 | **jump at step 15,500, then 1.000** |
+| E1 | uniform | 1 | partial: 0.59-0.60 to step 9,300, then 0.64-0.69 from step 12,400 (loss 0.53-0.56); no full jump |
+| T: `training/train.py` on run E's exact pool | uniform | 0 (trainer) | partial: test_iid 67.4%. Validation loss 0.664 for 10 epochs, then down to 0.52 by epoch 17, flat after |
+| F | **balanced** | 0 | **exactly chance throughout**: 0.47-0.54, loss 0.691-0.696 |
+
+**Against the pre-registration:**
+
+- **Predictions:**
+  - "T is learned": false. It reached 67.4%, against a criterion of 95%.
+  - "F is not learned": true.
+  - "E1 is learned": false.
+- **Decision rule:**
+  - **E1 failed.** So the timing of the jump at 21 facts varies widely between seeds, and runs that
+    decide anything need 3 seeds.
+  - **T failed too.** The T clause names the trainer, but T's curve matches E1's: a partial solution
+    with loss around 0.52-0.55. A second seed of the sanity script does the same without the trainer.
+    So T is not evidence against the trainer. The 3-seed ladder runs will show whether the trainer
+    matters at all.
+  - **The balanced-query clause** was written for "T learns and F fails". T did not learn. F's result
+    stands on its own all the same.
+
+**Reading:**
+
+- **Balanced training queries are the ladder's obstacle.** F differs from run E only in how training
+  queries are drawn. It never leaves exact chance in 31,000 steps, the same flat 0.693 as every ladder
+  run. All three runs with uniform queries left chance: E fully, E1 and T partly.
+  - With uniform queries, answering with the table's majority value beats chance, and every run that
+    learned sat on that shortcut first. Balanced queries make the shortcut worth nothing, and the
+    gradient never finds the lookup.
+- **At 21 facts the lookup forms in only some seeds within 31,000 steps.** Of the three uniform-query
+  runs, one got the full jump. The other two found a partial solution (about 67%) and stayed there.
+- **Fix.** `data/eval_generator.py --train-query-sampling uniform` draws training queries uniformly over
+  all atoms. Val and test items are unchanged: balanced, with twins. The next check is pre-registered in
+  `plan_formula_evaluation.md`.

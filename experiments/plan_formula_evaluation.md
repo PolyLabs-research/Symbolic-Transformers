@@ -433,3 +433,43 @@ separate what remains:
     run E with 32 facts, and the ladder's `single` rung with a second seed.
   - **E1 fails:** the timing of the jump varies widely between seeds. Any single-seed result near the
     budget, including run E's, is then unreliable, and the runs that decide anything need 3 seeds.
+
+## Uniform training queries, three seeds: pre-registered before it runs
+
+Balanced training queries kept every lookup run at exact chance, and uniform queries let runs leave it
+(`eval_lookup.md`). At 21 facts, though, only one seed in three completed the jump.
+
+This check has two parts. Part 1 runs in `sanity_recall.py` and asks whether more queries per training
+sequence make the jump reliable. Part 2 is the ladder's `single` rung with uniform training queries.
+
+**Part 1: `sanity_recall.py`.** `table_keylast`, 21 facts, a fixed pool of 50,000, the cosine schedule,
+31,000 steps, uniform queries:
+
+| queries per training sequence | seeds |
+|---|---|
+| 8 | 0 (run E: learned) and 1 (run E1: partial), already run; seed 2 new |
+| 16 | 0, 1, 2 |
+
+**Part 2: the ladder's `single` rung.** Data: `datasets/eval_lookup_single_keylast_uq8`. This is key-last,
+with 8 uniform training queries per item, 12-32 objects, and balanced test items with twins. Settings:
+`tiny`, 40 epochs, batch 64, learning rate 3e-4, 500 warm-up steps. Seeds 1, 2 and 3.
+`datasets/eval_lookup_single_keylast_uq16` (16 queries) is generated for a follow-up.
+
+- **Criteria.**
+  - Part 1: query accuracy ≥ 0.95 at the last logged step.
+  - Part 2: test_iid pair accuracy ≥ 95%.
+  - A recipe is reliable if all 3 seeds pass.
+- **Predictions:**
+  - Part 1, 8 queries, seed 2: uncertain.
+  - Part 1, 16 queries: learned in all three seeds. In the density check, 8 queries turned "never" into
+    a jump, and denser supervision should shorten the plateau again.
+  - Part 2: every seed leaves exact chance, with validation loss below 0.69 at some epoch. Reaching 95%
+    pairs in at least one seed is uncertain. The 12-object worlds are learned before the 32-object ones.
+- **Decision rule:**
+  - **Part 2 passes in 3/3 seeds:** one-token lookups are fixed. Run the `unary` and `full` rungs with
+    uniform queries, 3 seeds each.
+  - **Part 2 passes in 1-2 seeds:** rerun it with 16 queries (`uq16`) if Part 1 found 16 reliable.
+    Otherwise use a size curriculum: train on small worlds first, then warm-start on the full rung.
+  - **Part 2 leaves chance but never passes:** the same choice, 16 queries or a curriculum.
+  - **A Part 2 run stays at exact chance:** something else in the ladder's items still blocks. Compare
+    them with the sanity layout token by token.

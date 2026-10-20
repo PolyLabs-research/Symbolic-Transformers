@@ -179,3 +179,20 @@ def test_keylast_tables_list_every_atom(tok):
     listing = [(a, i % 2 == 0) for i, a in enumerate(possible_atoms(objects))]
     table = tok.table(objects, listing, keylast=True)
     assert table.count(tok.RP) == len(listing) and table.count(tok.TRUE) + table.count(tok.FALSE) == len(listing)
+
+
+@pytest.mark.parametrize("sampling, low, high", [("balanced", 0.45, 0.55), ("uniform", 0.55, 0.70)])
+def test_training_query_sampling_and_the_majority_shortcut(tok, sampling, low, high):
+    """Uniform queries let 'answer with the world's majority value' beat chance; balanced queries do not."""
+    random.seed(4)
+    sampler = Sampler(objects=(12,), max_height=(0,), min_height=0, unary=[0], binary=[])
+    items, _ = build_multi_query_split(tok, sampler, 300, set(), 8, "keylast", query_sampling=sampling)
+    right = total = 0
+    for it in items:
+        seq = it["direct_seq"]
+        world = seq[:seq.index(tok.MODELS)]
+        majority = tok.TRUE if world.count(tok.TRUE) > world.count(tok.FALSE) else tok.FALSE
+        for t in it["direct_targets"]:
+            right += seq[t] == majority
+            total += 1
+    assert low < right / total < high

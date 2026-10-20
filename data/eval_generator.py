@@ -237,8 +237,10 @@ def multi_query_item(tok: "Tokens", objects, true_atoms, queries, table=None, ke
 
 
 def build_multi_query_split(tok: "Tokens", sampler: "Sampler", n: int, seen: set, k: int,
-                            encoding: str) -> Tuple[List[Dict], Dict]:
-    """n training items with k lookup queries each, half of them true, in random order."""
+                            encoding: str, query_sampling: str = "balanced") -> Tuple[List[Dict], Dict]:
+    """n training items with k lookup queries each, in random order. ``balanced``: each query is true with
+    probability 1/2, whatever the world holds. ``uniform``: each query is an atom drawn uniformly from all
+    possible atoms, so answering with the world's majority value beats chance."""
     items, stats = [], {"too_long": 0, "duplicates": 0}
     while len(items) < n:
         objects, true_atoms, rho = sampler.world()
@@ -247,9 +249,12 @@ def build_multi_query_split(tok: "Tokens", sampler: "Sampler", n: int, seen: set
         false_atoms = [a for a in possible if a not in true_set]
         queries = []
         for _ in range(k):
-            want = random.random() < 0.5
-            pool = true_atoms if (want and true_atoms) or not false_atoms else false_atoms
-            a = random.choice(pool)
+            if query_sampling == "uniform":
+                a = random.choice(possible)
+            else:
+                want = random.random() < 0.5
+                pool = true_atoms if (want and true_atoms) or not false_atoms else false_atoms
+                a = random.choice(pool)
             queries.append((a, a in true_set))
         table = None
         if encoding in ("full_table", "keylast"):
@@ -451,7 +456,8 @@ SIGNATURES = {
 
 def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: int = 0,
              scale: float = 1.0, train_not_mode: str = "any", lookup: bool = False,
-             encoding: str = "true_atoms", signature: str = "full", queries: int = 1) -> Dict:
+             encoding: str = "true_atoms", signature: str = "full", queries: int = 1,
+             train_query_sampling: str = "balanced") -> Dict:
     random.seed(seed)
     vocab = Vocabulary(vocab_path)
     tok = Tokens(vocab)
@@ -472,17 +478,22 @@ def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: in
         meta.update({"signature": signature, "unary_preds": unary, "binary_preds": binary})
     if encoding == "keylast" and not lookup:
         raise ValueError("the key-last encoding is only defined for the lookup diagnostic")
+    if train_query_sampling != "balanced" and queries == 1:
+        raise ValueError("--train-query-sampling applies to multi-query training items (--queries > 1)")
     if queries > 1:
         if not lookup:
             raise ValueError("several queries per item are only defined for the lookup diagnostic")
         meta["train_queries"] = queries
+        if train_query_sampling != "balanced":
+            meta["train_query_sampling"] = train_query_sampling
     for name, (kwargs, n, pairs) in splits.items():
         kw = dict(kwargs)
         if name in ("train", "val", "test_iid") and train_not_mode != "any":
             kw["not_mode"] = train_not_mode
         n_items = max(1, int(n * scale))
         if name == "train" and queries > 1:
-            items, stats = build_multi_query_split(tok, Sampler(**kw), n_items, seen, queries, encoding)
+            items, stats = build_multi_query_split(tok, Sampler(**kw), n_items, seen, queries, encoding,
+                                                   train_query_sampling)
         else:
             items, stats = build_split(tok, Sampler(**kw), n_items, seen, pairs, encoding)
         text = json.dumps({"split": name, "items": items})
@@ -513,6 +524,9 @@ if __name__ == "__main__":
                     help="Lookup ladder: 'single' (one predicate), 'unary' (four unary), 'full' (Stage A)")
     ap.add_argument("--queries", type=int, default=1,
                     help="Lookup diagnostic: queries per training item (val and test items keep one)")
+    ap.add_argument("--train-query-sampling", default="balanced", choices=["balanced", "uniform"],
+                    help="With --queries > 1: training queries true half the time (balanced) or drawn uniformly "
+                         "from all atoms (uniform). Val and test items are unchanged")
     args = ap.parse_args()
     generate(args.out, args.vocab, args.seed, args.scale, args.train_not_mode, args.lookup, args.encoding,
-             args.signature, args.queries)
+             args.signature, args.queries, args.train_query_sampling)
