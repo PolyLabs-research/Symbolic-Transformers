@@ -17,6 +17,7 @@ not in the formula-evaluation data. ``--variant`` changes one thing at a time fr
 """
 
 import argparse
+import json
 import math
 import sys
 from pathlib import Path
@@ -54,9 +55,13 @@ LAYOUTS = {
 }
 
 
-def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs"):
+def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs", balanced=False):
     """A batch of ``layout`` (see LAYOUTS). The table layouts list the facts in a random order, and
-    separate queries with SEP. Returns the sequences and the positions of the answers."""
+    separate queries with SEP. Returns the sequences and the positions of the answers.
+
+    Queries pick a fact uniformly, so answering with the majority of the listed values beats chance. With
+    ``balanced`` (binary values only) each answer is TRUE or FALSE with probability 1/2 whatever the table
+    holds, as in the lookup ladder's training items, and that shortcut is worth nothing."""
     lab = vocab.encode_label
     true_false = torch.tensor([lab("TRUE"), lab("FALSE")])
     keys = torch.stack([torch.randperm(100)[:n_pairs] for _ in range(bs)])
@@ -82,7 +87,15 @@ def batch(vocab, n_pairs, bs, values, queries, device, layout="pairs"):
         seq += [full(lab("SEP")), interleave(entry), full(lab("MODELS"))]
     targets = []
     for i in range(queries):
-        qi = torch.randint(0, n_pairs, (bs,))
+        if balanced:
+            if values != "binary":
+                raise ValueError("balanced queries need binary values")
+            want = true_false[torch.randint(0, 2, (bs,))]
+            match = (vals == want[:, None]).float()
+            match[match.sum(1) == 0] = 1.0  # every value is the other one: query any fact
+            qi = torch.multinomial(match, 1).squeeze(1)
+        else:
+            qi = torch.randint(0, n_pairs, (bs,))
         q = keys[torch.arange(bs), qi][:, None]
         v = vals[torch.arange(bs), qi][:, None]
         if layout in ("pairs", "pairs_gap_context"):
@@ -113,17 +126,38 @@ def fuse_batch(fuser, seq, targets):
     return seq[:, [j for j in range(seq.size(1)) if j not in numerals]], [where[t] for t in targets]
 
 
+def export_items(out, vocab, pool, targets, fresh, n_pairs):
+    """Write the training pool and fresh single-query val/test sets as data/eval_generator item files, so
+    training/train.py and scripts/assess_eval.py run on exactly these sequences."""
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    true = vocab.encode_label("TRUE")
+
+    def items(seq, tg):
+        return [{"direct_seq": row, "direct_from": tg[0], "direct_targets": tg, "label": int(row[tg[0]] == true),
+                 "pair": None, "height": 0, "objects": n_pairs, "outer": "ATOM", "rho": 0.5}
+                for row in seq.tolist()]
+    splits = {"train": items(pool, targets)}
+    for name in ("val", "test_iid"):
+        splits[name] = items(*fresh(2000, 1))
+    for name, its in splits.items():
+        (out / f"{name}.json").write_text(json.dumps({"split": name, "items": its}))
+        print(f"{name}: {len(its)} items of length {len(its[0]['direct_seq'])}")
+
+
 def run(variant, steps, n_pairs, values, queries, seed, device, log_every, layout="pairs", fuse=False,
-        fixed=0, schedule="constant"):
+        fixed=0, schedule="constant", balanced=False, export=None):
     """``fixed``: train on a pool of that many sequences, drawn once (evaluation stays fresh), as the
     trainer does with a dataset. ``schedule="cosine"``: the trainer's learning-rate schedule, warm-up
-    then cosine decay to 10% of the rate over ``steps``; the default holds the rate after warm-up."""
+    then cosine decay to 10% of the rate over ``steps``; the default holds the rate after warm-up.
+    ``export``: write that pool (drawn exactly as a run with these settings would draw it) and fresh
+    val/test sets to a directory, and stop."""
     torch.manual_seed(seed)
     cfg = VARIANTS[variant]
     vocab = Vocabulary(str(ROOT / "unified_vocabulary.json"))
     fuser = SymbolFuser(vocab) if fuse else None
     make = lambda bs, q: (lambda b: fuse_batch(fuser, *b) if fuse else b)(
-        batch(vocab, n_pairs, bs, values, q, device, layout))
+        batch(vocab, n_pairs, bs, values, q, device, layout, balanced))
     model = create_model(vocab.vocab_size, "tiny", verbose=False,
                          fused_categories=fuser.categories if fuse else None)
     if "norm_first" in cfg or "dropout" in cfg:
@@ -145,6 +179,12 @@ def run(variant, steps, n_pairs, values, queries, seed, device, log_every, layou
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda)
     if fixed:
         pool, targets = make(fixed, queries)
+    if export:
+        if not fixed or fuse:
+            raise ValueError("--export writes the --fixed pool in split tokens (the trainer fuses on its own)")
+        export_items(export, vocab, pool.cpu(), targets, lambda bs, q: (lambda b: (b[0].cpu(), b[1]))(make(bs, q)),
+                     n_pairs)
+        return []
     history = []
     for step in range(1, steps + 1):
         if fixed:
@@ -181,6 +221,10 @@ def main():
     ap.add_argument("--fuse", action="store_true", help="One token per symbol: CONST k as a single token")
     ap.add_argument("--fixed", type=int, default=0, metavar="N",
                     help="Train on a fixed pool of N sequences instead of fresh batches (evaluation stays fresh)")
+    ap.add_argument("--balanced", action="store_true",
+                    help="Answers TRUE or FALSE with probability 1/2 whatever the table holds, as in the ladder's items")
+    ap.add_argument("--export", default=None, metavar="DIR",
+                    help="With --fixed: write the training pool and fresh val/test sets as item files, then stop")
     ap.add_argument("--schedule", default="constant", choices=["constant", "cosine"],
                     help="cosine: the trainer's warm-up then cosine decay to 10%% over --steps")
     ap.add_argument("--seed", type=int, default=0)
@@ -189,7 +233,7 @@ def main():
     args = ap.parse_args()
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     run(args.variant, args.steps, args.pairs, args.values, args.queries, args.seed, device, args.log_every,
-        args.layout, args.fuse, args.fixed, args.schedule)
+        args.layout, args.fuse, args.fixed, args.schedule, args.balanced, args.export)
 
 
 if __name__ == "__main__":

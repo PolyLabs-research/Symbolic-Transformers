@@ -404,3 +404,32 @@ starts from that layout and adds one of the ladder's conditions (`--pairs`, `--f
     together: a constant rate and data generated on the fly.
   - **E learns:** this script does not reproduce the ladder. The difference lies in the trainer or the
     generated items, so the check moves there.
+
+## Trainer, balanced queries or seed: pre-registered before it runs
+
+Run E of the factor check had the ladder's conditions, and learned anyway (`eval_lookup.md`). Three runs
+separate what remains:
+
+| run | what | how |
+|---|---|---|
+| T | `training/train.py` on run E's exact training pool | `sanity_recall.py ... --export runs/sanity_E` writes the pool, plus 2,000 fresh one-query val and test sequences. Then the ladder's trainer settings: `tiny`, batch 64, learning rate 3e-4, 500 warm-up steps, 40 epochs (31,280 steps), seed 0 |
+| F | run E with balanced queries | `--balanced`: each training answer is TRUE with probability 1/2 whatever the table holds, as in the ladder's items |
+| E1 | run E with seed 1 | |
+
+- **Criteria.**
+  - T: test_iid accuracy ≥ 95%. These sets have no twins, so there is no pair accuracy.
+  - F and E1: query accuracy ≥ 0.95 at the last logged step.
+- **Predictions:**
+  - T is learned. Nothing in the trainer should matter for this.
+  - F is not learned, because balanced queries remove the majority shortcut that every learned run sat
+    on before its jump.
+  - E1 is learned.
+- **Decision rule:**
+  - **T fails:** the trainer is the difference. Bisect it: optimiser betas and eps first, then batching.
+  - **T learns and F fails:** the ladder's balanced training queries are the obstacle. The fix is to draw
+    training queries uniformly over the facts. Test items stay balanced, with their twins. Then rerun
+    the ladder's `single` rung.
+  - **T and F both learn:** what remains is table size (the rung goes up to 32 facts) and the seed. Next,
+    run E with 32 facts, and the ladder's `single` rung with a second seed.
+  - **E1 fails:** the timing of the jump varies widely between seeds. Any single-seed result near the
+    budget, including run E's, is then unreliable, and the runs that decide anything need 3 seeds.

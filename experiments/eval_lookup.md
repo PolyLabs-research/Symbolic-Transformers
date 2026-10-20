@@ -228,7 +228,7 @@ queries per training item, on the RTX 2000 Ada GPU. Columns: test_iid accuracy /
 | 3 | `single` | table | fused | 50.0 / 0.0 | flat, 0.693-0.696 |
 | 4 | `unary` | key-last | split | 50.0 / 0.0 | rising, 0.693 to 0.710 |
 | 5 | `unary` | key-last | fused | 50.0 / 0.0 | rising, 0.693 to 0.714 |
-| 6 | `full` | key-last | split | not yet reported | |
+| 6 | `full` | key-last | split | 50.0 / 0.0 (test_large_world 50.0 / 0.0) | |
 | 7 | `full` | key-last | fused | 50.0 / 0.3 (test_large_world 50.2 / 0.6) | rising, 0.693 to 0.701 |
 
 **Against the pre-registration:**
@@ -239,7 +239,7 @@ queries per training item, on the RTX 2000 Ada GPU. Columns: test_iid accuracy /
   - "Run 3 is not learned": true.
   - Runs 4 and 5 were left open. Neither was learned, and "fused and split within 10 points" holds
     (0 and 0).
-  - "Runs 6 and 7 are not learned": true for run 7; run 6 is not yet reported.
+  - "Runs 6 and 7 are not learned": true.
 - **Decision rule:**
   - The first clause needed runs 1 and 2 to learn, and they did not.
   - "Fused beats split by 10 or more points on a rung" is met to the letter on `single` (19.8 against
@@ -274,11 +274,11 @@ starts from `table_keylast` (8 facts, fresh batches, constant learning rate), wh
 |---|---|---|
 | A | 21 facts | 0.56-0.64 for all 20,000 steps: no jump |
 | B | fixed pool of 50,000 sequences | 0.641 at step 2,000, **1.000** from step 4,000 (training loss 0.000 from step 8,000) |
-| C | cosine schedule | in progress |
-| D | fused tokens | in progress |
-| E | 21 facts, fixed pool, cosine | in progress |
+| C | cosine schedule | 0.645 at step 6,000, **1.000** from step 8,000 |
+| D | fused tokens | 0.660 at step 8,000, 0.973 at 10,000, **1.000** from 12,000 |
+| E | 21 facts, fixed pool, cosine, 31,000 steps | 0.57-0.66 to step 12,400, 0.996 at 15,500, **1.000** from 18,600 |
 
-So far:
+Reading:
 
 - **Table size blocks the jump.** At 21 facts, about the middle of the `single` rung's 12-32, no jump
   comes in 20,000 steps. With 8 facts it came by step 8,000. The prediction ("learned, later than 8,000")
@@ -288,3 +288,30 @@ So far:
   sequences is 1.000, so the model is doing the lookup rather than memorising. The rising validation
   loss in the ladder runs is what happens while a model sits on a long plateau. It is not, by itself,
   why the jump never came.
+- **The cosine schedule does not matter.** Run C jumps at the same point as the constant rate.
+- **Fusion delays the jump slightly.** Run D jumps about 2,000-4,000 steps later than split tokens. That
+  is one seed each, and the ladder's only movement was in a fused run, so there is no consistent effect
+  either way.
+- **Run E learns, although it has the ladder's conditions.** 21 facts, a fixed pool of 50,000 and the
+  cosine schedule over 31,000 steps give a jump at step 15,500. That is earlier than run A managed with
+  fresh data, which matches run B: a fixed pool speeds the jump rather than slowing it.
+- **Against the pre-registration:**
+  - A, "learned, later than 8,000": false. There was no jump in 20,000 steps.
+  - B was left open: learned.
+  - C and D, "learned": true.
+  - E, "not learned (reproduces the ladder)": false.
+  - The decision rule for E learning applies: this script does not reproduce the ladder. The difference
+    lies in the trainer or in the generated items.
+- **Differences that remain between run E and the ladder's `single` run:**
+  - **The trainer.** AdamW with betas (0.9, 0.98) and eps 1e-9, against (0.9, 0.999) and 1e-8 here;
+    length-bucketed batches; seed 1 against 0.
+  - **Table size.** The rung mixes 12, 21 and 32 facts; run E has 21 every time.
+  - **Balanced queries.**
+    - The ladder's training queries are TRUE half the time, whatever the table holds. Here a query picks
+      a fact uniformly, so answering with the majority of the listed values scores about 0.6 on the
+      plateau. Every sanity run sat at 0.60-0.67 before its jump. With balanced queries that shortcut
+      is worth nothing, and the ladder runs sat at exactly 50.0%.
+    - The shortcut may be a stepping stone: a head that already attends to the listed values only has
+      to learn which one to pick.
+- **Next.** The check that follows is pre-registered in `plan_formula_evaluation.md`. It runs the
+  trainer on run E's exact pool, adds balanced queries to run E, and repeats run E with a second seed.

@@ -66,3 +66,33 @@ def test_fixed_pool_and_cosine_schedule_run():
     assert [h[0] for h in history] == [2, 4]
     history = run("default", 2, 8, "binary", 2, 0, "cpu", 2, "table_keylast", fuse=True, fixed=16)
     assert len(history) == 1
+
+
+def test_balanced_queries_answer_true_half_the_time(vocab):
+    torch.manual_seed(0)
+    seq, targets = batch(vocab, 8, 4000, "binary", 1, "cpu", "table_keylast", balanced=True)
+    true = vocab.encode_label("TRUE")
+    share = (seq[:, targets[0]] == true).float().mean().item()
+    assert 0.47 < share < 0.53
+    fact_gap, query_gap = GAPS["table_keylast"]
+    for row in seq[:50].tolist():  # still the queried key's value
+        end = row.index(vocab.encode_label("MODELS"))
+        facts = {row[j]: row[j + fact_gap] for j in range(1, end - fact_gap)
+                 if row[j + fact_gap] in (true, vocab.encode_label("FALSE")) and row[j] < 625}
+        assert row[targets[0]] == facts[row[targets[0] - query_gap]]
+
+
+def test_export_matches_the_training_pool(vocab, tmp_path):
+    import json
+    from sanity_recall import run
+    run("default", 1, 8, "binary", 3, 0, "cpu", 1, "table_keylast", fixed=12, export=str(tmp_path))
+    train = json.load(open(tmp_path / "train.json"))["items"]
+    assert len(train) == 12 and all(len(it["direct_targets"]) == 3 for it in train)
+    torch.manual_seed(0)  # the same draws as the run: model init, then the pool
+    from models.transformer import create_model
+    create_model(vocab.vocab_size, "tiny", verbose=False)
+    pool, targets = batch(vocab, 8, 12, "binary", 3, "cpu", "table_keylast")
+    assert [it["direct_seq"] for it in train] == pool.tolist() and train[0]["direct_targets"] == targets
+    test = json.load(open(tmp_path / "test_iid.json"))["items"]
+    assert len(test) == 2000 and all(it["label"] == int(it["direct_seq"][it["direct_from"]] == vocab.encode_label("TRUE"))
+                                     for it in test)
