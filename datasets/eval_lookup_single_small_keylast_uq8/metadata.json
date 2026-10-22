@@ -1,0 +1,100 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0
+  ],
+  "binary_preds": [],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          4,
+          6,
+          8
+        ],
+        "unary": [
+          0
+        ],
+        "binary": []
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.49522,
+      "max_scratch_len": 137,
+      "sha256": "3c52551f3a5e9b409e22c6a5bc4dbd234860619e30859f0d0bbed741216e65e1",
+      "too_long": 0,
+      "duplicates": 0
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          4,
+          6,
+          8
+        ],
+        "unary": [
+          0
+        ],
+        "binary": []
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.5005,
+      "max_scratch_len": 81,
+      "sha256": "58d69d4687b98b06c5ecf1b3f55c54739e6738ed922f404eb6e268394e8fad3d",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 1018
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          4,
+          6,
+          8
+        ],
+        "unary": [
+          0
+        ],
+        "binary": []
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 81,
+      "sha256": "860a617a1536cc046683011c3514d316a7a26717a9bb02be1b151b2896df2e7a",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 482
+    }
+  },
+  "encoding": "keylast",
+  "signature": "single",
+  "objects": [
+    4,
+    6,
+    8
+  ],
+  "train_queries": 8,
+  "train_query_sampling": "uniform"
+}

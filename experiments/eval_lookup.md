@@ -358,3 +358,47 @@ facts, a fixed pool of 50,000, the cosine schedule and 31,000 steps.
 - **Fix.** `data/eval_generator.py --train-query-sampling uniform` draws training queries uniformly over
   all atoms. Val and test items are unchanged: balanced, with twins. The next check is pre-registered in
   `plan_formula_evaluation.md`.
+
+## Uniform training queries, three seeds: results
+
+This is the check pre-registered in `plan_formula_evaluation.md`, run on the AMD machine: a GMKtec EVO-X2
+with Radeon integrated graphics, under ROCm. Its smoke test reproduces the laptop: `pairs` jumps at step
+5,000 on both machines.
+
+**Part 1: `sanity_recall.py`.** `table_keylast`, 21 facts, a fixed pool of 50,000, the cosine schedule,
+31,000 steps, uniform queries:
+
+| queries per sequence | seed 0 | seed 1 | seed 2 |
+|---|---|---|---|
+| 8 | **jump at 15,500** (run E) | partial: about 0.65-0.69, loss about 0.53 (E1) | partial: 0.65-0.70, loss 0.53-0.57 |
+| 16 | **jump by 12,400** | partial: 0.65-0.71, loss 0.54-0.56 | **jump by 12,400** |
+
+**Part 2: the ladder's `single` rung.** Key-last, 8 uniform training queries, 40 epochs. test_iid
+accuracy / pair accuracy (%):
+
+| seed | test_iid | by objects (12 / 21 / 32) | validation loss |
+|---|---|---|---|
+| 1 | 80.0 / 60.1 | 74.2 / 87.7 / 78.7 | 0.678, falling from epoch 11 to a partial 0.55 by epoch 26; a second fall starts at epoch 38 (0.534, 0.474, 0.377) as training ends |
+| 2 | 66.6 / 33.3 | 74.8 / 64.3 / 61.1 | 0.679, down to a partial 0.53 by epoch 21, flat after |
+| 3 | **100.0 / 100.0** | 100 / 100 / 100 | 0.681, then at epoch 20 from 0.565 to 0.125, and 0.0000 from epoch 33 |
+
+**Against the pre-registration:**
+
+- **Predictions:**
+  - Part 1, 8 queries, seed 2, was left open: partial.
+  - Part 1, "16 queries learned in all three seeds": false (2 of 3).
+  - Part 2, "every seed leaves exact chance": true. All three fell below 0.69, to 0.53 or lower.
+  - Part 2, reaching 95% pairs in at least one seed was left open: seed 3 reached 100%.
+  - Part 2, "12-object worlds learned before 32-object ones": holds for seed 2. Seed 1 is best at 21.
+- **Decision rule.** Part 2 passes in 1 seed, and Part 1 did not find 16 queries reliable. So the next
+  step is the size curriculum: small worlds first, then a warm start on the full rung.
+
+**Reading:**
+
+- **Uniform training queries turn a lookup that was never learned into one that sometimes is.** For the
+  first time a ladder run is perfect at every world size, 12 to 32 objects.
+- **Runs that do not jump all stall at the same partial solution:** loss about 0.53, accuracy about 67%.
+  That holds in the sanity script and in the trainer, at 8 and at 16 queries. It looks like a separate
+  attractor, not a slow approach to the full solution. Seed 1 escaped it late.
+- **More queries per sequence help.** At 16, the jump came earlier (by step 12,400 against 15,500) and in
+  more seeds (2 of 3 against 1 of 3). They do not make it reliable.

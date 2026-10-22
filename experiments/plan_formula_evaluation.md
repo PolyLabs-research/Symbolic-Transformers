@@ -473,3 +473,33 @@ with 8 uniform training queries per item, 12-32 objects, and balanced test items
   - **Part 2 leaves chance but never passes:** the same choice, 16 queries or a curriculum.
   - **A Part 2 run stays at exact chance:** something else in the ladder's items still blocks. Compare
     them with the sanity layout token by token.
+
+## Size curriculum, three seeds: pre-registered before it runs
+
+With uniform training queries, the `single` rung was learned in 1 seed of 3. The seeds that failed stalled
+at a partial solution (`eval_lookup.md`). In the recall check, lookups over 8 facts were learned by step
+4,000-8,000. The curriculum trains on small worlds first, then warm-starts on the full rung.
+
+- **Stage 1.** `datasets/eval_lookup_single_small_keylast_uq8`: the `single` rung with 4, 6 or 8 objects
+  (`--objects 4 6 8`), key-last, 8 uniform training queries. 20 epochs.
+- **Stage 2.** Warm start (`--init-from`) from stage 1's best model, then
+  `datasets/eval_lookup_single_keylast_uq8` (12-32 objects, the same data as the last check). 20
+  epochs, with a fresh optimiser and schedule.
+- **Settings.** The total is 40 epochs, the same number of steps as the last check's 40 epochs from
+  scratch, so the comparison is at an equal budget. Otherwise `tiny`, batch 64, learning rate 3e-4, 500
+  warm-up steps per stage. Seeds 1, 2 and 3.
+- **Criteria.**
+  - Stage 1: its own test_iid pair accuracy ≥ 95%.
+  - Stage 2: test_iid pair accuracy on the full rung ≥ 95%.
+  - The curriculum is reliable if all 3 seeds pass stage 2.
+- **Predictions:**
+  - Stage 1 is learned in all 3 seeds.
+  - Stage 2 passes in all 3 seeds, with validation loss below 0.1 within 5 epochs. A head that matches
+    keys does not depend on how many facts there are.
+- **Decision rule:**
+  - **Stage 2 passes in 3/3:** the curriculum is the recipe. Use it for the `unary` and `full` rungs
+    (small worlds first, 3 seeds each), and later for Stage A.
+  - **Stage 1 fails in some seed:** small worlds are not reliable either. Before anything else, find out
+    what the partial solution does: accuracy by the queried fact's position in the table, and by key.
+  - **Stage 1 passes but stage 2 fails in some seed:** what was learned on small tables does not carry
+    over. Check whether it depends on position, for example by accuracy against the fact's position.

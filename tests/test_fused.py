@@ -196,3 +196,14 @@ def test_training_query_sampling_and_the_majority_shortcut(tok, sampling, low, h
             right += seq[t] == majority
             total += 1
     assert low < right / total < high
+
+
+def test_objects_override_sets_the_world_sizes(tmp_path):
+    from data.eval_generator import generate
+    meta = generate(str(tmp_path), str(ROOT / "unified_vocabulary.json"), seed=0, scale=0.002, lookup=True,
+                    encoding="keylast", signature="single", queries=4, train_query_sampling="uniform",
+                    objects=[4, 6])
+    assert meta["objects"] == [4, 6]
+    for name in ("train", "val", "test_iid"):
+        items = json.load(open(tmp_path / f"{name}.json"))["items"]
+        assert {it["objects"] for it in items} <= {4, 6} and meta["splits"][name]["sampler"]["objects"] == (4, 6)

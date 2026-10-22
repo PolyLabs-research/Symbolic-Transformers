@@ -44,7 +44,7 @@ import random
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -457,7 +457,7 @@ SIGNATURES = {
 def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: int = 0,
              scale: float = 1.0, train_not_mode: str = "any", lookup: bool = False,
              encoding: str = "true_atoms", signature: str = "full", queries: int = 1,
-             train_query_sampling: str = "balanced") -> Dict:
+             train_query_sampling: str = "balanced", objects: Optional[Sequence[int]] = None) -> Dict:
     random.seed(seed)
     vocab = Vocabulary(vocab_path)
     tok = Tokens(vocab)
@@ -472,10 +472,16 @@ def generate(out_dir: str, vocab_path: str = "unified_vocabulary.json", seed: in
     if signature != "full":
         if not lookup:
             raise ValueError("a reduced signature is only defined for the lookup diagnostic")
-        unary, binary, objects = SIGNATURES[signature]
-        splits = {name: ({**LOOKUP, "objects": objects, "unary": unary, "binary": binary}, n, pairs)
+        unary, binary, sig_objects = SIGNATURES[signature]
+        splits = {name: ({**LOOKUP, "objects": sig_objects, "unary": unary, "binary": binary}, n, pairs)
                   for name, (_, n, pairs) in LOOKUP_SPLITS.items() if name != "test_large_world"}
         meta.update({"signature": signature, "unary_preds": unary, "binary_preds": binary})
+    if objects is not None:
+        if not lookup:
+            raise ValueError("--objects is only defined for the lookup diagnostic")
+        splits = {name: (kw if name == "test_large_world" else {**kw, "objects": tuple(objects)}, n, pairs)
+                  for name, (kw, n, pairs) in splits.items()}
+        meta["objects"] = list(objects)
     if encoding == "keylast" and not lookup:
         raise ValueError("the key-last encoding is only defined for the lookup diagnostic")
     if train_query_sampling != "balanced" and queries == 1:
@@ -524,9 +530,12 @@ if __name__ == "__main__":
                     help="Lookup ladder: 'single' (one predicate), 'unary' (four unary), 'full' (Stage A)")
     ap.add_argument("--queries", type=int, default=1,
                     help="Lookup diagnostic: queries per training item (val and test items keep one)")
+    ap.add_argument("--objects", type=int, nargs="+", default=None,
+                    help="Lookup diagnostic: numbers of objects per world for train, val and test_iid, replacing the "
+                         "signature's (e.g. small worlds for the first stage of a curriculum)")
     ap.add_argument("--train-query-sampling", default="balanced", choices=["balanced", "uniform"],
                     help="With --queries > 1: training queries true half the time (balanced) or drawn uniformly "
                          "from all atoms (uniform). Val and test items are unchanged")
     args = ap.parse_args()
     generate(args.out, args.vocab, args.seed, args.scale, args.train_not_mode, args.lookup, args.encoding,
-             args.signature, args.queries, args.train_query_sampling)
+             args.signature, args.queries, args.train_query_sampling, args.objects)
