@@ -1,0 +1,108 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "binary_preds": [],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          1,
+          2
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.49908,
+      "max_scratch_len": 125,
+      "sha256": "59ab0a021a2a242c68c4b970fcf31e420b1459825469754c280bef2a92f14971",
+      "too_long": 0,
+      "duplicates": 1
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          1,
+          2
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.4995,
+      "max_scratch_len": 69,
+      "sha256": "50ad552b504be0fd3b6ba4df006a15073d4f030f729e8cfa7fc8a7d9d201fb84",
+      "too_long": 0,
+      "duplicates": 2,
+      "no_twin": 0,
+      "balance_rejects": 992
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          1,
+          2
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 69,
+      "sha256": "8903706ecef88b668a0fd8a9b320eb087b7e87981880db3b5270a7a3df62ab65",
+      "too_long": 0,
+      "duplicates": 8,
+      "no_twin": 0,
+      "balance_rejects": 472
+    }
+  },
+  "encoding": "keylast",
+  "signature": "unary",
+  "objects": [
+    1,
+    2
+  ],
+  "train_queries": 8,
+  "train_query_sampling": "uniform"
+}

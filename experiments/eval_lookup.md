@@ -402,3 +402,38 @@ accuracy / pair accuracy (%):
   attractor, not a slow approach to the full solution. Seed 1 escaped it late.
 - **More queries per sequence help.** At 16, the jump came earlier (by step 12,400 against 15,500) and in
   more seeds (2 of 3 against 1 of 3). They do not make it reliable.
+
+## Size curriculum, three seeds: results
+
+This is the check pre-registered in `plan_formula_evaluation.md`, run on the AMD machine. Stage 1 is 20
+epochs on the `single` rung with 4-8 objects. Stage 2 is 20 epochs on the full rung (12-32 objects),
+warm-started from stage 1. Columns: test_iid accuracy / pair accuracy (%).
+
+| seed | stage 1 (4 / 6 / 8 objects) | stage 1 validation loss | stage 2 (12 / 21 / 32 objects) | stage 2 validation loss |
+|---|---|---|---|---|
+| 1 | 100.0 / 100.0 (100 / 100 / 100) | 0.597, 0.594, 0.598, 0.576, then 0.099 in epoch 5 | **100.0 / 100.0** (100 / 100 / 100) | 0.343, 0.127, 0.054, then 0.000 |
+| 2 | 100.0 / 100.0 (100 / 100 / 100) | to 0.531 in epoch 5, then 0.030 in epoch 6 | **100.0 / 100.0** (100 / 100 / 100) | 0.359, 0.193, 0.066, 0.034, then 0.000 |
+| 3 | 100.0 / 100.0 (100 / 100 / 100) | to 0.505 in epoch 5, then 0.002 in epoch 6 | **100.0 / 100.0** (100 / 100 / 100) | 0.349, 0.252, 0.107, 0.016, then 0.000 |
+
+**Against the pre-registration:**
+
+- **Predictions:**
+  - "Stage 1 is learned in all 3 seeds": true. Each jump came in epoch 5 or 6, about 4,000-4,700
+    steps in.
+  - "Stage 2 passes in all 3 seeds, with validation loss below 0.1 within 5 epochs": true. Validation
+    loss was below 0.1 by epoch 3 or 4.
+- **Decision rule.** The curriculum is the recipe. Next are the `unary` and `full` rungs, small worlds
+  first, 3 seeds each.
+
+**Reading:**
+
+- **One-token lookups are solved.** Every seed is at 100% on every world size, with the same 40-epoch
+  budget under which training from scratch succeeded in 1 seed of 3. The partial solution never
+  appears: on small tables the full lookup forms before anything else can settle in.
+- **What is learned on small tables carries over to large ones almost at once.** Stage 2 starts at a
+  validation loss of about 0.35, far below the 0.69 of chance, and reaches 0 within 2-4 epochs. The
+  head matches keys whatever the table's size, as predicted.
+- **The full recipe so far:**
+  - each value right after its key, and the answer predicted at the query key (key-last);
+  - training queries drawn uniformly over the facts;
+  - small worlds first.

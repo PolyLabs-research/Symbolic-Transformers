@@ -1,0 +1,107 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "binary_preds": [],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          3,
+          5,
+          8
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.50194,
+      "max_scratch_len": 305,
+      "sha256": "a97d1d337b65719d5312f4026ef899b250d717f06c98327f7e0699035a46ffa9",
+      "too_long": 0,
+      "duplicates": 0
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          3,
+          5,
+          8
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.5005,
+      "max_scratch_len": 249,
+      "sha256": "bc925966afb5920a1ee38edf817746ca201ad27596f92748e48f5d030cda7e8c",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 976
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          3,
+          5,
+          8
+        ],
+        "unary": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "binary": []
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 249,
+      "sha256": "451f9e580d6ba53ba7170c9a6c5fde080678025308a153d85c9f99f189dbea6b",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 470
+    }
+  },
+  "encoding": "keylast",
+  "signature": "unary",
+  "train_queries": 8,
+  "train_query_sampling": "uniform"
+}

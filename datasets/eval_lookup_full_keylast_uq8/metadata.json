@@ -1,0 +1,93 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "binary_preds": [
+    4
+  ],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.49824,
+      "max_scratch_len": 369,
+      "sha256": "7f6a8b83972bd1a7a0d75dc2bb0b89a8ef0a4cd9ee1b08f02ff9f6636de9dbc8",
+      "too_long": 0,
+      "duplicates": 0
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.5,
+      "max_scratch_len": 292,
+      "sha256": "021c475d843c4fc4e53cf41f4b68c32549bb3d3a63a47559d4a8d9f2ed211826",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 1057
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 292,
+      "sha256": "b9ebd9376b5973eb0b0e71799997e0d941d72affab0910c7e60b807a639dbe34",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 559
+    },
+    "test_large_world": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          5
+        ]
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 412,
+      "sha256": "7dfbd64b271f7130c5f5c92f0fc77bb878c6706712c90d36fcf64b46df4a1df1",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 532
+    }
+  },
+  "encoding": "keylast",
+  "train_queries": 8,
+  "train_query_sampling": "uniform"
+}

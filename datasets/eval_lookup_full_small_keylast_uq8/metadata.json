@@ -1,0 +1,109 @@
+{
+  "generator": "eval_lookup_v1",
+  "seed": 0,
+  "unary_preds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "binary_preds": [
+    4
+  ],
+  "max_len": 512,
+  "train_not_mode": "any",
+  "splits": {
+    "train": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          1,
+          2
+        ]
+      },
+      "base_items": 50000,
+      "items": 50000,
+      "pairs": false,
+      "true_fraction": 0.50216,
+      "max_scratch_len": 189,
+      "sha256": "066260ce4a90f99056ecea1ed24c01b63c28682616c33b412f833f5fcd9c79dd",
+      "too_long": 0,
+      "duplicates": 0
+    },
+    "val": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          1,
+          2
+        ]
+      },
+      "base_items": 2000,
+      "items": 2000,
+      "pairs": false,
+      "true_fraction": 0.5,
+      "max_scratch_len": 112,
+      "sha256": "6e2cbb2e1a9593b85ea69d4cd591a89b60996d8a3a9b8c4d9b19fe435ebcc4f5",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 995
+    },
+    "test_iid": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          1,
+          2
+        ]
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 112,
+      "sha256": "04dcfb5ac00c8efcd163fc38a54bf30beb14cb5c85ee7932595a6eef265d043b",
+      "too_long": 0,
+      "duplicates": 2,
+      "no_twin": 0,
+      "balance_rejects": 458
+    },
+    "test_large_world": {
+      "sampler": {
+        "max_height": [
+          0
+        ],
+        "min_height": 0,
+        "objects": [
+          5
+        ]
+      },
+      "base_items": 1000,
+      "items": 2000,
+      "pairs": true,
+      "true_fraction": 0.5,
+      "max_scratch_len": 412,
+      "sha256": "ada0a31bb87d54784131819071ca4ec7cf460039b7b86e7f0c3b1e3d339ee073",
+      "too_long": 0,
+      "duplicates": 0,
+      "no_twin": 0,
+      "balance_rejects": 545
+    }
+  },
+  "encoding": "keylast",
+  "objects": [
+    1,
+    2
+  ],
+  "train_queries": 8,
+  "train_query_sampling": "uniform"
+}

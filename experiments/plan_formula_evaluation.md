@@ -503,3 +503,30 @@ at a partial solution (`eval_lookup.md`). In the recall check, lookups over 8 fa
     what the partial solution does: accuracy by the queried fact's position in the table, and by key.
   - **Stage 1 passes but stage 2 fails in some seed:** what was learned on small tables does not carry
     over. Check whether it depends on position, for example by accuracy against the fact's position.
+
+## The `unary` rung with the curriculum: pre-registered before it runs
+
+The curriculum made one-token lookups reliable (`eval_lookup.md`). The `unary` rung has 4 predicates, and
+its key is two tokens: the predicate and the object (`PRED p ( CONST a v )`).
+
+- **Stage 1.** `datasets/eval_lookup_unary_small_keylast_uq8`: 1 or 2 objects, so 4 or 8 facts. With one
+  object, every fact ends with the same object token, so only the predicate tells the facts apart.
+- **Stage 2.** `datasets/eval_lookup_unary_keylast_uq8`: 3, 5 or 8 objects (12-32 facts).
+- **Settings.** As in the single-rung curriculum: key-last, 8 uniform training queries, 20 + 20 epochs,
+  warm start, seeds 1, 2 and 3.
+- **The `full` rung** (`eval_lookup_full_small_keylast_uq8` and `eval_lookup_full_keylast_uq8`) is
+  generated, but runs only once `unary` passes in all 3 seeds. Its binary atoms add a third key token.
+- **Criteria.** As before: pair accuracy ≥ 95% on each stage's test_iid. Reliable if all 3 seeds pass
+  stage 2.
+- **Predictions.** Uncertain, and I expect trouble.
+  - The object token sits right before the value, as in `single`.
+  - The predicate sits 4 tokens before the value in a fact, and 3 tokens before the answer position in
+    a query. That is the kind of gap that blocked the jump in the recall checks.
+  - So stage 1 may learn to match the object but not the predicate. That is worth about 62% with
+    one object (the majority of 4 values), and less as objects are added.
+- **Decision rule:**
+  - **Stage 2 passes in 3/3:** two-token keys work with the same recipe. Run `full` the same way.
+  - **It fails:** the next design puts every part of the key next to the value, with one token per
+    symbol and no parentheses in the facts: `PRED_p CONST_a v`, and queries `PRED_p CONST_q -> v`. The
+    key is then the two tokens just before the value. This is where fused tokens should help, and it
+    would be their first real test.
