@@ -522,7 +522,7 @@ its key is two tokens: the predicate and the object (`PRED p ( CONST a v )`).
   - The object token sits right before the value, as in `single`.
   - The predicate sits 4 tokens before the value in a fact, and 3 tokens before the answer position in
     a query. That is the kind of gap that blocked the jump in the recall checks.
-  - So stage 1 may learn to match the object but not the predicate. That is worth about 62% with
+  - So stage 1 may learn to match the object but not the predicate. That is worth about 69% with
     one object (the majority of 4 values), and less as objects are added.
 - **Decision rule:**
   - **Stage 2 passes in 3/3:** two-token keys work with the same recipe. Run `full` the same way.
